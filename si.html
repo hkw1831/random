@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>肌肉伸展 Q&A 隨機抽題卡</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --background: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #212529;
+            --success: #38b000;
+            --error: #d00000;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--background);
+            padding: 1rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .question {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+        
+        .show-answer-btn-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        
+        .answer-container {
+            margin-top: 1rem;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.5s ease;
+        }
+        
+        .answer-content {
+            background-color: rgba(67, 97, 238, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .answer-content ul {
+            padding-left: 1.5rem;
+        }
+        
+        .answer-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s, transform 0.2s;
+            display: inline-block;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .btn-success:hover {
+            background-color: #2d9600;
+        }
+        
+        .btn-error {
+            background-color: var(--error);
+        }
+        
+        .btn-error:hover {
+            background-color: #b00000;
+        }
+
+        .btn-info {
+            background-color: #6c757d;
+        }
+
+        .btn-info:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .feedback-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+        
+        .count {
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--primary);
+            font-weight: 500;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 1rem 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        
+        .stat-item {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex: 1;
+            min-width: 80px;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            white-space: nowrap;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-value.correct {
+            color: var(--success);
+        }
+        
+        .stat-value.incorrect {
+            color: var(--error);
+        }
+        
+        footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 1rem 0;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .info {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: rgba(67, 97, 238, 0.05);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            padding: 2rem;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            margin: 2rem auto;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .question-list {
+            margin-top: 1rem;
+        }
+
+        .question-item {
+            background-color: rgba(67, 97, 238, 0.05);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95rem;
+        }
+
+        .question-item.correct {
+            border-left-color: var(--success);
+            background-color: rgba(56, 176, 0, 0.05);
+        }
+
+        .question-item.remaining {
+            border-left-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+            gap: 1rem;
+        }
+
+        .question-text {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .question-answer {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            border: 1px solid rgba(67, 97, 238, 0.2);
+            display: none;
+        }
+
+        .question-answer.show {
+            display: block;
+        }
+
+        .question-answer ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+
+        .question-answer li {
+            margin-bottom: 0.5rem;
+        }
+
+        .question-count {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .question-count.correct {
+            color: var(--success);
+        }
+
+        .question-count.remaining {
+            color: var(--primary);
+        }
+
+        @media (max-width: 600px) {
+            .stats {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .stat-item {
+                min-width: calc(50% - 0.5rem);
+                flex: none;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .question {
+                font-size: 1.25rem;
+            }
+            
+            .btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .btn-small {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .controls .btn {
+                width: 100%;
+                margin-right: 0;
+            }
+            
+            .feedback-controls {
+                flex-direction: column;
+            }
+
+            .modal-buttons {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                margin: 1rem auto;
+                padding: 1.5rem;
+                max-width: 95%;
+            }
+
+            .question-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+
+            .question-text {
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>肌肉伸展 Q&A 隨機抽題卡</h1>
+            <p>隨機抽取伸展相關問題並測試自己的知識</p>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">總題數</div>
+                <div id="totalCount" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">待答題數</div>
+                <div id="remainingCount" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">答對</div>
+                <div id="correctCount" class="stat-value correct">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">答錯</div>
+                <div id="incorrectCount" class="stat-value incorrect">0</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="drawBtn" class="btn">隨機抽題</button>
+            <button id="resetBtn" class="btn">重設</button>
+            <button id="showRemainingBtn" class="btn btn-info">查看待答題目</button>
+            <button id="showCorrectBtn" class="btn btn-info">查看已答對題目</button>
+        </div>
+        
+        <div class="info">
+            <p>✓ 正確回答的問題將不再出現</p>
+            <p>✓ 回答錯誤的問題將保留在題庫中再次抽取</p>
+            <p>✓ 按「重設」按鈕可重新開始</p>
+            <p>✓ 可查看待答題目和已答對題目列表</p>
+        </div>
+        
+        <div id="card" class="card">
+            <div id="question" class="question">按下「隨機抽題」按鈕開始</div>
+            
+            <div class="show-answer-btn-container">
+                <button id="showAnswerBtn" class="btn">顯示答案</button>
+            </div>
+            
+            <div id="answerContainer" class="answer-container">
+                <div id="answer" class="answer-content"></div>
+                <div id="feedbackControls" class="feedback-controls">
+                    <button id="correctBtn" class="btn btn-success">我答對了</button>
+                    <button id="incorrectBtn" class="btn btn-error">我答錯了</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 重設確認模態框 -->
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">確定要重設？</div>
+            <p>這將清除所有答題進度，此操作無法撤銷。</p>
+            <div class="modal-buttons">
+                <button id="confirmResetBtn" class="btn btn-error">確定重設</button>
+                <button id="cancelResetBtn" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 待答題目模態框 -->
+    <div id="remainingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">待答題目列表</div>
+            <div id="remainingQuestionCount" class="question-count remaining"></div>
+            <div id="remainingQuestionList" class="question-list"></div>
+            <div class="modal-buttons">
+                <button id="closeRemainingBtn" class="btn">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 已答對題目模態框 -->
+    <div id="correctModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">已答對題目列表</div>
+            <div id="correctQuestionCount" class="question-count correct"></div>
+            <div id="correctQuestionList" class="question-list"></div>
+            <div class="modal-buttons">
+                <button id="closeCorrectBtn" class="btn">關閉</button>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2026 肌肉伸展 Q&A 隨機抽題卡</p>
+    </footer>
+    
+    <script>
+        // 您的原始問題（完全不變）
+        const qaData = [
+             {
+                question: "人為什麼需要伸展",
+                answer: "<ul><li>體適能元素</li><li>肌肉用力後會縮短，產生激痛點 + 關節 血管 神經線 內臟受壓</li><li>肌肉獲得營養的方法之一</li><li>預防受傷及拉傷</li><li>刺激副交感神經</li></ul>"
+            },
+            {
+                question: "伸展的好處",
+                answer: "<ul><li>促進新陳代謝</li><li>增加柔軟度</li><li>增加 ROM</li><li>增加血循</li><li>增加本體感</li><li>神經感覺</li><li>保持肌肉長度</li><li>減低肌肉和關節壓力</li><li>減少受傷</li><li>通淋巴 去水腫</li><li>心情開朗 保持青春</li><li>長壽</li><li>刺激副交感神經</li></ul>"
+            },
+            {
+                question: "什麼情況不要伸展",
+                answer: "<ul><li>嚴重發炎 紅腫熱痛</li><li>手術後或有傷口</li><li>骨折</li><li>腫瘤</li><li>甩臼</li><li>斷韌帶</li></ul>"
+            },
+            {
+                question: "什麼是恆定現象",
+                answer: "身體內部的環境保持在某個範圍的穩定狀態"
+            },
+            {
+                question: "正常體溫是",
+                answer: "98F or 35.7C"
+            },
+            {
+                question: "正常血壓是",
+                answer: "120/80mm/Hg"
+            },
+            {
+                question: "血糖範圍",
+                answer: "餐前：3-6；餐後：5-10"
+            },
+            {
+                question: "同化作用是",
+                answer: "指生物體把從外界環境中獲得的營養物質轉變成自身組織物質，並且儲存能量的變化過程"
+            },
+            {
+                question: "異化作用是",
+                answer: "指生物體能夠把自身的一部份組成物質加以分解，釋放出其中能量，並且把分解的終產物排出體外的變化過程"
+            },
+            {
+                question: "能量單位是",
+                answer: "ATP 三磷酸腺苷"
+            },
+            {
+                question: "能量轉變公式",
+                answer: "ATP + H2O -> ADP + Pi + Energy"
+            },
+            {
+                question: "細胞五個成份",
+                answer: "細胞膜 細胞質 胞器 包涵體 細胞核"
+            },
+            {
+                question: "粒腺體作用",
+                answer: "細胞公廠"
+            },
+            {
+                question: "使人產生動作的組織包括",
+                answer: "結締組織 肌肉組織 神經組織"
+            },
+            {
+                question: "骨骼系統的功能包括",
+                answer: "<ul><li>支持身體的柔軟組織，但身體維持外形及姿勢</li><li>保護精細的構造如內臟</li><li>動</li><li>貯存礦物質（鈣 + 磷）和脂肪</li><li>在骨髓製造血球</li></ul>"
+            },
+            {
+                question: "長骨有以下七個部分",
+                answer: "<ul><li>骨幹</li><li>骨端 / 骨骺</li><li>骨骺關節軟骨</li><li>骨外膜</li><li>骨髓腔</li><li>骨內膜</li></ul>"
+            },
+            {
+                question: "六種骨的類型及例子",
+                answer: "<ul><li>縫間骨： 頭骨縫間的骨</li><li>不規則骨：脊椎骨、上頜骨、下頜骨、顴骨、髖骨</li><li>短骨：腕骨、跗骨</li><li>扁平骨：胸骨、肩胛骨、肋骨、髂骨、組成顱蓋的額骨與頂骨</li><li>長骨：肱骨、尺骨、橈骨、股骨、脛骨、腓骨</li><li>種子骨：臏骨、豆狀骨</li></ul>"
+            },
+            {
+                question: "成年人的骨骼由幾多塊組成，分為那兩大類和分別有多少塊骨骼",
+                answer: "206：中軸骨骼 80 + 附肢骨骼 126"
+            },
+            {
+                question: "頸胸腰骶尾骨各幾多節",
+                answer: "7 12 5 5 1"
+            },
+            {
+                question: "關節從功能上分為那三類",
+                answer: "不動關節 微動關節 可動關節"
+            },
+            {
+                question: "關節從結構上分為那三類",
+                answer: "纖維性關節 軟骨性關節 滑液性關節"
+            },
+            {
+                question: "關節七個組成部份",
+                answer: "滑液膜 纖維性關節囊 透明軟骨 滑液 肌肉 肌腱 韌帶"
+            },
+            {
+                question: "六種滑液性關節種類及例子",
+                answer: "<ul><li>車軸關節：C1 C2</li><li>鉸鏈關節 肘</li><li>滑動關節： 手腕骨</li><li>球窩關節：肩/髖</li><li>鞍狀關節：手指-腕</li><li>橢圓關節：手指之間</li></ul>"
+            },
+            {
+                question: "肌肉收縮的功能",
+                answer: "運動 維持姿勢 產生熱量"
+            },
+            {
+                question: "三種肌肉種類",
+                answer: "骨骼肌 心肌 平滑肌"
+            },
+            {
+                question: "肌肉種織由粗到幼",
+                answer: "肌體 肌束 肌纖維 肌原纖維 肌絲 粗肌絲幼肌絲"
+            },
+            {
+                question: "肌肉佔人體總重量約幾多%，約幾多塊肌肉",
+                answer: "40-50%，656-850"
+            },
+            {
+                question: "四種肌束排列及例子",
+                answer: "<ul><li>平行：扁平：顱頂肌；繩帶：縫匠肌；紡錘：肱二頭肌</li><li>羽狀：單：脛肌；雙：股直肌；多：三角肌</li><li>放射狀：胸大肌 / 顳肌</li><li>環肌：口輪匝肌/眼輪匝肌</li></ul>"
+            },
+            {
+                question: "深層肌肉和特性",
+                answer: "<ul><li>作用：平衡 協調 穩定</li><li>特性：維持時間長而穩定，疲勞後恢復時間長，體積比較幼長，力量比較弱</li></ul>"
+            },
+            {
+                question: "神經系統分為那兩類",
+                answer: "中樞神經系統（腦+脊髓）和週邊神經系統"
+            },
+            {
+                question: "週邊神經系統分為那兩類和那些子類",
+                answer: "<ul><li>輸入系統和輸出系統</li><li>輸出系統又分為自主神經系統和體神經系統</li><li>自主神經系統又分交感神經和副交感神經</li></ul>"
+            },
+            {
+                question: "什麼是體神經系統",
+                answer: "<ul><li>體神經系統中的感覺神經纖維可將身體各部份的感覺器官所搜集到的視覺嗅覺味覺觸覺等資訊傳送到大腦或脊髓。</li><li>而運動神經纖維則負責將中樞神經系統所下達的命令傳道骨骼肌已產生所需的運動。</li></ul>"
+            },
+            {
+                question: "人體內最長的神經是那一條？",
+                answer: "坐骨神經"
+            },
+            {
+                question: "自主神經系統的功能",
+                answer: "調控內臟的平滑肌運動易及內分泌腺體產生內分泌激素"
+            },
+            {
+                question: "神經元的構造可分為那三類，以及有什麼用途？",
+                answer: "<ul><li>細胞體：維持神經細胞生存</li><li>樹特：負責將訊息傳至細胞體</li><li>獨特：負責將訊息由細胞睇傳至令一神經元或組織</li></ul>"
+            },
+            {
+                question: "由肌絲滑動學說的肌肉收縮及放鬆過程",
+                answer: "<ul><li>肌肉收縮過程：神經刺激運動神經元，然後釋放ACH，鈣離子再操機師上的ATP，粗肌絲將幼肌絲旋轉及拉近讓肌小節縮短並收縮肌肉</li><li>肌肉放鬆過程：神經刺激運動神經元釋放ACHE鈣離子返回肌槳，粗肌絲放開幼肌絲，肌小節變回原本長度，肌肉放鬆</li></ul>"
+            },
+            {
+                question: "肌肉收縮，六個種類",
+                answer: "按頻率：抽動性收縮、加成收縮、強直收縮；按長度：等張收縮、等長收縮、等速/動收縮"
+            },
+            {
+                question: "紅肌是一型還是二形肌肉收縮速度是快還是慢，容易疲勞嗎？肌纖維厚度是什麼，含氧量高還是低，肌肉顏色是什麼，爆炸力是什麼？",
+                answer: "一型、肌肉收縮慢、不易疲勞、肌纖維厚度為細、含氧量高、肌肉顏色是紅色、爆炸力低"
+            },
+            {
+                question: "白肌是一型還是二形肌肉收縮速度是快還是慢，容易疲勞嗎？肌纖維厚度是什麼，含氧量高還是低，肌肉顏色是什麼，爆炸力是什麼？",
+                answer: "二A型、肌肉收縮速度快、稍耳疲勞、肌纖維厚度為中等、含氧量低、肌肉顏色紅色、爆炸力高"
+            },
+            {
+                question: "健康體式能元素",
+                answer: "心肺功能，柔軟度、肌力或肌耐力、身體肥瘦組合、壓力處理"
+            },
+            {
+                question: "運動體式能的元素",
+                answer: "心肺功能，柔軟度、肌力或肌耐力、身體肥瘦組合、壓力處理、速度、爆發力、敏捷性、平衡性、協調性"
+            },
+            {
+                question: "柔軟度分為那三個種類",
+                answer: "動態柔軟度、靜止主動柔軟度、靜止被動柔軟度"
+            },
+            {
+                question: "影響柔軟度的因素",
+                answer: "軟組織、年齡、性別、關節構造和種類、遺傳、溫度、身體活動度"
+            },
+            {
+                question: "熱身運動可提高關節的溫度至什麼溫度，並促進關節的活動範圍多少percent",
+                answer: "45C 20%"
+            },
+            {
+                question: "緩和溫度會降低關節的溫度多少，而促進關節的活動度減少多少percent",
+                answer: "18.33C 20%"
+            },
+            {
+                question: "軟組織構造對關節阻力的相對比例",
+                answer: "關節囊： 47 ，肌肉： 41 ，肌腱： 10 ，皮膚：二"
+            },
+            {
+                question: "柔軟度從運動表現上有什麼重要？",
+                answer: "<ul><li>增加關節活動幅度，改善運動表現</li><li>暖化肌肉，為高強度運動作出準備</li><li>預防運動傷害</li></ul>"
+            },
+            {
+                question: "柔軟度在痛症身上有什麼重要？",
+                answer: "<ul><li>平衡腹背肌肉柔軟度及肌力</li><li>改善激痛點缺血缺氧問題</li><li>改善理想身體姿勢，包括站立及走路姿勢等</li></ul>"
+            },
+            {
+                question: "七個伸展的種類",
+                answer: "<ul><li>彈動式伸展</li><li>動態式伸展</li><li>靜態式伸展</li><li>主動式伸展</li><li>被動式伸展</li><li>本體感覺神經肌肉促進術</li><li>動態獨立群組伸展</li></ul>"
+            },
+            {
+                question: "伸展計劃的七個步驟",
+                answer: "<ul><li>充分了解患者的生理及心理的情況</li><li>共同設定預期可達成的目標</li><li>分階段設立小目標</li><li>以FITT原則，編制伸展計劃 freq intensity timing type</li><li>記錄上課進度</li><li>考慮各項因素</li><li>進行計劃檢討</li></ul>"
+            },
+            {
+                question: "新階段設立伸展目標時，對方會執行成那三個階段",
+                answer: "認知其、學習期、鍛鍊強化期"
+            },
+            {
+                question: "伸展肌肉四個先後處理原則",
+                answer: "<ul><li>先伸展旋轉肌，後伸展屈伸肌</li><li>先伸展大肌肉，後伸展深層肌肉</li><li>先伸展軀幹，後伸展四肢</li><li>先利用動態式伸展，後利用靜態式伸展</li></ul>"
+            },
+                       // Day 1 - 腹部和臀部肌肉
+            {
+                question: "腹橫肌的肌肉介紹",
+                answer: "<ul><li>腹橫肌位於腹部，肌肉纖維呈橫向排列</li><li>是腹部最深層的肌肉，被其他腹肌覆蓋</li><li>主要負責保護內臟和穩定身體姿勢</li></ul>"
+            },
+            {
+                question: "腹橫肌伸展的好處",
+                answer: "<ul><li>保護內臟器官，維持腹腔內壓</li><li>穩定身體姿勢，預防駝背和腰椎前凸</li><li>改善核心穩定性，減少腰背疲勞</li><li>預防因腹部無力導致的姿勢問題</li></ul>"
+            },
+            {
+                question: "腹橫肌伸展的步驟",
+                answer: "<ul><li>坐直或站立，保持腰背挺直</li><li>鼻吸氣時將腹部脹起，脹到最大</li><li>維持腹部脹起狀態，閉氣二至三秒</li><li>口呼氣時自然放鬆腹部</li><li>重複三至十次（與其他肌肉不同，需要較多次數）</li></ul>"
+            },
+            {
+                question: "腹橫肌伸展的注意事項",
+                answer: "<ul><li>肩膀保持放鬆，不要聳肩</li><li>專注於腹部動作，避免其他部位用力</li><li>呼氣時自然放鬆，不要刻意用力收縮</li><li>動作要緩慢控制，避免急促</li></ul>"
+            },
+            {
+                question: "腹內斜肌的肌肉介紹",
+                answer: "<ul><li>腹內斜肌位於腹部，肌肉纖維呈斜向排列</li><li>比腹橫肌表層，是腹部的重要組成部分</li><li>主要負責身體的旋轉和側彎動作</li></ul>"
+            },
+            {
+                question: "腹內斜肌伸展的好處",
+                answer: "<ul><li>保護內臟器官</li><li>穩定身體姿勢，預防不良姿態</li><li>改善身體旋轉靈活性</li><li>減少腰部緊張和不適</li></ul>"
+            },
+            {
+                question: "腹內斜肌坐姿伸展步驟",
+                answer: "<ul><li>坐在地上，雙腿交叉或盤腿</li><li>要做右邊腹內斜肌時，左手舉起至耳旁</li><li>右手放在地面支撐</li><li>吸氣時將脊椎向上拉直</li><li>呼氣時身體向右側彎</li><li>用腰椎帶動身體稍微向下轉動</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "腹內斜肌站姿伸展步驟",
+                answer: "<ul><li>站立，要做右邊腹內斜肌時，左手舉起至耳旁</li><li>右手可插腰或自然放置</li><li>吸氣時將脊椎向上拉長</li><li>呼氣時身體向右側彎</li><li>用腰椎帶動身體稍微向下轉動</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "臀大肌的肌肉介紹",
+                answer: "<ul><li>臀大肌位於臀部，是臀部表層最大的肌肉</li><li>肉眼可見，負責髖關節的伸展和穩定</li><li>是人體最大最有力的肌肉之一</li></ul>"
+            },
+            {
+                question: "臀大肌伸展的好處",
+                answer: "<ul><li>防止骨盆前傾，維持良好姿勢</li><li>對於經常上下樓梯或久蹲的人特別重要</li><li>改善下肢功能和穩定性</li><li>預防腰背疼痛</li></ul>"
+            },
+            {
+                question: "臀大肌坐姿伸展步驟",
+                answer: "<ul><li>坐在地上，腰背挺直</li><li>要伸展右邊臀大肌時，右腳跨過左腳</li><li>左手固定右腳腳踝，作為固定點</li><li>右手抱住右膝，向身體方向拉</li><li>吸氣時挺直腰背，呼氣時將膝蓋拉向左肩方向</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "臀大肌躺姿伸展步驟",
+                answer: "<ul><li>平躺，下巴指向胸前</li><li>要伸展右邊臀大肌時，右腳跨過左腿</li><li>左手穿過腿部空隙，與右手相扣抱住小腿</li><li>將右腿拉向胸部方向</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "臀大肌椅子伸展步驟",
+                answer: "<ul><li>坐在穩固的椅子上</li><li>要伸展右邊臀大肌時，將右腳踝放在左大腿上</li><li>雙手按住右膝，身體前傾</li><li>感受右邊臀部的拉扯感</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "梨狀肌的肌肉介紹",
+                answer: "<ul><li>梨狀肌位於臀部深層，是一條橫向的細小肌肉</li><li>被臀大肌覆蓋，從尾骨橫向延伸至大腿骨外側</li><li>主要負責髖關節的外旋和穩定</li></ul>"
+            },
+            {
+                question: "梨狀肌伸展的好處",
+                answer: "<ul><li>預防或舒緩坐骨神經痛</li><li>改善下背痛問題</li><li>對長時間久坐的人特別有效（如辦公室工作者、司機、保安員等）</li><li>放鬆深層臀部肌肉，改善下肢循環</li></ul>"
+            },
+            {
+                question: "梨狀肌躺姿伸展步驟",
+                answer: "<ul><li>平躺，下巴指向胸前</li><li>要做右邊梨狀肌時，右腳放在左腳上方</li><li>右手穿過腿部空隙，與左手相扣抱住左腿小腿</li><li>呼氣時將下方腿拉向身體</li><li>用手肘將上方腿向天空推（形成一拉一推動作）</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "梨狀肌坐姿伸展步驟",
+                answer: "<ul><li>坐在地上，要做左邊梨狀肌時</li><li>將左腳踝放在右大腿上方，腳踝不要壓在膝蓋上</li><li>雙腳稍微分開，不在同一直線上以保持平衡</li><li>吸氣時挺直腰背，呼氣時身體稍微前傾</li><li>胸口不要貼大腿，保持挺胸姿勢</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+
+            // 腰部肌肉
+            {
+                question: "腰方肌的肌肉介紹",
+                answer: "<ul><li>腰方肌位於腰部兩側，從第十二根肋骨延伸至骨盆</li><li>是一條較長的肌肉，貼近脊椎兩側</li><li>主要負責脊椎的側彎和穩定功能</li></ul>"
+            },
+            {
+                question: "腰方肌伸展的好處",
+                answer: "<ul><li>預防或舒緩腰痛</li><li>改善腰部靈活性和穩定性</li><li>對長期腰部緊張的人特別有效</li><li>減少因腰方肌緊張導致的不適</li></ul>"
+            },
+            {
+                question: "腰方肌坐姿旋轉伸展步驟",
+                answer: "<ul><li>坐在地上，要做右邊腰方肌時</li><li>舉起左腳，用右手抱住左膝（對側手腳）</li><li>左手按在地面支撐</li><li>吸氣時挺直腰背，呼氣時身體向左轉</li><li>用腰椎帶動轉動，而非胸椎</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "腰方肌躺姿扭轉伸展步驟",
+                answer: "<ul><li>平躺，下巴指向胸前</li><li>要做左邊腰方肌時，先將臀部稍微移向左側</li><li>左腳跨過右腳外側，右手輕壓左腿向下</li><li>左手可平展成九十度或橫放</li><li>兩側肩膀盡量貼地，如需要可轉頭向右</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "腰方肌側彎伸展步驟",
+                answer: "<ul><li>坐在地上，右腳伸直，左腳彎曲成九十度以上</li><li>要做左邊腰方肌時，右手反手抓右腳</li><li>左手先向天舉起，拉直脊椎</li><li>呼氣時身體向右腳方向彎曲</li><li>左手盡量保持在耳旁，不要遮臉</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+
+            // 髖部肌肉
+            {
+                question: "髂腰肌的肌肉介紹",
+                answer: "<ul><li>髂腰肌由髂肌和腰大肌組成，位於髖關節前方</li><li>從腰椎穿過骨盆連接到大腿骨</li><li>是重要的髖屈肌群，負責抬腿和穩定軀幹</li></ul>"
+            },
+            {
+                question: "髂腰肌伸展的好處",
+                answer: "<ul><li>通淋巴去水腫，提升深層代謝</li><li>預防或舒緩深層膝痛及腰痛</li><li>改善因久坐導致的髖關節緊繃</li><li>促進下肢血液循環</li></ul>"
+            },
+            {
+                question: "髂腰肌動態弓箭步伸展步驟",
+                answer: "<ul><li>做右邊髂腰肌時，採用左腳前右腳後的弓箭步</li><li>前腳呈九十度直角，膝蓋不超過腳尖</li><li>後腳盡量向後拉，雙手按地支撐</li><li>吸氣時後腿離地伸直</li><li>臀部輕微上下震動十五秒為一次</li><li>做三次，每次間隔稍作休息</li></ul>"
+            },
+            {
+                question: "髂腰肌靜態弓箭步伸展步驟",
+                answer: "<ul><li>採用相同弓箭步姿勢，後膝跪地</li><li>如膝蓋疼痛可墊毛巾或軟墊</li><li>後腿盡量向後拉開</li><li>上身挺直，雙手可按前腿或舉向天空</li><li>盆骨向前推，感受前髖的拉扯</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "髂腰肌加強版伸展步驟",
+                answer: "<ul><li>在靜態弓箭步基礎上，雙手舉向天空</li><li>吸氣時拉直脊椎，呼氣時向下坐</li><li>如無腰痛可稍微後彎增強伸展</li><li>有腰痛者只需挺直手臂向天即可</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+
+            // 小腿肌肉
+            {
+                question: "腓腸肌的肌肉介紹",
+                answer: "<ul><li>腓腸肌位於小腿後方，是小腿表層最大的肌肉</li><li>肉眼可見，形成小腿後側的主要輪廓</li><li>主要負責踮腳和行走時的推進動作</li></ul>"
+            },
+            {
+                question: "腓腸肌伸展的好處",
+                answer: "<ul><li>預防或舒緩膝下痛（膝蓋下方疼痛）</li><li>防止足底筋膜炎的發生</li><li>改善小腿肌肉避震功能</li><li>減少下樓梯或跳躍運動後的不適</li></ul>"
+            },
+            {
+                question: "腓腸肌弓箭步伸展步驟",
+                answer: "<ul><li>做右腿腓腸肌時，採用左腳前右腳後的弓箭步</li><li>手按牆壁或插腰保持平衡</li><li>兩腳腳尖都指向正前方</li><li>吸氣時雙腿伸直，呼氣時前腳彎曲後腿保持直</li><li>後腳腳跟必須踩實地面，不可抬起</li><li>重心移向前方，感受後腿小腿拉扯</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "腓腸肌踩牆伸展步驟",
+                answer: "<ul><li>要伸展的腳踩在磚塊或台階上</li><li>另一腳在地面，腳跟提起</li><li>踩磚腳的腳跟下壓，感受小腿後側拉扯</li><li>可輕微前後搖擺增加伸展感</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "比目魚肌的肌肉介紹",
+                answer: "<ul><li>比目魚肌位於小腿深層，在腓腸肌下方</li><li>是小腿較深層的肌肉，位置稍低於腓腸肌</li><li>負責穩定踝關節和協助推進動作</li></ul>"
+            },
+            {
+                question: "比目魚肌伸展的好處",
+                answer: "<ul><li>預防或舒緩膝下痛</li><li>防止足底筋膜炎</li><li>改善踝關節穩定性</li><li>與腓腸肌同樣重要的避震功能</li></ul>"
+            },
+            {
+                question: "比目魚肌與腓腸肌伸展的主要差別",
+                answer: "<ul><li>採用與腓腸肌相同的弓箭步姿勢</li><li>先做腓腸肌伸展（前腳彎後腿直）</li><li>然後後腳也要微微彎曲膝蓋（關鍵差別）</li><li>後腳腳跟仍需踩實地面</li><li>感受後腿近腳跟上方位置的拉扯</li></ul>"
+            },
+            {
+                question: "脛骨前肌的肌肉介紹",
+                answer: "<ul><li>脛骨前肌位於小腿前側，沿著脛骨排列</li><li>是小腿前方最主要的肌肉</li><li>負責勾腳動作和踝關節的背屈</li></ul>"
+            },
+            {
+                question: "脛骨前肌伸展的好處",
+                answer: "<ul><li>預防或舒緩脛前疼痛（小腿前側疼痛）</li><li>改善踝關節靈活性</li><li>平衡小腿前後肌群發展</li><li>預防運動傷害，特別是跑步相關</li></ul>"
+            },
+            {
+                question: "脛骨前肌跪坐伸展步驟",
+                answer: "<ul><li>採跪坐姿勢，手向後撐地支撐</li><li>重心向後移，感受腳背拉扯</li><li>要做左腳時，左腳膝蓋慢慢離地</li><li>膝蓋向外稍微旋轉增加伸展</li><li>維持十二至十五秒，做三次</li><li>如有膝痛不適合此動作</li></ul>"
+            },
+            {
+                question: "脛骨前肌手抓腳伸展步驟",
+                answer: "<ul><li>坐在地上，要做右腳脛骨前肌時</li><li>用左手（對側手）抓住右腳腳掌</li><li>右手撐地支撐身體</li><li>慢慢從彎膝變直膝，如太緊可用彈力帶</li><li>右腳拉向左肩方向（對角線）</li><li>腳掌輕微內收，腳趾向下</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+
+            // 大腿肌肉
+            {
+                question: "股四頭肌的肌肉介紹",
+                answer: "<ul><li>股四頭肌位於大腿前方，是人體最大的肌群之一</li><li>由四條肌肉組成：股直肌、股外側肌、股內側肌、股中間肌</li><li>主要負責膝關節伸展和髖關節屈曲</li></ul>"
+            },
+            {
+                question: "股四頭肌伸展的好處",
+                answer: "<ul><li>預防不同種類的膝蓋疼痛</li><li>對騎單車、跑步、上下樓梯特別重要</li><li>改善膝關節靈活性</li><li>減少膝蓋緊繃感和爆開感</li></ul>"
+            },
+            {
+                question: "股四頭肌站姿伸展步驟（同手同腳）",
+                answer: "<ul><li>要做左邊股四頭肌時，左手抓左腳踝</li><li>右手可扶牆或插腰保持平衡</li><li>腰背挺直，膝蓋盡量指向地面</li><li>雙腿盡量併攏，吸氣收腹</li><li>呼氣時將腳跟拉向臀部方向</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "股四頭肌趴姿伸展步驟",
+                answer: "<ul><li>趴在地上，要做左邊時右手抓右腳</li><li>如抓不到腳可使用彈力帶輔助</li><li>吸氣穩定身體，呼氣輕柔地將腳跟拉向臀部</li><li>避免用力過猛，保護膝關節</li><li>維持十二至十五秒，做三次</li><li>懷孕者不適合此動作</li></ul>"
+            },
+            {
+                question: "股四頭肌弓箭步伸展步驟（股中間肌）",
+                answer: "<ul><li>左腳前右腳後的弓箭步，後膝跪地</li><li>如膝蓋疼痛請墊毛巾或軟墊</li><li>用對側手（左手）抓住後腿（右腳）腳踝</li><li>如抓不到可使用彈力帶</li><li>上身挺直，盆骨向前推</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "腿後肌群的肌肉介紹",
+                answer: "<ul><li>腿後肌群位於大腿後側，由三條肌肉組成</li><li>包括股二頭肌、半腱肌、半膜肌</li><li>主要負責膝關節彎曲和髖關節伸展</li></ul>"
+            },
+            {
+                question: "腿後肌群伸展的好處",
+                answer: "<ul><li>預防或舒緩坐骨神經痛</li><li>改善下背痛問題</li><li>減少膝蓋疼痛</li><li>特別適合久坐或下背痛患者</li></ul>"
+            },
+            {
+                question: "腿後肌群坐姿伸展步驟",
+                answer: "<ul><li>坐在地上，要伸展右腿時右腿伸直</li><li>左腿彎曲，伸直腿與肚臍同方向</li><li>臀部肌肉向後推，坐骨坐平</li><li>吸氣時雙手向上，拉直脊椎</li><li>呼氣時身體向前，肚臍往地面方向</li><li>眼睛平視前方，不要刻意低頭</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "腿後肌群跪姿伸展步驟",
+                answer: "<ul><li>左膝跪地，右腿伸直向前</li><li>雙手按地支撐，圍繞伸直腿兩側</li><li>如膝蓋疼痛不適合此動作</li><li>腳趾盡量向上勾（背屈）</li><li>吸氣挺直背部，呼氣肚臍往地面</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "腿後肌群躺姿伸展步驟",
+                answer: "<ul><li>平躺，下巴指向胸前</li><li>要伸展的腿向上舉，可用手抓腳掌</li><li>抓不到可使用彈力帶輔助</li><li>將腿拉向頭部方向</li><li>另一腿如抬起可輕踩地面</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            {
+                question: "腿後肌群椅子伸展步驟",
+                answer: "<ul><li>坐在穩固椅子上，要伸展右腿時右腿伸直</li><li>腰背挺直，呼氣時身體前傾</li><li>肚臍往地面方向，保持安全範圍</li><li>適合行動不便或長者使用</li><li>維持十二至十五秒，做三次</li></ul>"
+            },
+            // Day 2 - 內收肌群和其他肌肉
+            {
+                question: "內收肌群的肌肉介紹",
+                answer: "<ul><li>內收肌群位於大腿內側，包含五條肌肉：內收長肌、內收短肌、恥骨肌、內收大肌、股薄肌</li><li>主要負責雙腿向中線內收的動作</li><li>統一摸著大腿內側即可代表整個內收肌群</li></ul>"
+            },
+            {
+                question: "內收肌群伸展的好處",
+                answer: "<ul><li>預防或舒緩鼠蹊部疼痛</li><li>改善整體髖關節的活動度和靈活性</li><li>對日常生活中的分腿動作有幫助</li></ul>"
+            },
+            {
+                question: "內收肌群坐姿合掌伸展步驟（內收長肌和短肌）",
+                answer: "<ul><li>坐在地上，腳掌貼腳掌，雙手捉住雙腳</li><li>背部挺直，稍微收腹</li><li>用手肘將雙腿向下壓，盡量挺直身體</li><li>維持十二至十五秒，保持自然呼吸（鼻吸口呼）</li><li>重複三次</li></ul>"
+            },
+            {
+                question: "內收肌群坐姿開腿前彎步驟（針對恥骨肌）",
+                answer: "<ul><li>坐直，雙腿分開，背挺直</li><li>雙腿盡量打開，腳趾指向自己</li><li>吸氣坐直腰背，呼氣時身體慢慢向前傾</li><li>維持十二至十五秒，重複三次</li></ul>"
+            },
+            {
+                question: "內收肌群跪姿撐地伸展步驟（針對恥骨肌）",
+                answer: "<ul><li>採用四足跪姿，手撐地，膝蓋慢慢向左右兩邊打開</li><li>肩膀、手肘成直線，上臂、前臂約九十度直角</li><li>膝蓋和髖關節成直線，大腿、小腿約九十度直角</li><li>腳掌向後，腳底朝天</li></ul>"
+            },
+            {
+                question: "ITB（髂脛束）的肌肉介紹",
+                answer: "<ul><li>ITB是髂脛束的簡稱，位於大腿外側</li><li>是一塊筋膜，不是肌肉，從臀部一直延伸到膝蓋下方</li><li>主要負責穩定膝關節和髖關節</li></ul>"
+            },
+            {
+                question: "ITB（髂脛束）伸展的好處",
+                answer: "<ul><li>預防膝蓋外側疼痛</li><li>改善下肢整體的活動度</li><li>對跑步和行山等運動特別有幫助</li></ul>"
+            },
+            {
+                question: "ITB（髂脛束）伸展步驟",
+                answer: "<ul><li>左腳在前，右腳在後（做右邊ITB時）</li><li>右腳的腳掌外側放在地上，腳掌稍微外反</li><li>前腳微曲膝蓋，重心放在前腳</li><li>左手可扶牆或插腰，右手向天舉起</li><li>吸氣，呼氣時收腹，屁股向後推</li><li>右手找右腳方向，維持十五秒</li><li>重複三次</li></ul>"
+            },
+            {
+                question: "闊筋膜張肌（TFL）的肌肉介紹",
+                answer: "<ul><li>闊筋膜張肌位於褲袋位，約在盆骨下方一個手掌的位置</li><li>介於股四頭肌和ITB中間的一條坑</li><li>主要功能是帶領抬腿和蹬腿的動作</li></ul>"
+            },
+            {
+                question: "闊筋膜張肌（TFL）伸展的好處",
+                answer: "<ul><li>預防股四頭肌和ITB過度負荷</li><li>改善走路和跑步的效率</li><li>減少股四頭肌和ITB的代償性緊繃</li></ul>"
+            },
+            {
+                question: "TFL（闊筋膜張肌）伸展步驟",
+                answer: "<ul><li>趴在地上，曲左腳九十度成青蛙腳狀</li><li>用右前臂撐起上身，右手撐地</li><li>曲起右膝，用左手捉右腳掌</li><li>下前上棘（盆骨）要貼地</li><li>將腳跟拉向屁股的外側位置（不是正中間）</li><li>維持十二至十五秒，重複三次</li></ul>"
+            },
+
+            // 脊椎和背部肌肉
+            {
+                question: "豎脊肌的肌肉介紹",
+                answer: "<ul><li>豎脊肌是沿著整條脊椎的深層肌肉</li><li>從頸椎一直延伸到腰椎，很接近脊骨的位置</li><li>負責維持脊椎的穩定和直立</li></ul>"
+            },
+            {
+                question: "豎脊肌伸展的好處",
+                answer: "<ul><li>預防或舒緩下腰背疼痛</li><li>改善脊椎缺乏弧度的狀況</li><li>增加脊椎整體的靈活度</li></ul>"
+            },
+            {
+                question: "豎脊肌坐姿抱膝伸展步驟",
+                answer: "<ul><li>坐在地上，雙腳併攏</li><li>雙手抱在膝蓋下方，手肘就手肘，抱不到就抱前臂</li><li>微微低頭，收腹</li><li>呼氣時肚臍向後推，背部向後推，形成拱背</li><li>腳慢慢向前推一點，維持十五秒</li><li>重複三次</li></ul>"
+            },
+            {
+                question: "豎脊肌貓背式伸展步驟",
+                answer: "<ul><li>四足跪姿，手掌、手腕和肩膀成水平線</li><li>髖關節、膝蓋成直線</li><li>吸氣時尾骨向後，帶動中下背向下，眼望前</li><li>呼氣時尾骨向前，帶動背部向上拱起，低頭</li><li>每次維持十五秒，重複三次</li></ul>"
+            },
+            {
+                question: "背闊肌的肌肉介紹",
+                answer: "<ul><li>背闊肌是背部最大的一塊肌肉</li><li>從肩胛骨尖端一直延伸到肱骨（手臂骨）</li><li>整個背部都可以摸到這塊肌肉</li></ul>"
+            },
+            {
+                question: "背闊肌伸展的好處",
+                answer: "<ul><li>幫助舉手動作更靈活</li><li>改善肩膀活動度</li><li>預防上背部緊繃</li></ul>"
+            },
+            {
+                question: "背闊肌伸展步驟",
+                answer: "<ul><li>站立，要伸展哪邊就舉起該側手臂</li><li>掌心向下，另一隻手捉住手腕</li><li>第一步：吸氣，脊椎拉直向上</li><li>第二步：側彎，向對側彎腰</li><li>第三步：胸椎向下轉約三十度</li><li>維持十五秒，重複三次</li></ul>"
+            },
+            {
+                question: "中斜方肌的肌肉介紹",
+                answer: "<ul><li>中斜方肌位於肩胛骨上段，覆蓋著肩膀頭的上段</li><li>是斜方肌的中段部分</li><li>辦公室工作者和職業司機容易出現此肌肉緊繃</li></ul>"
+            },
+            {
+                question: "中斜方肌伸展的好處",
+                answer: "<ul><li>刺激中背肌肉重新學習活動</li><li>改善含胸駝背的姿勢</li><li>讓肩胛骨重新學會移動</li></ul>"
+            },
+            {
+                question: "中斜方肌伸展步驟",
+                answer: "<ul><li>坐著或站著都可以，微微低頭</li><li>十指緊扣於胸前，與胸部成水平線</li><li>上背微弓，就像有點駝背的感覺</li><li>鼻吸氣不動，呼氣時扣手向前推</li><li>胸部向內推，上背向後退</li><li>維持十五秒，重複三次</li></ul>"
+            },
+            {
+                question: "菱形肌的肌肉介紹",
+                answer: "<ul><li>菱形肌位於肩胛骨和脊椎中間的坑裡</li><li>分為大菱形肌和小菱形肌</li><li>是比斜方肌更深層的肌肉</li></ul>"
+            },
+            {
+                question: "菱形肌伸展的好處",
+                answer: "<ul><li>刺激中背肌肉重新學習活動</li><li>減低上背肌肉繃緊情況</li><li>防止聳肩問題</li><li>防止肩胛骨發炎</li></ul>"
+            },
+            {
+                question: "菱形肌站姿開放式伸展步驟",
+                answer: "<ul><li>站立低頭，身體轉向要伸展的對側四十五度</li><li>上背微曲，用另一隻手捉住要伸展側的上臂</li><li>先將上臂向下拉，再向後拉</li><li>手尖和捉住的手肘朝同一方向</li><li>維持十二至十五秒，重複三次</li></ul>"
+            },
+            {
+                question: "菱形肌坐姿封閉式伸展步驟（強度較高）",
+                answer: "<ul><li>坐下，曲起對側腳</li><li>將要伸展的手穿到對側腳下方</li><li>用另一隻手捉住前臂，微微低頭</li><li>呼氣時將手臂向後拉，背部向後扣</li><li>對側腳向前伸，腳尖向下</li><li>維持十二至十五秒，重複三次</li></ul>"
+            },
+
+            // 腹部和胸部肌肉
+            {
+                question: "腹直肌的肌肉介紹",
+                answer: "<ul><li>腹直肌位於腹部前方，就是六塊腹肌的位置</li><li>肌肉紋理是直向的，從胸骨一直延伸到恥骨</li><li>負責軀幹屈曲的動作</li></ul>"
+            },
+            {
+                question: "腹直肌伸展的好處",
+                answer: "<ul><li>預防駝背</li><li>改善長期坐姿造成的腹部緊縮</li><li>恢復正常的脊椎曲度</li></ul>"
+            },
+            {
+                question: "腹直肌站姿反手向上伸展步驟",
+                answer: "<ul><li>站立，十指緊扣</li><li>稍微收腹，反手向上伸</li><li>頭微微向上看，避免過度仰腰</li><li>維持十五秒，重複三次</li></ul>"
+            },
+            {
+                question: "腹直肌躺姿伸展步驟",
+                answer: "<ul><li>躺在地上，十指緊扣或反手扣住</li><li>手向頭頂推，腳尖向下伸</li><li>整個腹部拉長伸展</li><li>維持十五秒，重複三次</li></ul>"
+            },
+            {
+                question: "腹直肌蛇式伸展步驟（可選）",
+                answer: "<ul><li>趴在地上，雙手放在胸前兩側</li><li>手肘夾在身體兩側，慢慢撐起上身</li><li>肩膀向後打開，眼望前方</li><li>如果腰部受壓，手可以放前一點</li></ul>"
+            },
+            {
+                question: "胸大肌的肌肉介紹",
+                answer: "<ul><li>胸大肌是胸部最大的肌肉</li><li>從胸骨延伸到肱骨（手臂骨）</li><li>負責手臂內收和前推動作</li></ul>"
+            },
+            {
+                question: "胸大肌伸展的好處",
+                answer: "<ul><li>預防駝背和圓肩</li><li>防止手部麻痺</li><li>改善肩膀前傾的問題</li></ul>"
+            },
+            {
+                question: "胸大肌靠牆伸展步驟",
+                answer: "<ul><li>靠牆站立，採前後腳弓箭步姿勢</li><li>手臂呈九十度，手肘和肩膀成水平線</li><li>前腳微曲膝蓋，呼氣時上身向外轉</li><li>收腹避免腰部下沉</li><li>維持十五秒，重複三次</li></ul>"
+            },
+            {
+                question: "胸大肌俯臥伸展步驟（強度較高）",
+                answer: "<ul><li>趴在地上，一隻手臂呈九十度</li><li>手肘和肩膀成水平線，手掌向下</li><li>轉身向對側，曲腳推前</li><li>下巴指向鎖骨，維持十五秒</li><li>重複三次</li></ul>"
+            },
+            // Day 3A - 肩膀肌肉
+            {
+                question: "前三角肌的肌肉介紹",
+                answer: "<ul><li>前三角肌位於肩膀前方</li><li>是三角肌的前束部分</li><li>負責手臂前舉和內轉動作</li></ul>"
+            },
+            {
+                question: "前三角肌伸展的好處",
+                answer: "<ul><li>預防或舒緩肩周炎</li><li>防止圓肩問題</li><li>防止手部麻痺</li></ul>"
+            },
+            {
+                question: "前三角肌坐姿後撐伸展步驟",
+                answer: "<ul><li>坐在地上，雙腳與髖關節同寬</li><li>雙手放在身後約兩個手掌位的距離</li><li>手指指向臀部，手肘不要外旋</li><li>微曲手肘，將手肘夾向背部後方</li><li>呼氣時胸部向前推，維持十五秒</li></ul>"
+            },
+            {
+                question: "前三角肌椅子輔助伸展步驟",
+                answer: "<ul><li>坐在椅子上，一隻手放在椅子後方</li><li>四隻手指在椅子前方，手指弓在後面</li><li>慢慢將手肘夾向背部後方</li><li>坐直身體，稍微推胸向前</li><li>維持十五秒</li></ul>"
+            },
+            {
+                question: "前三角肌俯臥強化伸展步驟",
+                answer: "<ul><li>趴在地上，一隻手臂向下呈九十度</li><li>手掌向下，手肘與肩膀成水平線</li><li>轉身向對側，曲腳推前</li><li>下巴指向鎖骨，維持十五秒</li></ul>"
+            },
+            {
+                question: "中三角肌的肌肉介紹",
+                answer: "<ul><li>中三角肌位於肩膀外側位置，是肩膀側面的主要肌肉</li><li>主要負責手臂向側邊抬起的動作</li><li>與肩關節距離很近，因此容易引發肩膀問題</li></ul>"
+            },
+            {
+                question: "中三角肌伸展的好處",
+                answer: "<ul><li>預防或舒緩肩周炎症狀</li><li>對打羽毛球、排球或有肩膀勞損問題的人特別有效</li><li>改善肩膀靈活性，減少運動傷害風險</li></ul>"
+            },
+            {
+                question: "中三角肌基本站立伸展步驟",
+                answer: "<ul><li>身體保持挺直，將要伸展的手臂水平伸出，手掌與肩膀成一條水平線</li><li>手掌伸向身體後方，另一隻手彎曲扣著上臂位置</li><li>吸一口氣，首先將肩膀下沉，避免縮肩</li><li>呼氣時用另一隻手將上臂拉向身體，身體保持面向前方不要轉動</li><li>維持十二至十五秒，保持自然呼吸（鼻吸口呼）</li><li>重複三次</li></ul>"
+            },
+            {
+                question: "中三角肌進階俯臥伸展步驟",
+                answer: "<ul><li>先仰臥，將要伸展的手臂打開與肩膀呈水平線，掌心向天</li><li>用另一隻手按住肩膀避免縮肩，然後慢慢轉身俯臥在該手臂上</li><li>不做的手臂向下放在腰旁，伸展的手肘與肩膀保持水平線</li><li>可選擇額頭貼地或側臉貼地的姿勢</li><li>維持十五秒，然後慢慢回到仰臥位置</li></ul>"
+            },
+            {
+                question: "後三角肌的肌肉介紹",
+                answer: "<ul><li>後三角肌位於肩膀後方，不要與背部肌肉混淆</li><li>主要負責手臂向後拉的動作</li><li>是羽毛球和網球運動中重要的發力肌群</li></ul>"
+            },
+            {
+                question: "後三角肌伸展的好處",
+                answer: "<ul><li>預防或舒緩肩周炎問題</li><li>對打羽毛球或網球有勞損問題的人特別適合</li><li>改善抽球、控球等動作的肌肉平衡</li></ul>"
+            },
+            {
+                question: "後三角肌基本站立伸展步驟",
+                answer: "<ul><li>將要伸展的手臂斜向上四十五度抬起（非水平線）</li><li>頭部轉向手掌方向，避免下巴頂住手臂</li><li>另一隻手扣著上臂位置，身體保持面向前方</li><li>吸一口氣，肩膀下沉避免縮肩</li><li>呼氣時將上臂夾向身體，感受後三角肌的伸展</li><li>維持十二至十五秒，保持自然呼吸</li><li>重複三次</li></ul>"
+            },
+            {
+                question: "後三角肌進階俯臥伸展步驟",
+                answer: "<ul><li>先仰臥，將要伸展的手臂斜向上四十五度，掌心向上</li><li>用另一隻手按住肩膀，然後慢慢轉身俯臥</li><li>頭部側面可以貼地或用手臂支撐</li><li>如需增加強度，可採用同手同腳的青蛙腳姿勢</li><li>維持十五秒後回到仰臥位置</li></ul>"
+            },
+
+            // Day 3B - 手腕和手臂肌肉
+            {
+                question: "拇指長伸肌和拇指短伸肌的肌肉介紹",
+                answer: "<ul><li>拇指長伸肌和短伸肌位於食指和拇指之間的位置</li><li>這些是很細小的肌腱，容易因重複性動作而緊張</li><li>是造成媽媽手和手腕疼痛的常見原因</li></ul>"
+            },
+            {
+                question: "拇指長伸肌和拇指短伸肌伸展的好處",
+                answer: "<ul><li>預防或舒緩手腕腱鞘炎（媽媽手）</li><li>對初生嬰兒媽媽、頻繁使用手機者特別有效</li><li>改善家庭主婦因家務勞動造成的手部不適</li><li>舒緩長時間握持物品造成的手部疲勞</li></ul>"
+            },
+            {
+                question: "拇指長伸肌和拇指短伸肌基本伸展步驟",
+                answer: "<ul><li>單手伸直，將拇指彎曲貼向手掌</li><li>其他四隻手指包覆住拇指，握成拳頭狀</li><li>吸一口氣，保持手臂伸直</li><li>呼氣時慢慢將拳頭向下推，感受拇指側的牽拉</li><li>維持十五秒，保持自然呼吸（鼻吸口呼）</li><li>重複三次</li></ul>"
+            },
+            {
+                question: "拇指長伸肌和拇指短伸肌進階加強版步驟",
+                answer: "<ul><li>按基本步驟握好拳頭</li><li>用另一隻手像剪刀石頭布遊戲般，四指在上，拇指在下包住拳頭</li><li>吸一口氣，用另一隻手的力量</li><li>呼氣時輕輕施力將拳頭向下拉，強度會比自主動作更高</li><li>維持十五秒後放鬆</li></ul>"
+            },
+            {
+                question: "腕伸肌的肌肉介紹",
+                answer: "<ul><li>腕伸肌位於前臂手背側，是手背上的重要肌肉</li><li>主要負責手腕向上抬起的動作</li><li>經常因重複性手部動作而過度緊張</li></ul>"
+            },
+            {
+                question: "腕伸肌伸展的好處",
+                answer: "<ul><li>預防或舒緩手背疼痛問題</li><li>有效預防網球肘症狀</li><li>對辦公室工作者、經常使用鼠標的人特別有效</li><li>改善地盤工友或需要前臂發力工作者的手部不適</li></ul>"
+            },
+            {
+                question: "腕伸肌基本伸展步驟",
+                answer: "<ul><li>將手臂伸直，手掌與肩膀成水平線</li><li>手背朝外（注意是手背不是手掌）</li><li>另一隻手按住手背位置，不要按手指</li><li>肩膀下沉，避免縮肩動作</li><li>吸一口氣，呼氣時將手背按向身體方向</li><li>注意手肘不要過度伸直，保持自然彎曲</li><li>維持十五秒，重複三次</li></ul>"
+            },
+            {
+                question: "腕伸肌加強旋轉版本步驟",
+                answer: "<ul><li>按基本步驟將手背按向身體後</li><li>將手掌旋轉向小指方向（只轉手掌，不要轉整條手臂）</li><li>這會增加橈骨位置的牽拉感</li><li>注意避免因旋轉而造成手肘過度伸直</li></ul>"
+            },
+            {
+                question: "腕伸肌跪姿雙手伸展步驟",
+                answer: "<ul><li>跪坐在地上，雙手手背貼地，手指指向膝蓋方向</li><li>可用虎口位相扣或單手按住另一手掌</li><li>身體重心慢慢向後移，但要保持手臂伸直</li><li>吸氣，呼氣時慢慢坐下，坐到能力範圍內即可</li><li>維持十五秒，注意不要讓手背被撐起</li></ul>"
+            },
+            {
+                question: "腕屈肌群的肌肉介紹",
+                answer: "<ul><li>腕屈肌群位於前臂手掌側，靠近拇指側</li><li>主要負責手腕屈曲和橈側偏移動作</li><li>是日常生活中頻繁使用的肌肉群</li></ul>"
+            },
+            {
+                question: "腕屈肌群伸展的好處",
+                answer: "<ul><li>預防或舒緩高爾夫球肘症狀</li><li>對扭轉動作有幫助（如擰毛巾、開水瓶蓋、轉門鎖等）</li><li>改善手部靈活性和功能</li></ul>"
+            },
+            {
+                question: "腕屈肌群基本伸展步驟",
+                answer: "<ul><li>將手掌向外伸直，手掌與肩膀成一條水平線</li><li>另一隻手按著手掌，不要縮肩膀，保持肩膀放鬆</li><li>吸一口氣，呼氣時將手掌拉向自己的身體</li><li>維持十五秒，保持自然呼吸（鼻吸口呼）</li><li>重複三次</li></ul>"
+            },
+            {
+                question: "腕屈肌群進階伸展（旋轉加強版）步驟",
+                answer: "<ul><li>按基本步驟拉向身體後</li><li>手掌轉向小指方向（不是整個手臂，只是手掌）</li><li>這樣會加強靠近尺骨位置的拉扯感</li></ul>"
+            },
+            {
+                question: "腕屈肌群跪姿伸展步驟",
+                answer: "<ul><li>跪在地上，手掌貼地，虎口朝前</li><li>輕輕抬起臀部，保持手掌平貼地面</li><li>手臂保持挺直，不要讓手掌翹起</li><li>呼氣時慢慢向後坐，注意手掌不要超伸</li><li>維持十五秒</li></ul>"
+            },
+            {
+                question: "肱三頭肌的肌肉介紹",
+                answer: "<ul><li>肱三頭肌位於手臂後側（俗稱拜拜肉位置）</li><li>靠近手肘位置，貼著前臂骨</li><li>是手臂伸展的主要肌肉</li></ul>"
+            },
+            {
+                question: "肱三頭肌伸展的好處",
+                answer: "<ul><li>預防或舒緩肩周炎</li><li>改善手肘超伸情況</li><li>由於接近手肘，可預防手肘周圍不適</li></ul>"
+            },
+            {
+                question: "肱三頭肌站姿伸展步驟",
+                answer: "<ul><li>手掌屈曲向天，手掌放在同側的肩胛骨位置</li><li>另一隻手有兩個動作：先將手肘拉向後，再將手肘向內拉（向脊骨方向）</li><li>如果抓不到手掌，可以只用推的方式</li><li>頭部盡量抬起，不要被手壓低</li><li>維持十五秒，做三次</li></ul>"
+            },
+            {
+                question: "肱三頭肌扣手進階版步驟",
+                answer: "<ul><li>兩手從背後扣住（一手從上，一手從下）</li><li>這個動作難度較高，需要良好的肩膀靈活性</li><li>如有圓肩問題，建議先處理前三角肌、胸肌等再嘗試</li></ul>"
+            },
+            {
+                question: "肱二頭肌的肌肉介紹",
+                answer: "<ul><li>肱二頭肌位於手臂前側，由長頭和短頭組成</li><li>連接肩膀和手肘，像豬腱一樣有肌肉和筋腱部分</li></ul>"
+            },
+            {
+                question: "肱二頭肌伸展的好處",
+                answer: "<ul><li>預防或舒緩肩周炎</li><li>預防肱二頭肌長頭發炎</li><li>避免負重訓練時的代償問題</li></ul>"
+            },
+            {
+                question: "肱二頭肌靠牆伸展步驟",
+                answer: "<ul><li>右手靠牆，前後腳站立（右腳在前）</li><li>手伸直成水平線，前臂貼牆（如有手肘超伸，只需手掌貼牆）</li><li>肩膀和手掌成一條直線</li><li>呼氣時上身向外轉，可配合後腿發力</li><li>維持十五秒</li></ul>"
+            },
+            {
+                question: "肱二頭肌趴姿進階版步驟",
+                answer: "<ul><li>趴在地上，左手伸出，手掌按地</li><li>左手掌和肩膀成水平線</li><li>右手撐地，慢慢側身向右邊</li><li>彎曲腿部，將臀部推前</li><li>下巴指向鎖骨</li><li>靈活度好的可嘗試抬起一腳或雙腳</li></ul>"
+            },
+
+            // 頸部肌肉
+            {
+                question: "頸椎後肌群的肌肉介紹",
+                answer: "<ul><li>包含頭夾肌、頸半棘肌、頭半棘肌三條肌肉</li><li>位於頸部後方，較為細緻和脆弱</li></ul>"
+            },
+            {
+                question: "頸椎後肌群伸展的好處",
+                answer: "<ul><li>舒緩或預防肩頸痛</li><li>對長期低頭工作、頭前傾者很有幫助</li><li>改善頸椎後肌群緊繃問題</li></ul>"
+            },
+            {
+                question: "頸椎後肌群伸展步驟",
+                answer: "<ul><li>先矯正頸椎（耳珠對準肩膀，不是鎖骨）</li><li>垂直低頭，雙手放在頭頂</li><li>手肘與鼻子同一條直線，不要打開手肘</li><li>呼氣時用手掌輕壓頭部向下</li><li>用手托頭回到中立位置（不要用頸部力量）</li></ul>"
+            },
+            {
+                question: "頭夾肌和頸夾肌的肌肉介紹",
+                answer: "<ul><li>頭夾肌和頸夾肌位於頸部側邊</li><li>頸夾肌較長，可跨到肩胛骨上方位置</li><li>兩者位置相近，伸展方法類似</li></ul>"
+            },
+            {
+                question: "頭夾肌和頸夾肌伸展的好處",
+                answer: "<ul><li>舒緩或預防肩頸痛</li><li>對長期低頭工作、頭前傾者有幫助</li><li>改善頸部側面肌肉緊繃</li></ul>"
+            },
+            {
+                question: "頭夾肌和頸夾肌伸展步驟",
+                answer: "<ul><li>先矯正頸椎</li><li>頭轉向一側（頭夾肌轉35-45度，頸夾肌轉20-25度）</li><li>轉頭後再低頭</li><li>同側手放在頭頂</li><li>採用四短一長的DIS方法進行</li></ul>"
+            },
+            {
+                question: "斜角肌的肌肉介紹",
+                answer: "<ul><li>位於頸部外側（耳珠正對位置）</li><li>包含前斜角肌、中斜角肌和後斜角肌</li><li>主要伸展中斜角肌</li></ul>"
+            },
+            {
+                question: "斜角肌伸展的好處",
+                answer: "<ul><li>預防手部麻痺</li><li>放鬆情緒，適合容易緊張的人士</li><li>改善前斜角肌壓迫臂叢神經的問題</li></ul>"
+            },
+            {
+                question: "斜角肌伸展步驟",
+                answer: "<ul><li>採用四短一長的DIS方法</li><li>先矯正頸椎</li><li>頭側屈（側彎），不是旋轉</li><li>手放在耳朵上方或頭頂</li><li>手肘盡量打開</li><li>對側肩膀下沉（可抓住衣服向下拉）</li></ul>"
+            },
+            {
+                question: "胸鎖乳突肌的肌肉介紹",
+                answer: "<ul><li>從耳後乳突位置延伸至鎖骨</li><li>呈彎曲狀沿頸部側面向下</li><li>現代人因頭前傾問題常導致此肌肉緊繃</li></ul>"
+            },
+            {
+                question: "胸鎖乳突肌伸展的好處",
+                answer: "<ul><li>預防頭前傾問題</li><li>防止面部水腫</li><li>改善淋巴循環</li></ul>"
+            },
+            {
+                question: "胸鎖乳突肌雙側伸展步驟",
+                answer: "<ul><li>矯正頸椎後，雙手托在枕骨底（後腦下方硬骨處）</li><li>頭向上望</li><li>下巴向上推，像露出下排牙齒</li><li>頸部向上拉長，不要壓縮後頸</li><li>採用四短一長方法進行</li></ul>"
+            },
+            {
+                question: "胸鎖乳突肌單側伸展步驟",
+                answer: "<ul><li>矯正頸椎後，頭先轉向一側</li><li>然後側頭向上</li><li>雙手托在枕骨底</li><li>下巴向上推</li></ul>"
+            },
+
+            // 特殊原則和方法
+            {
+                question: "梨狀肌和臀大肌的伸展順序原則",
+                answer: "<ul><li>如果五張卡中同時有臀大肌和梨狀肌，先做臀大肌再做梨狀肌</li><li>如果只抽到梨狀肌，必須先做臀大肌（表層）再做梨狀肌（深層）</li><li>考試時間會增加二至三分鐘以完成兩條肌肉</li></ul>"
+            },
+            {
+                question: "腓腸肌和比目魚肌的伸展順序原則",
+                answer: "<ul><li>必須先伸展腓腸肌（表層）再做比目魚肌（深層）</li><li>如五張卡同時有腓腸肌和比目魚肌，先做腓腸肌</li><li>如只有比目魚肌，不需先做腓腸肌</li></ul>"
+            },
+            {
+                question: "DIS（動態獨立群組伸展）方法",
+                answer: "<ul><li>採用四短一長的方式：四次兩秒 + 一次十五秒</li><li>適用於頸部肌肉伸展</li><li>伸展前後都要用雙手按摩頸部</li><li>通常安排在課堂後段進行</li></ul>"
+            },
+            {
+                question: "伸展肌肉四個先後處理原則",
+                answer: "<ul><li>先伸展旋轉肌，後伸展屈伸肌</li><li>先伸展大肌肉，後伸展深層肌肉</li><li>先伸展軀幹，後伸展四肢</li><li>先利用動態式伸展，後利用靜態式伸展</li></ul>"
+            }
+        ];
+
+        // 合併所有問題
+        //const qaData = [...originalQuestions, ...additionalQuestions];
+        
+        // 初始化變數
+        let currentQuestion = null;
+        let correctAnswers = [];
+        let incorrectAnswers = [];
+        let isAnswerShowing = false;
+        let storageAvailable = false;
+        
+        // 取得DOM元素
+        const drawBtn = document.getElementById('drawBtn');
+        const showAnswerBtn = document.getElementById('showAnswerBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const showRemainingBtn = document.getElementById('showRemainingBtn');
+        const showCorrectBtn = document.getElementById('showCorrectBtn');
+        const questionElem = document.getElementById('question');
+        const answerElem = document.getElementById('answer');
+        const answerContainer = document.getElementById('answerContainer');
+        const feedbackControls = document.getElementById('feedbackControls');
+        const correctBtn = document.getElementById('correctBtn');
+        const incorrectBtn = document.getElementById('incorrectBtn');
+        
+        // 重設確認模態框元素
+        const resetModal = document.getElementById('resetModal');
+        const confirmResetBtn = document.getElementById('confirmResetBtn');
+        const cancelResetBtn = document.getElementById('cancelResetBtn');
+        
+        // 待答題目模態框元素
+        const remainingModal = document.getElementById('remainingModal');
+        const closeRemainingBtn = document.getElementById('closeRemainingBtn');
+        const remainingQuestionCount = document.getElementById('remainingQuestionCount');
+        const remainingQuestionList = document.getElementById('remainingQuestionList');
+        
+        // 已答對題目模態框元素
+        const correctModal = document.getElementById('correctModal');
+        const closeCorrectBtn = document.getElementById('closeCorrectBtn');
+        const correctQuestionCount = document.getElementById('correctQuestionCount');
+        const correctQuestionList = document.getElementById('correctQuestionList');
+        
+        // 統計數據元素
+        const totalCountElem = document.getElementById('totalCount');
+        const remainingCountElem = document.getElementById('remainingCount');
+        const correctCountElem = document.getElementById('correctCount');
+        const incorrectCountElem = document.getElementById('incorrectCount');
+        
+        // 檢測localStorage是否可用
+        function checkStorageAvailability() {
+            try {
+                const testKey = 'test-storage';
+                localStorage.setItem(testKey, '1');
+                localStorage.removeItem(testKey);
+                storageAvailable = true;
+                return true;
+            } catch (e) {
+                storageAvailable = false;
+                return false;
+            }
+        }
+        
+        // 本地存儲鍵
+        const STORAGE_KEY = 'muscleStretchFlashcards';
+        
+        // 保存進度到本地存儲
+        function saveProgress() {
+            if (!storageAvailable) return;
+            
+            try {
+                // 只保存問題文本，而不是整個對象
+                const correctQuestions = correctAnswers.map(q => q.question);
+                const incorrectQuestions = incorrectAnswers.map(q => q.question);
+                
+                const data = {
+                    correctQuestions,
+                    incorrectQuestions
+                };
+                
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.error('保存進度時出錯：', e);
+                storageAvailable = false;
+            }
+        }
+        
+        // 從本地存儲加載進度
+        function loadProgress() {
+            if (!storageAvailable) return;
+            
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                if (!data) return;
+                
+                const { correctQuestions, incorrectQuestions } = JSON.parse(data);
+                
+                // 根據問題文本還原對象引用
+                correctAnswers = qaData.filter(q => correctQuestions.includes(q.question));
+                incorrectAnswers = qaData.filter(q => incorrectQuestions.includes(q.question));
+                
+                // 更新統計
+                updateStats();
+            } catch (e) {
+                console.error('加載進度時出錯：', e);
+                storageAvailable = false;
+            }
+        }
+        
+        // 更新統計數據
+        function updateStats() {
+            totalCountElem.textContent = qaData.length;
+            remainingCountElem.textContent = qaData.length - correctAnswers.length;
+            correctCountElem.textContent = correctAnswers.length;
+            incorrectCountElem.textContent = incorrectAnswers.length;
+        }
+        
+        // 初始化 - 檢測存儲可用性並加載保存的進度
+        checkStorageAvailability();
+        if (storageAvailable) {
+            loadProgress();
+        }
+        updateStats();
+        
+        // 隨機抽題
+        function drawRandomQuestion() {
+            // 重置顯示答案按鈕狀態
+            showAnswerBtn.textContent = "顯示答案";
+            answerContainer.style.maxHeight = "0";
+            feedbackControls.style.maxHeight = "0";
+            isAnswerShowing = false;
+            
+            // 過濾掉已經回答正確的問題
+            const availableQuestions = qaData.filter(q => !correctAnswers.includes(q));
+            
+            // 如果所有問題都回答正確，提示用戶
+            if (availableQuestions.length === 0) {
+                questionElem.textContent = "恭喜！所有問題都已經答對了！點擊「重設」重新開始。";
+                answerElem.innerHTML = "";
+                currentQuestion = null;
+                return;
+            }
+            
+            // 隨機選取一個問題
+            const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+            currentQuestion = availableQuestions[randomIndex];
+            
+            // 更新界面
+            questionElem.textContent = currentQuestion.question;
+            answerElem.innerHTML = currentQuestion.answer;
+        }
+        
+        // 顯示答案
+        function toggleAnswer() {
+            if (!currentQuestion) return;
+            
+            if (isAnswerShowing) {
+                answerContainer.style.maxHeight = "0";
+                feedbackControls.style.maxHeight = "0";
+                showAnswerBtn.textContent = "顯示答案";
+            } else {
+                answerContainer.style.maxHeight = "1000px";
+                feedbackControls.style.maxHeight = "100px";
+                showAnswerBtn.textContent = "隱藏答案";
+            }
+            
+            isAnswerShowing = !isAnswerShowing;
+        }
+        
+        // 標記為正確答案
+        function markAsCorrect() {
+            if (!currentQuestion) return;
+            
+            // 從不正確列表中移除（如果存在）
+            const incorrectIndex = incorrectAnswers.indexOf(currentQuestion);
+            if (incorrectIndex !== -1) {
+                incorrectAnswers.splice(incorrectIndex, 1);
+            }
+            
+            // 加入正確列表（如果尚未加入）
+            if (!correctAnswers.includes(currentQuestion)) {
+                correctAnswers.push(currentQuestion);
+            }
+            
+            // 更新統計數據
+            updateStats();
+            
+            // 保存進度
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            // 抽取下一題
+            drawRandomQuestion();
+        }
+        
+        // 標記為錯誤答案
+        function markAsIncorrect() {
+            if (!currentQuestion) return;
+            
+            // 加入不正確列表（如果尚未加入）
+            if (!incorrectAnswers.includes(currentQuestion)) {
+                incorrectAnswers.push(currentQuestion);
+            }
+            
+            // 更新統計數據
+            updateStats();
+            
+            // 保存進度
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            // 抽取下一題
+            drawRandomQuestion();
+        }
+        
+        // 切換問題列表中的答案顯示
+        function toggleQuestionAnswer(index, type) {
+            const answerId = `${type}-answer-${index}`;
+            const answerElement = document.getElementById(answerId);
+            const buttonId = `${type}-btn-${index}`;
+            const buttonElement = document.getElementById(buttonId);
+            
+            if (answerElement.classList.contains('show')) {
+                answerElement.classList.remove('show');
+                buttonElement.textContent = '顯示答案';
+            } else {
+                answerElement.classList.add('show');
+                buttonElement.textContent = '隱藏答案';
+            }
+        }
+        
+        // 顯示待答題目列表
+        function showRemainingQuestions() {
+            const availableQuestions = qaData.filter(q => !correctAnswers.includes(q));
+            remainingQuestionCount.textContent = `待答題目 (${availableQuestions.length} 題)`;
+            
+            if (availableQuestions.length === 0) {
+                remainingQuestionList.innerHTML = '<div class="question-item">所有題目都已經答對了！</div>';
+            } else {
+                remainingQuestionList.innerHTML = availableQuestions
+                    .map((q, index) => `
+                        <div class="question-item remaining">
+                            <div class="question-header">
+                                <div class="question-text">${q.question}</div>
+                                <button id="remaining-btn-${index}" class="btn btn-small" onclick="toggleQuestionAnswer(${index}, 'remaining')">顯示答案</button>
+                            </div>
+                            <div id="remaining-answer-${index}" class="question-answer">
+                                ${q.answer}
+                            </div>
+                        </div>
+                    `)
+                    .join('');
+            }
+            
+            remainingModal.style.display = 'flex';
+        }
+        
+        // 顯示已答對題目列表
+        function showCorrectQuestions() {
+            correctQuestionCount.textContent = `已答對題目 (${correctAnswers.length} 題)`;
+            
+            if (correctAnswers.length === 0) {
+                correctQuestionList.innerHTML = '<div class="question-item">尚未答對任何題目</div>';
+            } else {
+                correctQuestionList.innerHTML = correctAnswers
+                    .map((q, index) => `
+                        <div class="question-item correct">
+                            <div class="question-header">
+                                <div class="question-text">${q.question}</div>
+                                <button id="correct-btn-${index}" class="btn btn-small" onclick="toggleQuestionAnswer(${index}, 'correct')">顯示答案</button>
+                            </div>
+                            <div id="correct-answer-${index}" class="question-answer">
+                                ${q.answer}
+                            </div>
+                        </div>
+                    `)
+                    .join('');
+            }
+            
+            correctModal.style.display = 'flex';
+        }
+        
+        // 顯示重設確認模態框
+        function showResetModal() {
+            resetModal.style.display = 'flex';
+        }
+        
+        // 隱藏重設確認模態框
+        function hideResetModal() {
+            resetModal.style.display = 'none';
+        }
+        
+        // 隱藏待答題目模態框
+        function hideRemainingModal() {
+            remainingModal.style.display = 'none';
+        }
+        
+        // 隱藏已答對題目模態框
+        function hideCorrectModal() {
+            correctModal.style.display = 'none';
+        }
+        
+        // 執行重設功能
+        function doResetQuiz() {
+            correctAnswers = [];
+            incorrectAnswers = [];
+            currentQuestion = null;
+            isAnswerShowing = false;
+            
+            questionElem.textContent = "按下「隨機抽題」按鈕開始";
+            answerElem.innerHTML = "";
+            answerContainer.style.maxHeight = "0";
+            feedbackControls.style.maxHeight = "0";
+            showAnswerBtn.textContent = "顯示答案";
+            
+            // 更新統計並保存進度
+            updateStats();
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            hideResetModal();
+        }
+        
+        // 將toggleQuestionAnswer綁定到window以供HTML onclick使用
+        window.toggleQuestionAnswer = toggleQuestionAnswer;
+        
+        // 綁定事件
+        drawBtn.addEventListener('click', drawRandomQuestion);
+        showAnswerBtn.addEventListener('click', toggleAnswer);
+        resetBtn.addEventListener('click', showResetModal);
+        showRemainingBtn.addEventListener('click', showRemainingQuestions);
+        showCorrectBtn.addEventListener('click', showCorrectQuestions);
+        confirmResetBtn.addEventListener('click', doResetQuiz);
+        cancelResetBtn.addEventListener('click', hideResetModal);
+        correctBtn.addEventListener('click', markAsCorrect);
+        incorrectBtn.addEventListener('click', markAsIncorrect);
+        closeRemainingBtn.addEventListener('click', hideRemainingModal);
+        closeCorrectBtn.addEventListener('click', hideCorrectModal);
+        
+        // 點擊模態框背景時關閉模態框
+        resetModal.addEventListener('click', function(e) {
+            if (e.target === resetModal) {
+                hideResetModal();
+            }
+        });
+        
+        remainingModal.addEventListener('click', function(e) {
+            if (e.target === remainingModal) {
+                hideRemainingModal();
+            }
+        });
+        
+        correctModal.addEventListener('click', function(e) {
+            if (e.target === correctModal) {
+                hideCorrectModal();
+            }
+        });
+    </script>
+</body>
+</html>
