@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q&A 隨機抽題卡</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --background: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #212529;
+            --success: #38b000;
+            --error: #d00000;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--background);
+            padding: 1rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .question {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+        
+        .show-answer-btn-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        
+        .answer-container {
+            margin-top: 1rem;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.5s ease;
+        }
+        
+        .answer-content {
+            background-color: rgba(67, 97, 238, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .answer-content ul {
+            padding-left: 1.5rem;
+        }
+        
+        .answer-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s, transform 0.2s;
+            display: inline-block;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .btn-success:hover {
+            background-color: #2d9600;
+        }
+        
+        .btn-error {
+            background-color: var(--error);
+        }
+        
+        .btn-error:hover {
+            background-color: #b00000;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .feedback-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+        
+        .count {
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--primary);
+            font-weight: 500;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 1rem 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        
+        .stat-item {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex: 1;
+            min-width: 80px;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            white-space: nowrap;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-value.correct {
+            color: var(--success);
+        }
+        
+        .stat-value.incorrect {
+            color: var(--error);
+        }
+        
+        footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 1rem 0;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .info {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: rgba(67, 97, 238, 0.05);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 600px) {
+            .stats {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .stat-item {
+                min-width: calc(50% - 0.5rem);
+                flex: none;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .question {
+                font-size: 1.25rem;
+            }
+            
+            .btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .controls .btn {
+                width: 100%;
+                margin-right: 0;
+            }
+            
+            .feedback-controls {
+                flex-direction: column;
+            }
+
+            .modal-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Q&A 隨機抽題卡</h1>
+            <p>隨機抽取問題並測試自己的知識</p>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">總題數</div>
+                <div id="totalCount" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">待答題數</div>
+                <div id="remainingCount" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">答對</div>
+                <div id="correctCount" class="stat-value correct">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">答錯</div>
+                <div id="incorrectCount" class="stat-value incorrect">0</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="drawBtn" class="btn">隨機抽題</button>
+            <button id="resetBtn" class="btn">重設</button>
+        </div>
+        
+        <div class="info">
+            <p>✓ 正確回答的問題將不再出現</p>
+            <p>✓ 回答錯誤的問題將保留在題庫中再次抽取</p>
+            <p>✓ 按「重設」按鈕可重新開始</p>
+        </div>
+        
+        <div id="card" class="card">
+            <div id="question" class="question">按下「隨機抽題」按鈕開始</div>
+            
+            <div class="show-answer-btn-container">
+                <button id="showAnswerBtn" class="btn">顯示答案</button>
+            </div>
+            
+            <div id="answerContainer" class="answer-container">
+                <div id="answer" class="answer-content"></div>
+                <div id="feedbackControls" class="feedback-controls">
+                    <button id="correctBtn" class="btn btn-success">我答對了</button>
+                    <button id="incorrectBtn" class="btn btn-error">我答錯了</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">確定要重設？</div>
+            <p>這將清除所有答題進度，此操作無法撤銷。</p>
+            <div class="modal-buttons">
+                <button id="confirmResetBtn" class="btn btn-error">確定重設</button>
+                <button id="cancelResetBtn" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2026 Q&A 隨機抽題卡</p>
+    </footer>
+    
+    <script>
+        // 儲存所有問題和答案的數組
+        const qaData = [
+            {
+                question: "人為什麼需要伸展",
+                answer: "<ul><li>體適能元素</li><li>肌肉用力後會縮短，產生激痛點 + 關節 血管 神經線 內臟受壓</li><li>肌肉獲得營養的方法之一</li><li>預防受傷及拉傷</li><li>刺激副交感神經</li></ul>"
+            },
+            {
+                question: "伸展的好處",
+                answer: "<ul><li>促進新陳代謝</li><li>增加柔軟度</li><li>增加 ROM</li><li>增加血循</li><li>增加本體感</li><li>神經感覺</li><li>保持肌肉長度</li><li>減低肌肉和關節壓力</li><li>減少受傷</li><li>通淋巴 去水腫</li><li>心情開朗 保持青春</li><li>長壽</li><li>刺激副交感神經</li></ul>"
+            },
+            {
+                question: "什麼情況不要伸展",
+                answer: "<ul><li>嚴重發炎 紅腫熱痛</li><li>手術後或有傷口</li><li>骨折</li><li>腫瘤</li><li>甩臼</li><li>斷韌帶</li></ul>"
+            },
+            {
+                question: "什麼是恆定現象",
+                answer: "身體內部的環境保持在某個範圍的穩定狀態"
+            },
+            {
+                question: "正常體溫是",
+                answer: "98F or 35.7C"
+            },
+            {
+                question: "正常血壓是",
+                answer: "120/80mm/Hg"
+            },
+            {
+                question: "血糖範圍",
+                answer: "餐前：3-6；餐後：5-10"
+            },
+            {
+                question: "同化作用是",
+                answer: "指生物體把從外界環境中獲得的營養物質轉變成自身組織物質，並且儲存能量的變化過程"
+            },
+            {
+                question: "異化作用是",
+                answer: "指生物體能夠把自身的一部份組成物質加以分解，釋放出其中能量，並且把分解的終產物排出體外的變化過程"
+            },
+            {
+                question: "能量單位是",
+                answer: "ATP 三磷酸腺苷"
+            },
+            {
+                question: "能量轉變公式",
+                answer: "ATP + H2O -> ADP + Pi + Energy"
+            },
+            {
+                question: "細胞五個成份",
+                answer: "細胞膜 細胞質 胞器 包涵體 細胞核"
+            },
+            {
+                question: "粒腺體作用",
+                answer: "細胞公廠"
+            },
+            {
+                question: "使人產生動作的組織包括",
+                answer: "結締組織 肌肉組織 神經組織"
+            },
+            {
+                question: "骨骼系統的功能包括",
+                answer: "<ul><li>支持身體的柔軟組織，但身體維持外形及姿勢</li><li>保護精細的構造如內臟</li><li>動</li><li>貯存礦物質（鈣 + 磷）和脂肪</li><li>在骨髓製造血球</li></ul>"
+            },
+            {
+                question: "長骨有以下七個部分",
+                answer: "<ul><li>骨幹</li><li>骨端 / 骨骺</li><li>骨骺關節軟骨</li><li>骨外膜</li><li>骨髓腔</li><li>骨內膜</li></ul>"
+            },
+            {
+                question: "六種骨的類型及例子",
+                answer: "<ul><li>縫間骨： 頭骨縫間的骨</li><li>不規則骨：脊椎骨、上頜骨、下頜骨、顴骨、髖骨</li><li>短骨：腕骨、跗骨</li><li>扁平骨：胸骨、肩胛骨、肋骨、髂骨、組成顱蓋的額骨與頂骨</li><li>長骨：肱骨、尺骨、橈骨、股骨、脛骨、腓骨</li><li>種子骨：臏骨、豆狀骨</li></ul>"
+            },
+            {
+                question: "成年人的骨骼由幾多塊組成，分為那兩大類和分別有多少塊骨骼",
+                answer: "206：中軸骨骼 80 + 附肢骨骼 126"
+            },
+            {
+                question: "頸胸腰骶尾骨各幾多節",
+                answer: "7 12 5 5 1"
+            },
+            {
+                question: "關節從功能上分為那三類",
+                answer: "不動關節 微動關節 可動關節"
+            },
+            {
+                question: "關節從結構上分為那三類",
+                answer: "纖維性關節 軟骨性關節 滑液性關節"
+            },
+            {
+                question: "關節七個組成部份",
+                answer: "滑液膜 纖維性關節囊 透明軟骨 滑液 肌肉 肌腱 韌帶"
+            },
+            {
+                question: "六種滑液性關節種類及例子",
+                answer: "<ul><li>車軸關節：C1 C2</li><li>鉸鏈關節 肘</li><li>滑動關節： 手腕骨</li><li>球窩關節：肩/髖</li><li>鞍狀關節：手指-腕</li><li>橢圓關節：手指之間</li></ul>"
+            },
+            {
+                question: "肌肉收縮的功能",
+                answer: "運動 維持姿勢 產生熱量"
+            },
+            {
+                question: "三種肌肉種類",
+                answer: "骨骼肌 心肌 平滑肌"
+            },
+            {
+                question: "肌肉種織由粗到幼",
+                answer: "肌體 肌束 肌纖維 肌原纖維 肌絲 粗肌絲幼肌絲"
+            },
+            {
+                question: "肌肉佔人體總重量約幾多%，約幾多塊肌肉",
+                answer: "40-50%，656-850"
+            },
+            {
+                question: "四種肌束排列及例子",
+                answer: "<ul><li>平行：扁平：顱頂肌；繩帶：縫匠肌；紡錘：肱二頭肌</li><li>羽狀：單：脛肌；雙：股直肌；多：三角肌</li><li>放射狀：胸大肌 / 顳肌</li><li>環肌：口輪匝肌/眼輪匝肌</li></ul>"
+            },
+            {
+                question: "深層肌肉和特性",
+                answer: "<ul><li>作用：平衡 協調 穩定</li><li>特性：維持時間長而穩定，疲勞後恢復時間長，體積比較幼長，力量比較弱</li></ul>"
+            },
+            {
+                question: "神經系統分為那兩類",
+                answer: "中樞神經系統（腦+脊髓）和週邊神經系統"
+            },
+            {
+                question: "週邊神經系統分為那兩類和那些子類",
+                answer: "<ul><li>輸入系統和輸出系統</li><li>輸出系統又分為自主神經系統和體神經系統</li><li>自主神經系統又分交感神經和副交感神經</li></ul>"
+            },
+            {
+                question: "什麼是體神經系統",
+                answer: "<ul><li>體神經系統中的感覺神經纖維可將身體各部份的感覺器官所搜集到的視覺嗅覺味覺觸覺等資訊傳送到大腦或脊髓。</li><li>而運動神經纖維則負責將中樞神經系統所下達的命令傳道骨骼肌已產生所需的運動。</li></ul>"
+            },
+            {
+                question: "人體內最長的神經是那一條？",
+                answer: "坐骨神經"
+            },
+            {
+                question: "自主神經系統的功能",
+                answer: "調控內臟的平滑肌運動易及內分泌腺體產生內分泌激素"
+            },
+            {
+                question: "神經元的構造可分為那三類，以及有什麼用途？",
+                answer: "<ul><li>細胞體：維持神經細胞生存</li><li>樹特：負責將訊息傳至細胞體</li><li>獨特：負責將訊息由細胞睇傳至令一神經元或組織</li></ul>"
+            },
+            {
+                question: "由肌絲滑動學說的肌肉收縮及放鬆過程",
+                answer: "<ul><li>肌肉收縮過程：神經刺激運動神經元，然後釋放ACH，鈣離子再操機師上的ATP，粗肌絲將幼肌絲旋轉及拉近讓肌小節縮短並收縮肌肉</li><li>肌肉放鬆過程：神經刺激運動神經元釋放ACHE鈣離子返回肌槳，粗肌絲放開幼肌絲，肌小節變回原本長度，肌肉放鬆</li></ul>"
+            },
+            {
+                question: "肌肉收縮，六個種類",
+                answer: "按頻率：抽動性收縮、加成收縮、強直收縮；按長度：等張收縮、等長收縮、等速/動收縮"
+            },
+            {
+                question: "紅肌是一型還是二形肌肉收縮速度是快還是慢，容易疲勞嗎？肌纖維厚度是什麼，含氧量高還是低，肌肉顏色是什麼，爆炸力是什麼？",
+                answer: "一型、肌肉收縮慢、不易疲勞、肌纖維厚度為細、含氧量高、肌肉顏色是紅色、爆炸力低"
+            },
+            {
+                question: "白肌是一型還是二形肌肉收縮速度是快還是慢，容易疲勞嗎？肌纖維厚度是什麼，含氧量高還是低，肌肉顏色是什麼，爆炸力是什麼？",
+                answer: "二A型、肌肉收縮速度快、稍耳疲勞、肌纖維厚度為中等、含氧量低、肌肉顏色紅色、爆炸力高"
+            },
+            {
+                question: "健康體式能元素",
+                answer: "心肺功能，柔軟度、肌力或肌耐力、身體肥瘦組合、壓力處理"
+            },
+            {
+                question: "運動體式能的元素",
+                answer: "心肺功能，柔軟度、肌力或肌耐力、身體肥瘦組合、壓力處理、速度、爆發力、敏捷性、平衡性、協調性"
+            },
+            {
+                question: "柔軟度分為那三個種類",
+                answer: "動態柔軟度、靜止主動柔軟度、靜止被動柔軟度"
+            },
+            {
+                question: "影響柔軟度的因素",
+                answer: "軟組織、年齡、性別、關節構造和種類、遺傳、溫度、身體活動度"
+            },
+            {
+                question: "熱身運動可提高關節的溫度至什麼溫度，並促進關節的活動範圍多少percent",
+                answer: "45C 20%"
+            },
+            {
+                question: "緩和溫度會降低關節的溫度多少，而促進關節的活動度減少多少percent",
+                answer: "18.33C 20%"
+            },
+            {
+                question: "軟組織構造對關節阻力的相對比例",
+                answer: "關節囊： 47 ，肌肉： 41 ，肌腱： 10 ，皮膚：二"
+            },
+            {
+                question: "柔軟度從運動表現上有什麼重要？",
+                answer: "<ul><li>增加關節活動幅度，改善運動表現</li><li>暖化肌肉，為高強度運動作出準備</li><li>預防運動傷害</li></ul>"
+            },
+            {
+                question: "柔軟度在痛症身上有什麼重要？",
+                answer: "<ul><li>平衡腹背肌肉柔軟度及肌力</li><li>改善激痛點缺血缺氧問題</li><li>改善理想身體姿勢，包括站立及走路姿勢等</li></ul>"
+            },
+            {
+                question: "七個伸展的種類",
+                answer: "<ul><li>彈動式伸展</li><li>動態式伸展</li><li>靜態式伸展</li><li>主動式伸展</li><li>被動式伸展</li><li>本體感覺神經肌肉促進術</li><li>動態獨立群組伸展</li></ul>"
+            },
+            {
+                question: "伸展計劃的七個步驟",
+                answer: "<ul><li>充分了解患者的生理及心理的情況</li><li>共同設定預期可達成的目標</li><li>分階段設立小目標</li><li>以FITT原則，編制伸展計劃 freq intensity timing type</li><li>記錄上課進度</li><li>考慮各項因素</li><li>進行計劃檢討</li></ul>"
+            },
+            {
+                question: "新階段設立伸展目標時，對方會執行成那三個階段",
+                answer: "認知其、學習期、鍛鍊強化期"
+            },
+            {
+                question: "伸展肌肉四個先後處理原則",
+                answer: "<ul><li>先伸展旋轉肌，後伸展屈伸肌</li><li>先伸展大肌肉，後伸展深層肌肉</li><li>先伸展軀幹，後伸展四肢</li><li>先利用動態式伸展，後利用靜態式伸展</li></ul>"
+            }
+        ];
+        
+        // 初始化變數
+        let currentQuestion = null;
+        let correctAnswers = [];
+        let incorrectAnswers = [];
+        let isAnswerShowing = false;
+        let storageAvailable = false;
+        
+        // 取得DOM元素
+        const drawBtn = document.getElementById('drawBtn');
+        const showAnswerBtn = document.getElementById('showAnswerBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const questionElem = document.getElementById('question');
+        const answerElem = document.getElementById('answer');
+        const answerContainer = document.getElementById('answerContainer');
+        const feedbackControls = document.getElementById('feedbackControls');
+        const correctBtn = document.getElementById('correctBtn');
+        const incorrectBtn = document.getElementById('incorrectBtn');
+        
+        // 重設確認模態框元素
+        const resetModal = document.getElementById('resetModal');
+        const confirmResetBtn = document.getElementById('confirmResetBtn');
+        const cancelResetBtn = document.getElementById('cancelResetBtn');
+        
+        // 統計數據元素
+        const totalCountElem = document.getElementById('totalCount');
+        const remainingCountElem = document.getElementById('remainingCount');
+        const correctCountElem = document.getElementById('correctCount');
+        const incorrectCountElem = document.getElementById('incorrectCount');
+        
+        // 檢測localStorage是否可用
+        function checkStorageAvailability() {
+            try {
+                const testKey = 'test-storage';
+                localStorage.setItem(testKey, '1');
+                localStorage.removeItem(testKey);
+                storageAvailable = true;
+                return true;
+            } catch (e) {
+                storageAvailable = false;
+                return false;
+            }
+        }
+        
+        // 本地存儲鍵
+        const STORAGE_KEY = 'qaFlashcards';
+        
+        // 保存進度到本地存儲
+        function saveProgress() {
+            if (!storageAvailable) return;
+            
+            try {
+                // 只保存問題文本，而不是整個對象
+                const correctQuestions = correctAnswers.map(q => q.question);
+                const incorrectQuestions = incorrectAnswers.map(q => q.question);
+                
+                const data = {
+                    correctQuestions,
+                    incorrectQuestions
+                };
+                
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.error('保存進度時出錯：', e);
+                storageAvailable = false;
+            }
+        }
+        
+        // 從本地存儲加載進度
+        function loadProgress() {
+            if (!storageAvailable) return;
+            
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                if (!data) return;
+                
+                const { correctQuestions, incorrectQuestions } = JSON.parse(data);
+                
+                // 根據問題文本還原對象引用
+                correctAnswers = qaData.filter(q => correctQuestions.includes(q.question));
+                incorrectAnswers = qaData.filter(q => incorrectQuestions.includes(q.question));
+                
+                // 更新統計
+                updateStats();
+            } catch (e) {
+                console.error('加載進度時出錯：', e);
+                storageAvailable = false;
+            }
+        }
+        
+        // 更新統計數據
+        function updateStats() {
+            totalCountElem.textContent = qaData.length;
+            remainingCountElem.textContent = qaData.length - correctAnswers.length;
+            correctCountElem.textContent = correctAnswers.length;
+            incorrectCountElem.textContent = incorrectAnswers.length;
+        }
+        
+        // 初始化 - 檢測存儲可用性並加載保存的進度
+        checkStorageAvailability();
+        if (storageAvailable) {
+            loadProgress();
+        }
+        updateStats();
+        
+        // 隨機抽題
+        function drawRandomQuestion() {
+            // 重置顯示答案按鈕狀態
+            showAnswerBtn.textContent = "顯示答案";
+            answerContainer.style.maxHeight = "0";
+            feedbackControls.style.maxHeight = "0";
+            isAnswerShowing = false;
+            
+            // 過濾掉已經回答正確的問題
+            const availableQuestions = qaData.filter(q => !correctAnswers.includes(q));
+            
+            // 如果所有問題都回答正確，提示用戶
+            if (availableQuestions.length === 0) {
+                questionElem.textContent = "恭喜！所有問題都已經答對了！點擊「重設」重新開始。";
+                answerElem.innerHTML = "";
+                currentQuestion = null;
+                return;
+            }
+            
+            // 隨機選取一個問題
+            const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+            currentQuestion = availableQuestions[randomIndex];
+            
+            // 更新界面
+            questionElem.textContent = currentQuestion.question;
+            answerElem.innerHTML = currentQuestion.answer;
+        }
+        
+        // 顯示答案
+        function toggleAnswer() {
+            if (!currentQuestion) return;
+            
+            if (isAnswerShowing) {
+                answerContainer.style.maxHeight = "0";
+                feedbackControls.style.maxHeight = "0";
+                showAnswerBtn.textContent = "顯示答案";
+            } else {
+                answerContainer.style.maxHeight = "1000px";
+                feedbackControls.style.maxHeight = "100px";
+                showAnswerBtn.textContent = "隱藏答案";
+            }
+            
+            isAnswerShowing = !isAnswerShowing;
+        }
+        
+        // 標記為正確答案
+        function markAsCorrect() {
+            if (!currentQuestion) return;
+            
+            // 從不正確列表中移除（如果存在）
+            const incorrectIndex = incorrectAnswers.indexOf(currentQuestion);
+            if (incorrectIndex !== -1) {
+                incorrectAnswers.splice(incorrectIndex, 1);
+            }
+            
+            // 加入正確列表（如果尚未加入）
+            if (!correctAnswers.includes(currentQuestion)) {
+                correctAnswers.push(currentQuestion);
+            }
+            
+            // 更新統計數據
+            updateStats();
+            
+            // 保存進度
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            // 抽取下一題
+            drawRandomQuestion();
+        }
+        
+        // 標記為錯誤答案
+        function markAsIncorrect() {
+            if (!currentQuestion) return;
+            
+            // 加入不正確列表（如果尚未加入）
+            if (!incorrectAnswers.includes(currentQuestion)) {
+                incorrectAnswers.push(currentQuestion);
+            }
+            
+            // 更新統計數據
+            updateStats();
+            
+            // 保存進度
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            // 抽取下一題
+            drawRandomQuestion();
+        }
+        
+        // 顯示重設確認模態框
+        function showResetModal() {
+            resetModal.style.display = 'flex';
+        }
+        
+        // 隱藏重設確認模態框
+        function hideResetModal() {
+            resetModal.style.display = 'none';
+        }
+        
+        // 執行重設功能
+        function doResetQuiz() {
+            correctAnswers = [];
+            incorrectAnswers = [];
+            currentQuestion = null;
+            isAnswerShowing = false;
+            
+            questionElem.textContent = "按下「隨機抽題」按鈕開始";
+            answerElem.innerHTML = "";
+            answerContainer.style.maxHeight = "0";
+            feedbackControls.style.maxHeight = "0";
+            showAnswerBtn.textContent = "顯示答案";
+            
+            // 更新統計並保存進度
+            updateStats();
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            hideResetModal();
+        }
+        
+        // 綁定事件
+        drawBtn.addEventListener('click', drawRandomQuestion);
+        showAnswerBtn.addEventListener('click', toggleAnswer);
+        resetBtn.addEventListener('click', showResetModal);
+        confirmResetBtn.addEventListener('click', doResetQuiz);
+        cancelResetBtn.addEventListener('click', hideResetModal);
+        correctBtn.addEventListener('click', markAsCorrect);
+        incorrectBtn.addEventListener('click', markAsIncorrect);
+        
+        // 點擊模態框背景時關閉模態框
+        resetModal.addEventListener('click', function(e) {
+            if (e.target === resetModal) {
+                hideResetModal();
+            }
+        });
+    </script>
+</body>
+</html>
