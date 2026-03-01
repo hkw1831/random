@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM 筋膜手法 CC 點和 CF 點 Q&A 隨機抽題卡</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --background: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #212529;
+            --success: #38b000;
+            --error: #d00000;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--background);
+            padding: 1rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .question {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+        
+        .show-answer-btn-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        
+        .answer-container {
+            margin-top: 1rem;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.5s ease;
+        }
+        
+        .answer-content {
+            background-color: rgba(67, 97, 238, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .answer-content ul {
+            padding-left: 1.5rem;
+        }
+        
+        .answer-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s, transform 0.2s;
+            display: inline-block;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .btn-success:hover {
+            background-color: #2d9600;
+        }
+        
+        .btn-error {
+            background-color: var(--error);
+        }
+        
+        .btn-error:hover {
+            background-color: #b00000;
+        }
+
+        .btn-info {
+            background-color: #6c757d;
+        }
+
+        .btn-info:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .feedback-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+        
+        .count {
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--primary);
+            font-weight: 500;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 1rem 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        
+        .stat-item {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex: 1;
+            min-width: 80px;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            white-space: nowrap;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-value.correct {
+            color: var(--success);
+        }
+        
+        .stat-value.incorrect {
+            color: var(--error);
+        }
+        
+        footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 1rem 0;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .info {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: rgba(67, 97, 238, 0.05);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            padding: 2rem;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            margin: 2rem auto;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .question-list {
+            margin-top: 1rem;
+        }
+
+        .question-item {
+            background-color: rgba(67, 97, 238, 0.05);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95rem;
+        }
+
+        .question-item.correct {
+            border-left-color: var(--success);
+            background-color: rgba(56, 176, 0, 0.05);
+        }
+
+        .question-item.remaining {
+            border-left-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+            gap: 1rem;
+        }
+
+        .question-text {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .question-answer {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            border: 1px solid rgba(67, 97, 238, 0.2);
+            display: none;
+        }
+
+        .question-answer.show {
+            display: block;
+        }
+
+        .question-answer ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+
+        .question-answer li {
+            margin-bottom: 0.5rem;
+        }
+
+        .question-count {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .question-count.correct {
+            color: var(--success);
+        }
+
+        .question-count.remaining {
+            color: var(--primary);
+        }
+
+        @media (max-width: 600px) {
+            .stats {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .stat-item {
+                min-width: calc(50% - 0.5rem);
+                flex: none;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .question {
+                font-size: 1.25rem;
+            }
+            
+            .btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .btn-small {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .controls .btn {
+                width: 100%;
+                margin-right: 0;
+            }
+            
+            .feedback-controls {
+                flex-direction: column;
+            }
+
+            .modal-buttons {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                margin: 1rem auto;
+                padding: 1.5rem;
+                max-width: 95%;
+            }
+
+            .question-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+
+            .question-text {
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>肌肉伸展 Q&A 隨機抽題卡</h1>
+            <p>隨機抽取伸展相關問題並測試自己的知識</p>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">總題數</div>
+                <div id="totalCount" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">待答題數</div>
+                <div id="remainingCount" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">答對</div>
+                <div id="correctCount" class="stat-value correct">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">答錯</div>
+                <div id="incorrectCount" class="stat-value incorrect">0</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="drawBtn" class="btn">隨機抽題</button>
+            <button id="resetBtn" class="btn">重設</button>
+            <button id="showRemainingBtn" class="btn btn-info">查看待答題目</button>
+            <button id="showCorrectBtn" class="btn btn-info">查看已答對題目</button>
+        </div>
+        
+        <div class="info">
+            <p>✓ 正確回答的問題將不再出現</p>
+            <p>✓ 回答錯誤的問題將保留在題庫中再次抽取</p>
+            <p>✓ 按「重設」按鈕可重新開始</p>
+            <p>✓ 可查看待答題目和已答對題目列表</p>
+        </div>
+        
+        <div id="card" class="card">
+            <div id="question" class="question">按下「隨機抽題」按鈕開始</div>
+            
+            <div class="show-answer-btn-container">
+                <button id="showAnswerBtn" class="btn">顯示答案</button>
+            </div>
+            
+            <div id="answerContainer" class="answer-container">
+                <div id="answer" class="answer-content"></div>
+                <div id="feedbackControls" class="feedback-controls">
+                    <button id="correctBtn" class="btn btn-success">我答對了</button>
+                    <button id="incorrectBtn" class="btn btn-error">我答錯了</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 重設確認模態框 -->
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">確定要重設？</div>
+            <p>這將清除所有答題進度，此操作無法撤銷。</p>
+            <div class="modal-buttons">
+                <button id="confirmResetBtn" class="btn btn-error">確定重設</button>
+                <button id="cancelResetBtn" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 待答題目模態框 -->
+    <div id="remainingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">待答題目列表</div>
+            <div id="remainingQuestionCount" class="question-count remaining"></div>
+            <div id="remainingQuestionList" class="question-list"></div>
+            <div class="modal-buttons">
+                <button id="closeRemainingBtn" class="btn">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 已答對題目模態框 -->
+    <div id="correctModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">已答對題目列表</div>
+            <div id="correctQuestionCount" class="question-count correct"></div>
+            <div id="correctQuestionList" class="question-list"></div>
+            <div class="modal-buttons">
+                <button id="closeCorrectBtn" class="btn">關閉</button>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© FM 筋膜手法 CC 點和 CF 點 Q&A 隨機抽題卡</p>
+    </footer>
+    
+    <script>
+        const qaData = [
+{
+    question: "an-cp1",
+    answer: "眼眶中間下緣下少少少少少"
+},
+{
+    question: "re-cp1",
+    answer: "眉毛最內側"
+},
+{
+    question: "me-cp1",
+    answer: "眼內到鼻骨"
+},
+{
+    question: "la-cp1",
+    answer: "眼眶外側邊界，接近外側眼角"
+},
+{
+    question: "ir-cp1",
+    answer: "外眼角內上方，眼框眼球中間"
+},
+{
+    question: "er-cp1",
+    answer: "眼框外下緣內"
+},
+{
+    question: "an-me-cp1",
+    answer: "1.鼻翼兩側（上45度）"
+},
+{
+    question: "an-la-cp1",
+    answer: "1.顴骨上緣（眼輪外）"
+},
+{
+    question: "re-me-cp1",
+    answer: "1. 叫對方先皺眉，額頭軟硬交界處，比 re-cp2 同 me-cp2 低少少，佢地中間"
+},
+{
+    question: "re-la-cp1",
+    answer: "1. 顳肌前緣側，額頂葉和蝶骨縫上<br>（眉毛外上凹陷處） cf 比 la-cp2 低"
+},
+{
+    question: "an-cp2",
+    answer: "眼眶下方中間開始到咀的線上用食指尖或中指尖睇下有無傳導痛；可能在鼻翼高度附近"
+},
+{
+    question: "re-cp2",
+    answer: "眉毛內側上，髮際線高"
+},
+{
+    question: "me-cp2",
+    answer: "A: 人中：鼻同口早間<br><br>R: 正中間，髮際線上一指節"
+},
+{
+    question: "la-cp2",
+    answer: "顳肌，耳仔中心計上斜方，咬野時會 Feel 到"
+},
+{
+    question: "ir-cp2",
+    answer: "耳輪（耳仔上半部）正前方筋膜"
+},
+{
+    question: "er-cp2",
+    answer: "耳仔正上方半指寸"
+},
+{
+    question: "an-me-cp2",
+    answer: "2.人中兩側，上犬齒根部"
+},
+{
+    question: "an-la-cp2",
+    answer: "2.顴骨下緣"
+},
+{
+    question: "re-me-cp2",
+    answer: "2. 顱骨頂端中線兩側<br>(天靈蓋 / 百會兩側)"
+},
+{
+    question: "re-la-cp2",
+    answer: "2.顳骨最高點，耳朵上方<br>（耳朵後緣正上方三指寸位置）"
+},
+{
+    question: "an-cp3",
+    answer: "下頜骨中間同最入角中點；cc 在這點骨頭入面縫縫旁的肌肉"
+},
+{
+    question: "re-cp3",
+    answer: "豎脊肌；枕骨下方肌肉"
+},
+{
+    question: "me-cp3",
+    answer: "A: 下巴骨中間入少少舊肉<br><br>R: 正中間，枕骨粗隆下肌肉"
+},
+{
+    question: "la-cp3",
+    answer: "智慧牙後，咬肌肌腹<br><br>- cf an-la-cp3"
+},
+{
+    question: "ir-cp3",
+    answer: "耳垂正前方，下頜骨後緣凹位"
+},
+{
+    question: "er-cp3",
+    answer: "乳突高度，SCM 止點最後緣"
+},
+{
+    question: "an-me-cp3",
+    answer: "3.下頜肌肉，下犬齒根部<br>（會摸到牙齒根）"
+},
+{
+    question: "an-la-cp3",
+    answer: "3.咀嚼肌前側緣（高度在咀角上面）<br><br>- cf la-cp3"
+},
+{
+    question: "re-me-cp3",
+    answer: "3.位於中線兩旁，上頸線，枕骨粗隆上<br>（不是枕下肌群，在枕骨突起處）OR<br>枕肌內側"
+},
+{
+    question: "re-la-cp3",
+    answer: "3.枕骨粗隆外側<br>（不是枕下肌群，在枕骨外側突起處，未到乳突） SCM 止點中間骨頭上"
+},
+{
+    question: "an-cl",
+    answer: "喉核高落一指寸（la-cl 比 an-cl 高）；SCM 前側肌腹"
+},
+{
+    question: "re-cl",
+    answer: "C6 高（C4-C6 from train fm video?），豎脊肌"
+},
+{
+    question: "me-cl",
+    answer: "A: 胸骨柄正上方少少<br><br>R: C7 T1 棘突"
+},
+{
+    question: "la-cl",
+    answer: "喉核高，SCM 肌腹"
+},
+{
+    question: "ir-cl",
+    answer: "SCM 近端，胸骨頭和鎖骨頭之間縫縫"
+},
+{
+    question: "er-cl",
+    answer: "C2-C4高（喉核在C4-C5），SCM 後的縫縫"
+},
+{
+    question: "an-me-cl",
+    answer: "1.胸鎖乳突肌胸鎖關節肌腱<br>（小心唔好按太入按到氣管）SCM 胸骨段肌腱上方"
+},
+{
+    question: "an-la-cl",
+    answer: "1.胸鎖乳突肌乳突處前側緣<br>（但學時高度和下巴高度差唔多） 下頜尖後， SCM 前"
+},
+{
+    question: "re-me-cl",
+    answer: "1.頸部中間，頸椎第三第四項韌帶兩側<br>（枕骨下的肌內是 C2，下一隻手指公闊係 C3，下一隻手指公闊係 C4） 書話 C1-C7 橫突 老師話 C3-C4 橫突"
+},
+{
+    question: "re-la-cl",
+    answer: "1.斜方肌和斜角肌之間，頸椎第二至第三水平<br>（上課時像在 C5 的高度，左右位置從肩的斜方肌向上掃）C3 斜方肌前，斜方肌和斜角肌中間"
+},
+{
+    question: "an-th",
+    answer: "rib cage 下緣邊邊條 curve上少少 ；中線和乳頭中間位"
+},
+{
+    question: "re-th",
+    answer: "T6 豎脊肌上"
+},
+{
+    question: "me-th",
+    answer: "A: 胸骨正中央<br><br>R: 背闊肌中間最上處：T7 棘突"
+},
+{
+    question: "la-th",
+    answer: "T6 T7 之間，中間外2-3指寸，斜方肌和背闊肌交界處"
+},
+{
+    question: "ir-th",
+    answer: "乳頭下方 五六肋間（乳頭在 45肋間）"
+},
+{
+    question: "er-th",
+    answer: "肩胛骨內上角"
+},
+{
+    question: "an-me-th",
+    answer: "<ul><li>1.肋骨兩旁，第一和第二肋間隙（鎖骨下方）</li><li>2.胸骨兩旁，第二、第三和第四肋間隙</li><li>3.中線兩旁，第五肋骨間隙及劍突旁肋骨面上（外到骨間內就太外邊了，要入番少少）</li></ul>"
+},
+{
+    question: "an-la-th",
+    answer: "<ul><li>1. 第四肋間隙，乳腺和腋下線之間，乳頭外側，胸大肌外側緣，前鋸肌（乳頭外下側）</li><li>2. 第五肋間隙，乳腺和腋下線之間，乳頭外側，胸大肌外側緣，前鋸肌（胸前外一的下一肋位置）</li></ul>"
+},
+{
+    question: "re-me-th",
+    answer: "<ul><li>1.第二至三胸椎水平，棘突兩側（就脊椎每節旁也搓搓看）</li><li>2.第四至七胸椎水平，棘突兩側（就脊椎每節旁也搓搓看）</li><li>3. 第七至十二胸椎水平，棘突兩側（就脊椎每節旁也搓搓看）</li></ul>"
+},
+{
+    question: "re-la-th",
+    answer: "1.肩胛骨內側緣遠端，斜方肌下面<br>（書中的圖是內下角內方，就是菱形肌止點最下方？）<br>（趴時做，做對方隻手隻解剖位置 aka 掌心向前時，會比較易找到肩胛內下角）"
+},
+{
+    question: "an-lu",
+    answer: "肚臍高度；中線和乳頭中間點（痛點有機會在這橫線間其中一點，很難在腹部找到緻密點，較容易找到收縮的肌肉帶）"
+},
+{
+    question: "re-lu",
+    answer: "髂脊上三指腹 T12-L1，豎脊肌上"
+},
+{
+    question: "me-lu",
+    answer: "A: 肚臍上一舊腹肌（上4指寸），白線<br><br>R: 後下鋸肌最下處：L2 棘突"
+},
+{
+    question: "la-lu",
+    answer: "QL 上"
+},
+{
+    question: "ir-lu",
+    answer: "11肋尖端下緣"
+},
+{
+    question: "er-lu",
+    answer: "12肋骨下緣"
+},
+{
+    question: "an-me-lu",
+    answer: "<ul><li>1.腹白線兩側，肋骨緣及劍突之間（接近骨縫）</li><li>2.腹白線兩側，劍突與肚臍中間（在 腰前內一 和 腰前內三 中間）</li><li>3.腹白線兩側，肚臍上緣</li></ul>"
+},
+{
+    question: "an-la-lu",
+    answer: "<ul><li>1.肋緣或肋下，腹直肌或腹外斜肌邊緣（上下：肋緣下）（左右：胸廓骨縫下和腹直肌邊緣交界，可以靠對方卷腹來幫忙找腹直肌邊緣）</li><li>2.肋緣和肚臍之間，腹直肌邊緣（高度在肋緣和肚臍之間，左右在腹直肌邊緣）</li></ul>"
+},
+{
+    question: "re-me-lu",
+    answer: "<ul><li>1.第一至二腰椎水平，棘突兩側（就脊椎每節旁也搓搓看）</li><li>2.第三至四腰椎水平，棘突兩側（就脊椎每節旁也搓搓看）</li></ul>"
+},
+{
+    question: "re-la-lu",
+    answer: "1.胸椎第十二至腰椎第一水平，豎脊肌外側，髂肋肌在肋骨的坎入點<br>（由 PSIS aka L4 向上找到 T12，左右位置在豎脊肌外側）"
+},
+{
+    question: "an-pv",
+    answer: "ASIS 內下 4 點鐘方向，ASIS 向內一隻中指闊左右，髂肌肌腹上=="
+},
+{
+    question: "re-pv",
+    answer: "L5 棘突和 PSIS 中間凹位處"
+},
+{
+    question: "me-pv",
+    answer: "A: 肚臍下一腹肌（下2指寸），腹橫肌腹直肌交會處<br><br>R: 薦骨底，股溝起點上一指寸"
+},
+{
+    question: "la-pv",
+    answer: "當住 PSIS 同大轉子中間先"
+},
+{
+    question: "ir-pv",
+    answer: "TFL 後，髂外則最高點和大轉子中間，近髂嵴肌腱"
+},
+{
+    question: "er-pv",
+    answer: "髂嵴下緣"
+},
+{
+    question: "an-me-pv",
+    answer: "<ul><li>1.腹白線兩側，肚臍下緣</li><li>2.腹白線兩側，肚臍與恥骨聯合的中點（盆前內一 和 盆前內三 的中間）</li><li>3.腹白線兩側，恥骨上緣，椎狀肌上（緣腹股溝找到恥骨）</li></ul>"
+},
+{
+    question: "an-la-pv",
+    answer: "<ul><li>1.肚臍和髂前上棘之間，腹直肌邊緣（可以靠對方卷腹來幫忙找腹直肌邊緣）</li><li>2.恥骨結節上，腹直肌邊緣（理論上比 盆前內三 低）</li></ul>"
+},
+{
+    question: "re-me-pv",
+    answer: "<ul><li>1.位於髂後上棘和骶骨結節之間，近端二分之一處（PSIS 和 骶骨 的垂直線一分為二，上 1/2 範圍，左右位在 PSIS 和 骶骨 三角形入）</li><li>2.骶骨遠端二分之一處（PSIS 和 骶骨 的垂直線一分為二，下 1/2 範圍，左右位在 PSIS 和 骶骨 三角形入）</li></ul>"
+},
+{
+    question: "re-la-pv",
+    answer: "1.髂後上棘外側，骶髂關節邊緣<br>（PSIS 正下方）"
+},
+{
+    question: "an-cx",
+    answer: "腹肌溝動脈外側，縫匠肌內側=="
+},
+{
+    question: "re-cx",
+    answer: "沿住薦結節韌帶找"
+},
+{
+    question: "me-cx",
+    answer: "下面同（膝頭內側骨上方肉開始計）1/4，大腿內側"
+},
+{
+    question: "la-cx",
+    answer: "TFL 肌腹"
+},
+{
+    question: "ir-cx",
+    answer: "大轉子下四指寸，縫匠肌和內收肌交界"
+},
+{
+    question: "er-cx",
+    answer: "梨狀肌 aka 大轉子和股骨中間"
+},
+{
+    question: "an-me-cx",
+    answer: "1.恥骨下緣，內收肌肌腱上<br>（內收肌果條大筋，對方躺曲膝外反，叫他自己擋住重要部位）"
+},
+{
+    question: "an-la-cx",
+    answer: "<ul><li>1.骼前上棘下緣，闊筋膜張肌，縫匠肌，腹直肌肌腱，以及腹股溝韌帶外側</li><li>2.大轉子前下方，股直肌和闊筋膜張肌之間（和大轉子同高，ASIS 垂直下方或外側一點）</li></ul>"
+},
+{
+    question: "re-me-cx",
+    answer: "1.位於骶骨，尾骨關節旁，臀大肌肌纖維上<br>（叫對方側躺，面向自己，上方腳屈曲至 45 度，自己雙腳夾住對方屈曲至 45 度的膝，才搓在對側的尾骨）"
+},
+{
+    question: "re-la-cx",
+    answer: "坐骨和大轉子中間<br><br>1.坐骨結節外側，大小轉子之間，靠近梨狀肌<br>（理解為大轉子和坐骨直線的中間）"
+},
+{
+    question: "an-ge",
+    answer: "腹股溝韌帶和臏骨中間（around 臏骨上緣開始計向上 7 指節）的股直肌外側肌腹"
+},
+{
+    question: "re-ge",
+    answer: "肌二頭和半腱半膜中間，成條去找，大概在膕窩中間記上8指寸"
+},
+{
+    question: "me-ge",
+    answer: "下面同（膝頭內側骨上方肉開始計）3/4，大腿內側"
+},
+{
+    question: "la-ge",
+    answer: "股二頭短頭起點， ITB 中間，垂直隻手中指掂到果個位（風市穴）"
+},
+{
+    question: "ir-ge",
+    answer: "菠蘿蓋上緣向上計四指寸，股內側肌"
+},
+{
+    question: "er-ge",
+    answer: "股骨外上髁向上五指寸，股二頭前的縫縫偏股二頭肌"
+},
+{
+    question: "an-me-ge",
+    answer: "<ul><li>1.縫匠肌和股內側肌的間溝上</li><li>2.內側副韌帶上（脛骨和股骨中間，膝眼凸起後方）</li><li>3.鵝掌肌腱和脛骨之間（膝眼下方）</li></ul>"
+},
+{
+    question: "an-la-ge",
+    answer: "<ul><li>1.股直肌和股外側肌之間的凹陷</li><li>2.外側副韌帶上（脛骨和股骨中間，膝眼凸起後方）</li><li>3.脛骨前肌起點，在脛骨粗隆上，腓骨頭水平</li></ul>"
+},
+{
+    question: "re-me-ge",
+    answer: "<ul><li>1.大腿遠端三分之一處，在半腱肌和半膜肌之間（半腱半膜肌腱）</li><li>2.位於內側腓腸肌近端肌腱（內腓腸肌肌腱）</li></ul>"
+},
+{
+    question: "re-la-ge",
+    answer: "<ul><li>1. 大腿遠端三分之一處，股二頭肌肌腱內側，髂脛束後側（股二頭肌腱，不要到 ITB）</li><li>2. 小腿近端，外側腓腸肌肌腱，腓骨頭後側（注意腓總神經）（外腓腸肌肌腱）</li></ul>"
+},
+{
+    question: "an-ta",
+    answer: "脛前肌肌腹，躺時腳掌底屈時脛前肌最漲果度"
+},
+{
+    question: "re-ta",
+    answer: "腓腸肌最下方，比目魚肌肌腱上方，腓腸肌內外頭中間偏少少外方"
+},
+{
+    question: "me-ta",
+    answer: "腓腸肌最低內側"
+},
+{
+    question: "la-ta",
+    answer: "腓骨正中間，骨的前方和伸趾長肌之間的縫縫上"
+},
+{
+    question: "ir-ta",
+    answer: "腓腸肌盡頭高，脛骨後緣，小心超近 me-ta"
+},
+{
+    question: "er-ta",
+    answer: "腓腸肌肌腹最下方上一至二指寸，腓骨外腓骨長肌後方肌腹"
+},
+{
+    question: "an-me-ta",
+    answer: "<ul><li>1.小腿遠端三分之一，脛骨內側緣後（計算方法是腳眼上和脛骨眼下為完整距離）</li><li>2.小腿遠端四分之一，脛骨內側緣後</li></ul>"
+},
+{
+    question: "an-la-ta",
+    answer: "<ul><li>1. 小腿遠端三分之一，腓骨前側（計算方法是腳眼上和脛骨眼下為完整距離）</li><li>2. 小腿遠端四分之一，腓骨前側</li></ul>"
+},
+{
+    question: "re-me-ta",
+    answer: "<ul><li>1.腓腸肌肌腱，小腿遠端三分一的上段（小腿肚邊緣再下方一點）</li><li>2.位於跟腱後內側，遠端</li></ul>"
+},
+{
+    question: "re-la-ta",
+    answer: "<ul><li>1.小腿遠端三分之一，跟腱和腓骨之間，抵於腓骨後側（小腿肚邊緣再下方一點）</li><li>2.小腿遠端四分之一，跟腱和腓骨之間，抵於腓骨</li></ul>"
+},
+{
+    question: "an-pe",
+    answer: "腳背：第一蹠骨和第二蹠骨之間，係蹠間條線度 check，應該係蹠骨基底部"
+},
+{
+    question: "re-pe",
+    answer: "第五蹠骨基底部根部，可能到跖骨處？"
+},
+{
+    question: "me-pe",
+    answer: "內髁下方，足弓起點"
+},
+{
+    question: "la-pe",
+    answer: "在二三腳趾之間跟部（皮）"
+},
+{
+    question: "ir-pe",
+    answer: "第一蹠骨基底部下方舊肉"
+},
+{
+    question: "er-pe",
+    answer: "伸趾短肌肌腹"
+},
+{
+    question: "an-me-pe",
+    answer: "<ul><li>1. 內踝和脛骨前肌之間，關節線上（脛前肌＋腳眼同高）</li><li>2.內踝前側，抵於脛骨前肌肌腱，在脛舟韌帶上（腳眼和前面最近凸起處中間再向前方移一點點）</li><li>3.第一跖骨基底部和內側楔骨上</li></ul>"
+},
+{
+    question: "an-la-pe",
+    answer: "<ul><li>1. 在外踝和趾長伸肌肌腱之間，關節線上（腳眼和前面最近凸起處中間的溝）</li><li>2. 在第四、第五跖骨之間，指短伸肌肌肉肌腱結合處（掌間肌盡頭再入）</li><li>3. 在第四、第五指骨之間（一隻手頂住腳掌，另一隻手搓）</li></ul>"
+},
+{
+    question: "re-me-pe",
+    answer: "<ul><li>1.在內踝和跟腱之間（跟骨上方的肌腱的內側）</li><li>2.小腿三頭肌在跟骨的坎入點（跟骨內側）</li><li>3.位於內踝下緣（腳眼前下少少的韌帶）</li></ul>"
+},
+{
+    question: "re-la-pe",
+    answer: "<ul><li>1.外踝和跟腱之間，跟骨上緣（跟骨上方的肌腱的外側）</li><li>2.跟骨上緣，跟腱止點水平（跟骨外側）</li><li>3.外踝下，韌帶間隙（腳眼前下少少的韌帶）</li></ul>"
+},
+{
+    question: "an-sc",
+    answer: "喙突下，在三角肌和胸肌的溝之間（by 谷胸），胸小肌肌腹上，胸骨柄最上方下 1 指節；中線外 6 指節"
+},
+{
+    question: "re-sc",
+    answer: "肩胛骨橫棘內點和 C7 中間"
+},
+{
+    question: "me-sc",
+    answer: "前鋸肌，中線，乳頭高度上 1-2指寸"
+},
+{
+    question: "la-sc",
+    answer: "C5 C6 高，斜方肌前緣"
+},
+{
+    question: "ir-sc",
+    answer: "鎖骨下肌，SCM 鎖骨頭起點外緣闊，第一二肋中間"
+},
+{
+    question: "er-sc",
+    answer: "提肩胛肌上，斜方肌上，未到斜方肌邊緣"
+},
+{
+    question: "an-me-sc",
+    answer: "<ul><li>1. ﻿﻿第二肋間隙，鎖骨中線上（鎖骨中間下兩隻手指位）</li><li>2. ﻿﻿第三及四肋間隙，鎖骨中線上（肩前內一 的下一肋）</li></ul>"
+},
+{
+    question: "an-la-sc",
+    answer: "（斜角肌在找到 SCM 後，旁邊放發誓果三隻手指的範圍）<br><br>2.胸鎖乳突肌胸骨束後側，鎖骨上緣<br>（鎖骨中間上緣）"
+},
+{
+    question: "re-me-sc",
+    answer: "<ul><li>1. 肩胛骨內上角邊緣，菱形肌（可能靠近提肩胛肌肌腱）</li><li>2.棘上窩中點</li></ul>"
+},
+{
+    question: "re-la-sc",
+    answer: "<ul><li>1.斜方肌上，棘上窩中心</li><li>2.棘上窩外側包括肩鎮韌帶</li></ul>"
+},
+{
+    question: "an-hu",
+    answer: "胸大肌止點，肱骨三角肌上，肱二頭肌短頭上"
+},
+{
+    question: "re-hu",
+    answer: "上斜方肌和三角肌中間⋯assume 肩胛棘中間筒肩胛骨下角取一直線的上 1/3 位置"
+},
+{
+    question: "me-hu",
+    answer: "格肋底下一指寸（有啲話上臂上 1/3），手臂內側"
+},
+{
+    question: "la-hu",
+    answer: "三角肌中束肌腹，胸大肌止點高度， an-hu 同高"
+},
+{
+    question: "ir-hu",
+    answer: "胸大肌 肩胛下肌止點"
+},
+{
+    question: "er-hu",
+    answer: "三角肌後方，肩旋肌群後方"
+},
+{
+    question: "an-me-hu",
+    answer: "1.胸大肌在大臂的肌肉肌腱結合處<br>（腋下凹位條硬筋入面同出面）"
+},
+{
+    question: "an-la-hu",
+    answer: "1.前三角肌下四分之一的區域<br>（先摸粗隆 -> 前側）<br>（guess 三角肌和二頭肌交界？）"
+},
+{
+    question: "re-me-hu",
+    answer: "1.闊背肌肌腱，三頭肌和大圓肌肌腱結合處，抵於肩胛骨外側緣，或肱骨<br>（背闊肌條縫 aka 肌腱，可以往上搓或向肱骨方向搓）"
+},
+{
+    question: "re-la-hu",
+    answer: "1.三頭肌遠端二分之一處，三角肌後側縫<br>（三角肌和三頭肌的交界）"
+},
+{
+    question: "an-cu",
+    answer: "三角肌粗隆高；肱二頭肌外側肌腹（最好沿住成條二頭肌直線找）"
+},
+{
+    question: "re-cu",
+    answer: "三頭肌內外側頭近外側頭，鷹嘴韌帶向上到三頭肌肌內邊緣，三角肌粗隆低一指節"
+},
+{
+    question: "me-cu",
+    answer: "上臂下向上計 1/3，手臂內側"
+},
+{
+    question: "la-cu",
+    answer: "屈曲手肘後前臂橈則向入到上臂的高度，三頭肌外側縫縫"
+},
+{
+    question: "ir-cu",
+    answer: "旋前圓肌，肱二頭肌腱膜上（近尺側，肘窩橫紋下2指寸）"
+},
+{
+    question: "er-cu",
+    answer: "手肘上三指寸，三頭肌外側肌腱"
+},
+{
+    question: "an-me-cu",
+    answer: "1.屈肌肌腱上，肱骨內上髁<br>（理解是橈骨端不是肱骨端）"
+},
+{
+    question: "an-la-cu",
+    answer: "1.在肱橈肌和肱二頭肌肌腱膜之間<br>（理解是橈骨端不是肱骨端）"
+},
+{
+    question: "re-me-cu",
+    answer: "<ul><li>1.尺神經溝近端，抵於三頭肌腱內側（肱骨端 / 比較往中間靠，不要搓到神經，搓時會手麻就是錯的）</li><li>2. 前臂近端，肱骨內上髁和鷹嘴溝，在尺側腕屈肌起點</li></ul>"
+},
+{
+    question: "re-la-cu",
+    answer: "1.前臂近端，肱橈肌後側間溝"
+},
+{
+    question: "an-ca",
+    answer: "前臂 上 1/3處（手腕摺摺 to 手肘摺摺） ，外側兩條肌肉（肱橈肌和橈側屈腕肌）中間="
+},
+{
+    question: "re-ca",
+    answer: "尺側腕伸肌，手腕莖突向上 5 指節（手腕莖突和鷹咀之間係 12 指節）"
+},
+{
+    question: "me-ca",
+    answer: "尺側腕屈肌，前臂下 1/3，橫向近尺側 1/3"
+},
+{
+    question: "la-ca",
+    answer: "橈側莖突向上找，前臂近端 1/3，橈側向外1/3縫縫處"
+},
+{
+    question: "ir-ca",
+    answer: "Assume 前臂內正中央"
+},
+{
+    question: "er-ca",
+    answer: "鷹咀突和橈側莖突中間點"
+},
+{
+    question: "an-me-ca",
+    answer: "<ul><li>1.前臂遠端三分之一，掌長肌肌腱和橈側屈腕肌肌腱之間</li><li>2.前臂遠端四分之一，掌長肌肌腱內側或外側</li></ul>"
+},
+{
+    question: "an-la-ca",
+    answer: "<ul><li>1.前臂遠端三分之一，橈動脈溝</li><li>2.前臂遠端四分之一，拇長屈肌肌腱近端（可以叫對方屈拇指確認肌鍵位置）</li></ul>"
+},
+{
+    question: "re-me-ca",
+    answer: "<ul><li>1.前臂遠端三分之一，尺側腕伸肌和小指伸肌之間（內是尺骨端）（橈骨尺骨中間，尺骨的骨縫肌肉）</li><li>2.前臂遠端四分之一，尺側腕伸肌和小指伸肌之間（內是尺骨端）（橈骨尺骨中間，尺骨的骨縫肌肉）</li></ul>"
+},
+{
+    question: "re-la-ca",
+    answer: "<ul><li>1. 前臂遠端三分之一，拇伸肌和拇外展肌肌腱（外是橈骨端）（橈骨尺骨中間，橈骨的骨縫肌肉）</li><li>2. 前臂遠端四分之一，拇伸肌和拇外展肌肌腱（外是橈骨端）（橈骨尺骨中間，橈骨的骨縫肌肉）</li></ul>"
+},
+{
+    question: "an-di",
+    answer: "大魚際肌腹中間外側少少（隆起處）"
+},
+{
+    question: "re-di",
+    answer: "小魚際肌腹，尺側處按"
+},
+{
+    question: "me-di",
+    answer: "小魚際肌腹少近中間，手掌處按"
+},
+{
+    question: "la-di",
+    answer: "合谷稍下肌肉處"
+},
+{
+    question: "ir-di",
+    answer: "手掌正中間腱膜上"
+},
+{
+    question: "er-di",
+    answer: "手背三四指中間蚓狀肌"
+},
+{
+    question: "an-me-di",
+    answer: "<ul><li>1.小魚際基底部，大魚際和小魚際之間</li><li>2.第五掌骨和小指第一指骨之間</li></ul>"
+},
+{
+    question: "an-la-di",
+    answer: "<ul><li>1.大魚際近端，掌緣（拇指麻可能和這個有關）</li><li>2.拇指對掌肌位於食指上的止點</li></ul>"
+},
+{
+    question: "re-me-di",
+    answer: "<ul><li>1.腕横韌帶遠端邊緣指總伸肌肌腱和小指伸肌肌腱之間（手腕骨下方）</li><li>2.在第四和第五掌骨頭之間（拳眼關節中間）</li></ul>"
+},
+{
+    question: "re-la-di",
+    answer: "<ul><li>1.鼻煙窩（掌間肌盡頭過埋舊骨）</li><li>2.在第二和第三掌骨頭之間（拳眼關節中間）</li></ul>"
+}
+        ];
+        
+        // 初始化變數
+        let currentQuestion = null;
+        let correctAnswers = [];
+        let incorrectAnswers = [];
+        let isAnswerShowing = false;
+        let storageAvailable = false;
+        
+        // 取得DOM元素
+        const drawBtn = document.getElementById('drawBtn');
+        const showAnswerBtn = document.getElementById('showAnswerBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const showRemainingBtn = document.getElementById('showRemainingBtn');
+        const showCorrectBtn = document.getElementById('showCorrectBtn');
+        const questionElem = document.getElementById('question');
+        const answerElem = document.getElementById('answer');
+        const answerContainer = document.getElementById('answerContainer');
+        const feedbackControls = document.getElementById('feedbackControls');
+        const correctBtn = document.getElementById('correctBtn');
+        const incorrectBtn = document.getElementById('incorrectBtn');
+        
+        // 重設確認模態框元素
+        const resetModal = document.getElementById('resetModal');
+        const confirmResetBtn = document.getElementById('confirmResetBtn');
+        const cancelResetBtn = document.getElementById('cancelResetBtn');
+        
+        // 待答題目模態框元素
+        const remainingModal = document.getElementById('remainingModal');
+        const closeRemainingBtn = document.getElementById('closeRemainingBtn');
+        const remainingQuestionCount = document.getElementById('remainingQuestionCount');
+        const remainingQuestionList = document.getElementById('remainingQuestionList');
+        
+        // 已答對題目模態框元素
+        const correctModal = document.getElementById('correctModal');
+        const closeCorrectBtn = document.getElementById('closeCorrectBtn');
+        const correctQuestionCount = document.getElementById('correctQuestionCount');
+        const correctQuestionList = document.getElementById('correctQuestionList');
+        
+        // 統計數據元素
+        const totalCountElem = document.getElementById('totalCount');
+        const remainingCountElem = document.getElementById('remainingCount');
+        const correctCountElem = document.getElementById('correctCount');
+        const incorrectCountElem = document.getElementById('incorrectCount');
+        
+        // 檢測localStorage是否可用
+        function checkStorageAvailability() {
+            try {
+                const testKey = 'test-storage';
+                localStorage.setItem(testKey, '1');
+                localStorage.removeItem(testKey);
+                storageAvailable = true;
+                return true;
+            } catch (e) {
+                storageAvailable = false;
+                return false;
+            }
+        }
+        
+        // 本地存儲鍵
+        const STORAGE_KEY = 'muscleStretchFlashcards';
+        
+        // 保存進度到本地存儲
+        function saveProgress() {
+            if (!storageAvailable) return;
+            
+            try {
+                // 只保存問題文本，而不是整個對象
+                const correctQuestions = correctAnswers.map(q => q.question);
+                const incorrectQuestions = incorrectAnswers.map(q => q.question);
+                
+                const data = {
+                    correctQuestions,
+                    incorrectQuestions
+                };
+                
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.error('保存進度時出錯：', e);
+                storageAvailable = false;
+            }
+        }
+        
+        // 從本地存儲加載進度
+        function loadProgress() {
+            if (!storageAvailable) return;
+            
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                if (!data) return;
+                
+                const { correctQuestions, incorrectQuestions } = JSON.parse(data);
+                
+                // 根據問題文本還原對象引用
+                correctAnswers = qaData.filter(q => correctQuestions.includes(q.question));
+                incorrectAnswers = qaData.filter(q => incorrectQuestions.includes(q.question));
+                
+                // 更新統計
+                updateStats();
+            } catch (e) {
+                console.error('加載進度時出錯：', e);
+                storageAvailable = false;
+            }
+        }
+        
+        // 更新統計數據
+        function updateStats() {
+            totalCountElem.textContent = qaData.length;
+            remainingCountElem.textContent = qaData.length - correctAnswers.length;
+            correctCountElem.textContent = correctAnswers.length;
+            incorrectCountElem.textContent = incorrectAnswers.length;
+        }
+        
+        // 初始化 - 檢測存儲可用性並加載保存的進度
+        checkStorageAvailability();
+        if (storageAvailable) {
+            loadProgress();
+        }
+        updateStats();
+        
+        // 隨機抽題
+        function drawRandomQuestion() {
+            // 重置顯示答案按鈕狀態
+            showAnswerBtn.textContent = "顯示答案";
+            answerContainer.style.maxHeight = "0";
+            feedbackControls.style.maxHeight = "0";
+            isAnswerShowing = false;
+            
+            // 過濾掉已經回答正確的問題
+            const availableQuestions = qaData.filter(q => !correctAnswers.includes(q));
+            
+            // 如果所有問題都回答正確，提示用戶
+            if (availableQuestions.length === 0) {
+                questionElem.textContent = "恭喜！所有問題都已經答對了！點擊「重設」重新開始。";
+                answerElem.innerHTML = "";
+                currentQuestion = null;
+                return;
+            }
+            
+            // 隨機選取一個問題
+            const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+            currentQuestion = availableQuestions[randomIndex];
+            
+            // 更新界面
+            questionElem.textContent = currentQuestion.question;
+            answerElem.innerHTML = currentQuestion.answer;
+        }
+        
+        // 顯示答案
+        function toggleAnswer() {
+            if (!currentQuestion) return;
+            
+            if (isAnswerShowing) {
+                answerContainer.style.maxHeight = "0";
+                feedbackControls.style.maxHeight = "0";
+                showAnswerBtn.textContent = "顯示答案";
+            } else {
+                answerContainer.style.maxHeight = "1000px";
+                feedbackControls.style.maxHeight = "100px";
+                showAnswerBtn.textContent = "隱藏答案";
+            }
+            
+            isAnswerShowing = !isAnswerShowing;
+        }
+        
+        // 標記為正確答案
+        function markAsCorrect() {
+            if (!currentQuestion) return;
+            
+            // 從不正確列表中移除（如果存在）
+            const incorrectIndex = incorrectAnswers.indexOf(currentQuestion);
+            if (incorrectIndex !== -1) {
+                incorrectAnswers.splice(incorrectIndex, 1);
+            }
+            
+            // 加入正確列表（如果尚未加入）
+            if (!correctAnswers.includes(currentQuestion)) {
+                correctAnswers.push(currentQuestion);
+            }
+            
+            // 更新統計數據
+            updateStats();
+            
+            // 保存進度
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            // 抽取下一題
+            drawRandomQuestion();
+        }
+        
+        // 標記為錯誤答案
+        function markAsIncorrect() {
+            if (!currentQuestion) return;
+            
+            // 加入不正確列表（如果尚未加入）
+            if (!incorrectAnswers.includes(currentQuestion)) {
+                incorrectAnswers.push(currentQuestion);
+            }
+            
+            // 更新統計數據
+            updateStats();
+            
+            // 保存進度
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            // 抽取下一題
+            drawRandomQuestion();
+        }
+        
+        // 切換問題列表中的答案顯示
+        function toggleQuestionAnswer(index, type) {
+            const answerId = `${type}-answer-${index}`;
+            const answerElement = document.getElementById(answerId);
+            const buttonId = `${type}-btn-${index}`;
+            const buttonElement = document.getElementById(buttonId);
+            
+            if (answerElement.classList.contains('show')) {
+                answerElement.classList.remove('show');
+                buttonElement.textContent = '顯示答案';
+            } else {
+                answerElement.classList.add('show');
+                buttonElement.textContent = '隱藏答案';
+            }
+        }
+        
+        // 顯示待答題目列表
+        function showRemainingQuestions() {
+            const availableQuestions = qaData.filter(q => !correctAnswers.includes(q));
+            remainingQuestionCount.textContent = `待答題目 (${availableQuestions.length} 題)`;
+            
+            if (availableQuestions.length === 0) {
+                remainingQuestionList.innerHTML = '<div class="question-item">所有題目都已經答對了！</div>';
+            } else {
+                remainingQuestionList.innerHTML = availableQuestions
+                    .map((q, index) => `
+                        <div class="question-item remaining">
+                            <div class="question-header">
+                                <div class="question-text">${q.question}</div>
+                                <button id="remaining-btn-${index}" class="btn btn-small" onclick="toggleQuestionAnswer(${index}, 'remaining')">顯示答案</button>
+                            </div>
+                            <div id="remaining-answer-${index}" class="question-answer">
+                                ${q.answer}
+                            </div>
+                        </div>
+                    `)
+                    .join('');
+            }
+            
+            remainingModal.style.display = 'flex';
+        }
+        
+        // 顯示已答對題目列表
+        function showCorrectQuestions() {
+            correctQuestionCount.textContent = `已答對題目 (${correctAnswers.length} 題)`;
+            
+            if (correctAnswers.length === 0) {
+                correctQuestionList.innerHTML = '<div class="question-item">尚未答對任何題目</div>';
+            } else {
+                correctQuestionList.innerHTML = correctAnswers
+                    .map((q, index) => `
+                        <div class="question-item correct">
+                            <div class="question-header">
+                                <div class="question-text">${q.question}</div>
+                                <button id="correct-btn-${index}" class="btn btn-small" onclick="toggleQuestionAnswer(${index}, 'correct')">顯示答案</button>
+                            </div>
+                            <div id="correct-answer-${index}" class="question-answer">
+                                ${q.answer}
+                            </div>
+                        </div>
+                    `)
+                    .join('');
+            }
+            
+            correctModal.style.display = 'flex';
+        }
+        
+        // 顯示重設確認模態框
+        function showResetModal() {
+            resetModal.style.display = 'flex';
+        }
+        
+        // 隱藏重設確認模態框
+        function hideResetModal() {
+            resetModal.style.display = 'none';
+        }
+        
+        // 隱藏待答題目模態框
+        function hideRemainingModal() {
+            remainingModal.style.display = 'none';
+        }
+        
+        // 隱藏已答對題目模態框
+        function hideCorrectModal() {
+            correctModal.style.display = 'none';
+        }
+        
+        // 執行重設功能
+        function doResetQuiz() {
+            correctAnswers = [];
+            incorrectAnswers = [];
+            currentQuestion = null;
+            isAnswerShowing = false;
+            
+            questionElem.textContent = "按下「隨機抽題」按鈕開始";
+            answerElem.innerHTML = "";
+            answerContainer.style.maxHeight = "0";
+            feedbackControls.style.maxHeight = "0";
+            showAnswerBtn.textContent = "顯示答案";
+            
+            // 更新統計並保存進度
+            updateStats();
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            hideResetModal();
+        }
+        
+        // 將toggleQuestionAnswer綁定到window以供HTML onclick使用
+        window.toggleQuestionAnswer = toggleQuestionAnswer;
+        
+        // 綁定事件
+        drawBtn.addEventListener('click', drawRandomQuestion);
+        showAnswerBtn.addEventListener('click', toggleAnswer);
+        resetBtn.addEventListener('click', showResetModal);
+        showRemainingBtn.addEventListener('click', showRemainingQuestions);
+        showCorrectBtn.addEventListener('click', showCorrectQuestions);
+        confirmResetBtn.addEventListener('click', doResetQuiz);
+        cancelResetBtn.addEventListener('click', hideResetModal);
+        correctBtn.addEventListener('click', markAsCorrect);
+        incorrectBtn.addEventListener('click', markAsIncorrect);
+        closeRemainingBtn.addEventListener('click', hideRemainingModal);
+        closeCorrectBtn.addEventListener('click', hideCorrectModal);
+        
+        // 點擊模態框背景時關閉模態框
+        resetModal.addEventListener('click', function(e) {
+            if (e.target === resetModal) {
+                hideResetModal();
+            }
+        });
+        
+        remainingModal.addEventListener('click', function(e) {
+            if (e.target === remainingModal) {
+                hideRemainingModal();
+            }
+        });
+        
+        correctModal.addEventListener('click', function(e) {
+            if (e.target === correctModal) {
+                hideCorrectModal();
+            }
+        });
+    </script>
+</body>
+</html>
