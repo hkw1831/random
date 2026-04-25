@@ -997,7 +997,7 @@
             
             // 如果所有問題都回答正確，提示用戶
             if (availableQuestions.length === 0) {
-                questionElem.textContent = "恭喜！所有問題都已經答對了！點擊「重設」重新開始。";
+                questionElem.innerHTML = "恭喜！所有問題都已經答對了！點擊「重設」重新開始。";
                 answerElem.innerHTML = "";
                 currentQuestion = null;
                 return;
@@ -1008,7 +1008,7 @@
             currentQuestion = availableQuestions[randomIndex];
             
             // 更新界面
-            questionElem.textContent = currentQuestion.question;
+            questionElem.innerHTML = currentQuestion.question;
             answerElem.innerHTML = currentQuestion.answer;
         }
         
@@ -1171,7 +1171,7 @@
             currentQuestion = null;
             isAnswerShowing = false;
             
-            questionElem.textContent = "按下「隨機抽題」按鈕開始";
+            questionElem.innerHTML = "按下「隨機抽題」按鈕開始";
             answerElem.innerHTML = "";
             answerContainer.style.maxHeight = "0";
             feedbackControls.style.maxHeight = "0";
