@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM 筋膜手法 CC 點和 CF 點 Q&A 隨機抽題卡</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --background: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #212529;
+            --success: #38b000;
+            --error: #d00000;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--background);
+            padding: 1rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .question {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+        
+        .show-answer-btn-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        
+        .answer-container {
+            margin-top: 1rem;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.5s ease;
+        }
+        
+        .answer-content {
+            background-color: rgba(67, 97, 238, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .answer-content ul {
+            padding-left: 1.5rem;
+        }
+        
+        .answer-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s, transform 0.2s;
+            display: inline-block;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .btn-success:hover {
+            background-color: #2d9600;
+        }
+        
+        .btn-error {
+            background-color: var(--error);
+        }
+        
+        .btn-error:hover {
+            background-color: #b00000;
+        }
+
+        .btn-info {
+            background-color: #6c757d;
+        }
+
+        .btn-info:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .feedback-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+        
+        .count {
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--primary);
+            font-weight: 500;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 1rem 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        
+        .stat-item {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex: 1;
+            min-width: 80px;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            white-space: nowrap;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-value.correct {
+            color: var(--success);
+        }
+        
+        .stat-value.incorrect {
+            color: var(--error);
+        }
+        
+        footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 1rem 0;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .info {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: rgba(67, 97, 238, 0.05);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            padding: 2rem;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            margin: 2rem auto;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .question-list {
+            margin-top: 1rem;
+        }
+
+        .question-item {
+            background-color: rgba(67, 97, 238, 0.05);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95rem;
+        }
+
+        .question-item.correct {
+            border-left-color: var(--success);
+            background-color: rgba(56, 176, 0, 0.05);
+        }
+
+        .question-item.remaining {
+            border-left-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+            gap: 1rem;
+        }
+
+        .question-text {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .question-answer {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            border: 1px solid rgba(67, 97, 238, 0.2);
+            display: none;
+        }
+
+        .question-answer.show {
+            display: block;
+        }
+
+        .question-answer ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+
+        .question-answer li {
+            margin-bottom: 0.5rem;
+        }
+
+        .question-count {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .question-count.correct {
+            color: var(--success);
+        }
+
+        .question-count.remaining {
+            color: var(--primary);
+        }
+
+        @media (max-width: 600px) {
+            .stats {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .stat-item {
+                min-width: calc(50% - 0.5rem);
+                flex: none;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .question {
+                font-size: 1.25rem;
+            }
+            
+            .btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .btn-small {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .controls .btn {
+                width: 100%;
+                margin-right: 0;
+            }
+            
+            .feedback-controls {
+                flex-direction: column;
+            }
+
+            .modal-buttons {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                margin: 1rem auto;
+                padding: 1.5rem;
+                max-width: 95%;
+            }
+
+            .question-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+
+            .question-text {
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>肌肉伸展 Q&A 隨機抽題卡</h1>
+            <p>隨機抽取伸展相關問題並測試自己的知識</p>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">總題數</div>
+                <div id="totalCount" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">待答題數</div>
+                <div id="remainingCount" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">答對</div>
+                <div id="correctCount" class="stat-value correct">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">答錯</div>
+                <div id="incorrectCount" class="stat-value incorrect">0</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="drawBtn" class="btn">隨機抽題</button>
+            <button id="resetBtn" class="btn">重設</button>
+            <button id="showRemainingBtn" class="btn btn-info">查看待答題目</button>
+            <button id="showCorrectBtn" class="btn btn-info">查看已答對題目</button>
+        </div>
+        
+        <div class="info">
+            <p>✓ 正確回答的問題將不再出現</p>
+            <p>✓ 回答錯誤的問題將保留在題庫中再次抽取</p>
+            <p>✓ 按「重設」按鈕可重新開始</p>
+            <p>✓ 可查看待答題目和已答對題目列表</p>
+        </div>
+        
+        <div id="card" class="card">
+            <div id="question" class="question">按下「隨機抽題」按鈕開始</div>
+            
+            <div class="show-answer-btn-container">
+                <button id="showAnswerBtn" class="btn">顯示答案</button>
+            </div>
+            
+            <div id="answerContainer" class="answer-container">
+                <div id="answer" class="answer-content"></div>
+                <div id="feedbackControls" class="feedback-controls">
+                    <button id="correctBtn" class="btn btn-success">我答對了</button>
+                    <button id="incorrectBtn" class="btn btn-error">我答錯了</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 重設確認模態框 -->
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">確定要重設？</div>
+            <p>這將清除所有答題進度，此操作無法撤銷。</p>
+            <div class="modal-buttons">
+                <button id="confirmResetBtn" class="btn btn-error">確定重設</button>
+                <button id="cancelResetBtn" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 待答題目模態框 -->
+    <div id="remainingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">待答題目列表</div>
+            <div id="remainingQuestionCount" class="question-count remaining"></div>
+            <div id="remainingQuestionList" class="question-list"></div>
+            <div class="modal-buttons">
+                <button id="closeRemainingBtn" class="btn">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 已答對題目模態框 -->
+    <div id="correctModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">已答對題目列表</div>
+            <div id="correctQuestionCount" class="question-count correct"></div>
+            <div id="correctQuestionList" class="question-list"></div>
+            <div class="modal-buttons">
+                <button id="closeCorrectBtn" class="btn">關閉</button>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© FM 筋膜手法 CC 點和 CF 點 Q&A 隨機抽題卡</p>
+    </footer>
+    
+    <script>
+        const qaData = 
+[
+  {
+    "question": "p.6 脊柱上的孤度區域",
+    "answer": "<ul><li>頸椎 - 頸椎生理弧度</li><li>胸椎 - 胸椎後凸</li><li>腰椎 - 腰椎生理弧度</li><li>骶椎 - 骶後凸</li></ul>"
+  },
+  {
+    "question": "p.8 新生兒脊椎後凸",
+    "answer": "一個新生嬰的正中矢狀左側面觀。由於嬰兒彎曲在子宫內，所以只有脊柱後凸，而沒有頸椎及腰椎生理弧度。"
+  },
+  {
+    "question": "p.11 脊椎的結構",
+    "answer": "一個脊椎除C1和C2 基本會包含以下幾項元素<br>1 椎體 <br>2 椎弓（椎弓根/椎板）<br>3 棘突<br>4 兩個橫突<br>5 4個關節突（上關節突 下關節突）<br><br><img src=\"https://github.com/piccture74/twpic/raw/master/images/20260425020439-%E8%84%8A%E6%A4%8E%E7%9A%84%E7%B5%90%E6%A7%8B.jpeg\" alt=\"脊椎的結構\">"
+  },
+  {
+    "question": "p.12 C1 C2 C7 叫咩名",
+    "answer": "<ul><li>C1 寰椎</li><li>C2 軸椎</li><li>C7 隆椎</li></ul>"
+  },
+  {
+    "question": "p.13 C1 C2 和其他頸椎有什麼分別",
+    "answer": "<ul><li>C1 的棘突不是棘突，是叫後結節（方向向上</li><li>C2 棘突平的，其他棘突都是向下</li><li>C1 C2 沒有椎體</li><li>C2 也有橫突孔但圖上看不到孔</li></ul>"
+  },
+  {
+    "question": "p.16 C7 和 C3456有什麼分別",
+    "answer": "棘突大條好多"
+  },
+  {
+    "question": "p.17 相比頸椎和腰椎，有一樣野係胸椎獨有的是什麼？",
+    "answer": "肋面"
+  },
+  {
+    "question": "p.22 椎間盤結構",
+    "answer": "<ol><li>髓核</li><li>纖維環（外纖維環 / 內纖維環）</li></ol>"
+  },
+  {
+    "question": "p.22 椎間盤功能",
+    "answer": "<ol><li>髓核扮演著一個氣墊的角色，它能夠維持脊壓力的中軸，當中它的含水量達成 80-85%，因而產生一個靜水壓系統，有效吸收因地心吸力或運動時產生的衝力</li><li>當受到壓力時，椎間盤會以流體外流的力量去抵抗外來的壓力。椎骨之間的高度亦會降低</li><li>當壓力釋放時，椎骨的高度亦會回升，椎間盤沒有受到太大壓力，所以亦沒有產生流體外流的力量</li></ol>"
+  },
+  {
+    "question": "p.23 T11-L3脊椎附近之韌帶",
+    "answer": "<ul><li>前縱韌帶</li><li>後縱韌帶</li><li>黃韌帶</li><li>棘間韌帶</li><li>棘上韌帶</li><li>橫突間韌帶</li></ul><br><img src=\"https://github.com/piccture74/twpic/raw/master/images/20260425020435-%E9%9F%8C%E5%B8%B6.jpeg\" alt=\"韌帶\">"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110346-PST_1.jpeg\" alt=\"PST_1\">",
+    "answer": "<ol><li>頸棘間肌</li><li>腰棘間肌</li><li>胸棘肌</li><li>頸棘肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110349-PST_2.jpeg\" alt=\"PST_2\">",
+    "answer": "<ul><li>a 骼肋腰肌</li><li>b 最長肌</li><li>1 腰髂肋肌</li><li>2 胸髂肋肌</li><li>3 頸髂肋肌</li><li>4 胸最長肌</li><li>5 頸最長肌</li><li>6 頭最長肌</li></ul>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110352-PST_3.jpeg\" alt=\"PST_3\">",
+    "answer": "<ol start=\"7\"><li>頸夾肌</li><li>頭夾肌</li><li>腰橫突間內側肌</li><li>腰橫突間外側肌</li><li>頸橫突間肌</li><li>肋短提肌</li><li>肋長提肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110356-PST_4.jpeg\" alt=\"PST_4\">",
+    "answer": "<ul><li>a 胸短/長肌</li><li>b 多裂肌</li><li>c 半棘肌</li><li>5 胸短肌</li><li>6 胸長肌</li><li>7 多裂肌</li><li>8 胸半棘肌</li><li>9 頸半棘肌</li><li>10 頭半棘肌</li></ul>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110359-PST_5.jpeg\" alt=\"PST_5\">",
+    "answer": "<ol><li>頭後大直肌</li><li>頭後小直肌</li><li>頭上斜肌</li><li>頭下斜肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110302-PST_6.jpeg\" alt=\"PST_6\">",
+    "answer": "<ol><li>頭長肌</li><li>頸長肌</li><li>頭前直肌</li><li>頭側直肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110305-PST_7.jpeg\" alt=\"PST_7\">",
+    "answer": "<ol><li>腹直肌</li><li>錐狀肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110308-PST_8.jpeg\" alt=\"PST_8\">",
+    "answer": "1 腰大肌 2 髂肌"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260425030426-%E8%85%B9%E8%82%8C.jpeg\" alt=\"腹肌\">",
+    "answer": "左：腹外斜肌<br>中：腹內斜肌<br>右：腹橫肌"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110310-PST_9.jpeg\" alt=\"PST_9\">",
+    "answer": "<ol><li>前斜角肌</li><li>中斜角肌</li><li>後斜角肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110314-PST_10.jpeg\" alt=\"PST_10\">",
+    "answer": "<ol start=\"4\"><li>外肋間肌</li><li>肉肋間肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110317-PST_11.jpeg\" alt=\"PST_11\">",
+    "answer": "<ol><li>上斜方肌</li><li>中斜方肌</li><li>下斜方肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110320-PST_12.jpeg\" alt=\"PST_12\">",
+    "answer": "三個都係前鋸肌"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110323-PST_13.jpeg\" alt=\"PST_13\">",
+    "answer": "<ol><li>鎖骨下肌</li><li>胸小肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110326-PST_14.jpeg\" alt=\"PST_14\">",
+    "answer": "<ol><li>提肩胛肌</li><li>小菱形肌</li><li>大菱形肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110329-PST_15.jpeg\" alt=\"PST_15\">",
+    "answer": "<ol><li>棘上肌</li><li>棘下肌</li><li>小圓肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110331-PST_16.jpeg\" alt=\"PST_16\">",
+    "answer": "<ol><li>前三角肌</li><li>中三角肌</li><li>後三角肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110336-PST_17.jpeg\" alt=\"PST_17\">",
+    "answer": "<ol><li>背闊肌</li><li>大圓肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110339-PST_18.jpeg\" alt=\"PST_18\">",
+    "answer": "<ol><li>1a 胸大肌鎖骨部份</li><li>1b 胸大肌胸骨部份</li><li>1c 胸大肌腹部</li><li>2 喙肱肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110342-PST_19.jpeg\" alt=\"PST_19\">",
+    "answer": "<ol><li>肱二頭肌</li><li>肱肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110344-PST_20.jpeg\" alt=\"PST_20\">",
+    "answer": "上 三頭肌長頭<br>中 三頭肌外側頭<br>下 三頭肌內側頭"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110347-PST_21.jpeg\" alt=\"PST_21\">",
+    "answer": "<ol><li>旋前圓肌</li><li>指淺屈肌</li><li>橈側腕屈肌</li><li>尺側腕屈肌</li><li>掌長肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260323010304-PST.jpeg\" alt=\"PST\">",
+    "answer": "<ol><li>指淺屈肌</li><li>拇長屈肌</li><li>旋前方肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110350-PST_22.jpeg\" alt=\"PST_22\">",
+    "answer": "<ol><li>指伸肌</li><li>小指伸肌</li><li>尺側腕伸肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110353-PST_23.jpeg\" alt=\"PST_23\">",
+    "answer": "<ol><li>腰大肌</li><li>髂肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110357-PST_24.jpeg\" alt=\"PST_24\">",
+    "answer": "<ol><li>臀大肌</li><li>臀中肌</li><li>臀小肌</li><li>闊筋膜張肌</li><li>梨狀肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110300-PST_25.jpeg\" alt=\"PST_25\">",
+    "answer": "<ol><li>閉孔內肌</li><li>孖肌</li><li>股方肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110303-PST_26.jpeg\" alt=\"PST_26\">",
+    "answer": "<ol><li>閉孔外肌</li><li>恥骨肌</li><li>內收長肌</li><li>內收短肌</li><li>內收大肌</li><li>內收小肌</li><li>股薄肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110306-PST_27.jpeg\" alt=\"PST_27\">",
+    "answer": "<ol><li>股二頭肌</li><li>半膜肌</li><li>半腱肌</li><li>膕肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110309-PST_28.jpeg\" alt=\"PST_28\">",
+    "answer": "<ol><li>縫匠肌</li><li>肌四頭肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110312-PST_29.jpeg\" alt=\"PST_29\">",
+    "answer": "<ol><li>脛前肌</li><li>趾長伸肌</li><li>拇長伸肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110319-PST_30.jpeg\" alt=\"PST_30\">",
+    "answer": "<ol><li>腓骨長肌</li><li>腓骨短肌</li><li>腓骨第三肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110322-PST_31.jpeg\" alt=\"PST_31\">",
+    "answer": "<ol><li>小腿三頭肌</li><li>蹠肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110324-PST_32.jpeg\" alt=\"PST_32\">",
+    "answer": "<ol><li>脛後肌</li><li>趾長屈肌</li><li>拇長屈肌</li></ol>"
+  },
+  {
+    "question": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260322110327-PST_33.jpeg\" alt=\"PST_33\">",
+    "answer": "<ol><li>豎棘肌</li><li>胸腰筋膜淺層</li><li>胸腰筋膜深層</li><li>腰大肌</li><li>壁腹膜</li><li>腹牆肌側腱膜</li><li>淺層膜橫帶</li><li>腹直肌鞘</li><li>白線</li><li>腹直肌</li><li>腹外斜肌</li><li>腹內斜肌</li><li>腹橫肌</li><li>第三脊椎體</li><li>腰方肌</li></ol>"
+  },
+  {
+    "question": "p.6 連續性訓練",
+    "answer": "<img src=\"https://github.com/piccture74/twpic/raw/master/images/20260425030443-%E9%80%A3%E7%BA%8C%E6%80%A7%E8%A8%93%E7%B7%B4.jpeg\" alt=\"連續性訓練\">"
+  },
+  {
+    "question": "p.11 疲倦的主因",
+    "answer": "<ol><li>代謝因素 - 體力 / 體能不足</li><li>神經因素 - 腦疲勞、肌肉累積性疲勞</li><li>環境因素 - 旅行對身體失衡的恆定現象</li><li>心理因素 - 情緒及社會壓力源</li></ol>"
+  },
+  {
+    "question": "p.20 恢復的心理技巧",
+    "answer": "<ol><li>情緒恢復：情緒舒解活動，如聽音樂或看電影</li><li>放鬆技巧：冥想 / 深呼吸 / 漸進式放鬆法</li></ol>"
+  },
+  {
+    "question": "水中恢復",
+    "answer": "泳池恢復（水中運動）：15-40分鐘<br>水療（水噴射按摩）：20分鐘有助於肌肉的恢復<br>淋浴：在5-10分鐘後，訓練或比賽<br>浴室：熱水澡：可提高睡眠質量<br>桑拿：90度"
+  },
+  {
+    "question": "什麼是積極性恢復 active recovery",
+    "answer": "專項運動（如足球：慢跑 / 自行車：功率自行車 / 交叉訓練：啟動未使用的肌肉）<br>強度： 50%的最大攝氧量<br>體積:15分鐘"
+  },
+  {
+    "question": "什麼是尖細 Taper",
+    "answer": "一個進步的非線性訓練是是在一段時間減少一個變量負荷，試圖以減少日常訓練的生理和心理壓力和提高體能<br>80%強度但做很少時間"
+  },
+  {
+    "question": "第一類槓桿",
+    "answer": "支點在動力點和阻力點的中間，<br>既可能省力的，也可能費力的<br>主要由支點的位置決定，或者說由臂的長度決定<br><br>例子：<br>頭部往上移，斜方肌是力點，第一節頸椎是支點，頭部是重點。"
+  },
+  {
+    "question": "第二類槓桿",
+    "answer": "阻力點在動力點和支點中間<br>由於動力臂總是大於阻力臂，所以它是省力槓桿"
+  },
+  {
+    "question": "第三類槓桿",
+    "answer": "動力點在支點和阻力點之間<br>特點是動力臂比阻力臂短，所以這類槓桿是費力槓桿，然而能夠節省距離"
+  },
+  {
+    "question": "主動不足是什麼",
+    "answer": "雙關節肌肉同時在兩個關節縮短到極限，肌肉無法有效產生力量<br><br>例如膕膀肌收縮至最終時，這會產生hip extension 及 knee flexion，這樣膕膀肌是不能有效地發生等長收縮。這個狀態被稱為主動不足"
+  },
+  {
+    "question": "被動不足是什麼",
+    "answer": "雙關節肌肉同時被拉長到極限，肌肉伸展能力達到極限，限制活動範圍<br><br>相反，當肌肉延長至最終時，肌肉會超越了關節，而數量不足的肌絲又會重疊，導致肌肉不能夠產生有效收縮，這個狀態被稱為被動不足"
+  },
+  {
+    "question": "上肢的基本運動形式",
+    "answer": "<ul><li>推：在克服阻力時，上肢由屈曲態變為伸展態的動作過程</li><li>拉：在克肌阻力時，上肢由伸展態變為屈由態的動作過程</li><li>鞭打：在克肌阻力或自體位移時，上肢各環節依次加速、制動，使末端環節產地生極大速度的動作形式，叫鞭打動作。如投擲。</li></ul>"
+  },
+  {
+    "question": "下肢的基本運動形式",
+    "answer": "<ul><li>緩衝：在克服阻力時，下肢由伸展態轉為較為屈曲態的動作過程。如跳遠前起跳時擺動腿的動作</li><li>蹬伸：在克服阻力時，下肢由屈曲態主動轉為伸展態的動作過程。如跳遠前起跳時起跳腿的動作</li><li>鞭打：在完成自由泳的兩腿打水動作時，下肢各環節有類似上肢的鞭打動作</li></ul>"
+  },
+  {
+    "question": "全身基本運動形式",
+    "answer": "<ul><li>擺動：身體某一部分完成主要動作（如一條腿的起跳）時，另一部分配合主要動作進行加速擺動（如隻臂和另一條腿配會起跳的擺動）動作形式，稱擺動</li><li>軀幹扭轉：在身體各部位完成動作時，軀體上下肢沿身體縱軸的反向轉動的運動形式</li><li>相向運動：依據運動形式，把身體兩部分相互接近或遠離的運動形式稱相向運動</li></ul>"
+  },
+  {
+    "question": "外力的種類",
+    "answer": "<ol><li>人體重力</li><li>支撐反作用力</li><li>摩擦力</li><li>慣性力</li><li>流體阻力</li><li>器械的其他阻力</li></ol>"
+  },
+  {
+    "question": "內力的種類",
+    "answer": "<ol><li>肌拉力</li><li>各組織器官間的被動阻力</li><li>各內臟器官的魔擦力</li><li>內臟器官和固定裝置間的阻力</li></ol>"
+  },
+  {
+    "question": "人體重心",
+    "answer": "為了訓練平衝功能差的患者的平衡能力，開始訓練時，可以先練習坐位（重心低支撑面較大）平衡，完成後練習位位平衡時，可先分開雙腿以加大支撑面使重心比較低，練習靜態和動態平衡，達到一定效果後，再逐漸過渡到並足訓練。<br><br><img src=\"https://github.com/piccture74/twpic/raw/master/images/20260425030435-%E4%BA%BA%E9%AB%94%E9%87%8D%E5%BF%83.jpeg\" alt=\"人體重心\">"
+  },
+  {
+    "question": "人體重心在那裡",
+    "answer": "在地板量起的身高 55% 處，大約在肚臍下方約三公分處"
+  },
+  {
+    "question": "什麼是壓力？",
+    "answer": "壓力 Stress 可以是泛指任何造成生理或心理不正常的干擾。但通常是指精神壓力。以下討論也是精神壓力。<br><br>總之，要求實際上或感覺上高於自己的能力時，生理和心理便會有不同程度的反應。<br><br>初期會疲倦、暴燥，後來會神經緊張、焦慮。自己未必察覺，反而身旁的親友會容易察覺到。"
+  },
+  {
+    "question": "遇到令我們驚惶的情況時，我們會：",
+    "answer": "心跳會加快，身體會預備去應付這些情況：挑選或逃避反應（by 肯農）"
+  },
+  {
+    "question": "大部分人對壓力有如下三個的誤解（還有三個）：",
+    "answer": "<ol><li>壓力是不安而已</li><li>壓力全都源自於不如意的事件</li><li>壓力是全然有害的</li></ol><br>壓力本身並非壞事，因為人體的運作本來就是各種壓力的承受與排解。<br><br>壓力會使人更具生命力，或在壓力之下激發潛能而表現更好。<br><br>壓力之所以危害人體，是在壓力過大，或持續過久或次數（發生頻率）過多時，特別是壓力集於某一特定器官或機能時，危害更大。"
+  },
+  {
+    "question": "身體對壓力的反應順序",
+    "answer": "當我們還到壓力時，壓力源的訊息會從感覺器官，如眼 鼻 肌肉等，透過神經系統，傳送到腦部<br><br>大腦 - 身體內最主要的指揮中心，便會把這些訊息透過邊緣組織或視丘傳送到身體各部份<br><br>邊緣組織是情緒參與的所在，視丘是整合信號、做出決定的器官<br><br>視丘指令通過內分泌及自主神經系統對壓力作出反應及調整"
+  },
+  {
+    "question": "內分泌系統分泌的腎上腺皮質類脂醇的作用是？",
+    "answer": "提高血糖量，讓人體有更多的能量去處理壓力，作出挑戰或逃避反應"
+  },
+  {
+    "question": "當視丘下部的前方及腦下垂體分泌皮質醇釋放荷爾蒙及皮質素荷爾蒙是，腎上腺外層會會分泌出什麼？",
+    "answer": "糖皮質類脂醇 及 礦物皮質類脂醇"
+  },
+  {
+    "question": "糖皮質類脂醇主要的作用是？",
+    "answer": "提高血糖量，讓人體產生更多的能量"
+  },
+  {
+    "question": "礦物皮質脂醇主要的作用是？",
+    "answer": "運送氧氣至器官及肢體"
+  },
+  {
+    "question": "當腦下垂體被刺激，甲狀腺便會分泌出什麼，有什麼作用？",
+    "answer": "甲狀腺素，加速新陳代謝及減低疲倦的感覺"
+  },
+  {
+    "question": "當視丘下部的後方透過神經刺激腎上腺延髓，腎上腺延髓便會分泌出什麼？有什麼作用？",
+    "answer": "兒茶酚胺，能：<br>- 加速心跳<br>- 加強血液由心臟泵出來的動力<br>- 擴張冠狀動脈<br>- 擴張支氣管<br>- 加速其礎新陳代謝率<br>- 收縮上、下肢肌肉及皮膚的血管<br>- 增加氧氣消耗"
+  },
+  {
+    "question": "交感神經系統主要負責什麼？",
+    "answer": "消耗能量"
+  },
+  {
+    "question": "副交感神經系統主要負責什麼？",
+    "answer": "儲存能量"
+  },
+  {
+    "question": "身體肌肉對壓力有什麼反應？",
+    "answer": "壓力會令肌肉收縮、繃緊，可能引致頭痛和背痛"
+  },
+  {
+    "question": "身體皮膚會對壓力有什麼反應？",
+    "answer": "壓力會增加汗流，和減低皮膚表面的溫到度，令皮膚變得冰冷及蒼白。這也可能會導致粉刺和頭皮屑的產生。"
+  },
+  {
+    "question": "A型人面對壓力時的反應：",
+    "answer": "壓力反應的第一線是心臟、血管系統，有許多早期健康心理學的研究發現，A型性格的人比較容易得心臟病。"
+  },
+  {
+    "question": "壓力的反應 - 生理反應：",
+    "answer": "<ol><li>警報反應期：震撼期 / 反擊期</li><li>抵抗階段</li><li>耗竭期</li></ol>"
+  },
+  {
+    "question": "腹式呼吸法的好處",
+    "answer": "腹或呼吸法能做深層的體內按摩，讓體內攝取更充分的氧氣。<br><br>一來既可淨化血液，也能促進腦細胞活性化。<br><br>如止會減少頭昏、有助精神不濟，同時能有效地紐解壓力。"
+  },
+  {
+    "question": "微小動作失去<br><img src=\"https://raw.githubusercontent.com/piccture74/twpic/master/images/1774352218000zxtt4r.png\" alt=\"gh\">",
+    "answer": "<ol><li>解剖障礙</li><li>彈性障礙</li><li>生理障礙</li><li>由於肌筋膜變短以導致於失去動作</li><li>主動動作可獲的空間</li><li>受限障礙</li><li>動作失去</li><li>中間中立位</li><li>病理中立</li></ol>"
+  },
+  {
+    "question": "過度牽張是什麼？",
+    "answer": "過度牽張是指對關節或周圍的軟組織施予超過正常活動度的牽張，而造成活動度過大。"
+  },
+  {
+    "question": "黐連",
+    "answer": "要維持組織的健康及柔軟度，必須有足夠的活動；如果缺乏動作會使膠原纖維間的橫向連結增加而產生黐連。假如組織長時間處於縮短的位置上固定不動，就會失去正常活動度，也就是結締組織內的結構改變而產生攣縮。"
+  },
+  {
+    "question": "什麼是不可逆攣縮",
+    "answer": "這是指正常的軟組織或結構完整的結締組織被過量無延展性的組織如骨頭或纖維組織所取代，而永久失去其延展性的情形，且無法以非手術的方法來改善。"
+  },
+  {
+    "question": "什麼是假性肌原性攣縮",
+    "answer": "因中樞神經系統損傷使肌肉張力過高，也會造成活動度受限。肌肉會不適當且持續收縮，而使活動度受限。"
+  },
+  {
+    "question": "肌肉的可收縮部分",
+    "answer": "單一肌肉是由許多的肌肉纖維所組成，一條肌肉纖維是由許多肌原纖維所組成；而肌原纖維是由許多肌小節串連排列組結合而成。肌小節是肌原纖維的收縮單位，由肌動蛋白及肌凝蛋白的重疊交叉橋所組成，肌小節賦予肌肉收縮及放鬆的能力。當肌肉收縮時，肌動蛋白 - 肌凝蛋白絲會滑動靠近，肌肉即縮短；肌肉放鬆時，交叉橋會稍微滑開，肌肉即恢復到原來長度。"
+  },
+  {
+    "question": "肌肉如果一段時間固定不動會如何",
+    "answer": "會使肌肉內的蛋白質及粒線體減少，導致肌肉萎縮及無力。"
+  },
+  {
+    "question": "肌梭",
+    "answer": "肌梭是肌肉內主要的感覺器官，由許多微小的肌梭內纖維組合而成，並且平行於肌梭外纖維。肌梭可以監測牽張的速度及時間，並且感覺肌肉長度的變化。"
+  },
+  {
+    "question": "GTO",
+    "answer": "GTO 位於肌肉肌腱連合處附近，可以感覺出肌肉被動牽張或主動收縮時的張力。<br><br>肌肉主動收縮後激發閥值相當低，對被動牽張的激發閥值較高。<br><br>肌肉張力過高時， GTO 會被激發，supress alpha 運動神經元的活動，以降低肌肉的張力。"
+  }
+]
+;
+        
+        // 初始化變數
+        let currentQuestion = null;
+        let correctAnswers = [];
+        let incorrectAnswers = [];
+        let isAnswerShowing = false;
+        let storageAvailable = false;
+        
+        // 取得DOM元素
+        const drawBtn = document.getElementById('drawBtn');
+        const showAnswerBtn = document.getElementById('showAnswerBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const showRemainingBtn = document.getElementById('showRemainingBtn');
+        const showCorrectBtn = document.getElementById('showCorrectBtn');
+        const questionElem = document.getElementById('question');
+        const answerElem = document.getElementById('answer');
+        const answerContainer = document.getElementById('answerContainer');
+        const feedbackControls = document.getElementById('feedbackControls');
+        const correctBtn = document.getElementById('correctBtn');
+        const incorrectBtn = document.getElementById('incorrectBtn');
+        
+        // 重設確認模態框元素
+        const resetModal = document.getElementById('resetModal');
+        const confirmResetBtn = document.getElementById('confirmResetBtn');
+        const cancelResetBtn = document.getElementById('cancelResetBtn');
+        
+        // 待答題目模態框元素
+        const remainingModal = document.getElementById('remainingModal');
+        const closeRemainingBtn = document.getElementById('closeRemainingBtn');
+        const remainingQuestionCount = document.getElementById('remainingQuestionCount');
+        const remainingQuestionList = document.getElementById('remainingQuestionList');
+        
+        // 已答對題目模態框元素
+        const correctModal = document.getElementById('correctModal');
+        const closeCorrectBtn = document.getElementById('closeCorrectBtn');
+        const correctQuestionCount = document.getElementById('correctQuestionCount');
+        const correctQuestionList = document.getElementById('correctQuestionList');
+        
+        // 統計數據元素
+        const totalCountElem = document.getElementById('totalCount');
+        const remainingCountElem = document.getElementById('remainingCount');
+        const correctCountElem = document.getElementById('correctCount');
+        const incorrectCountElem = document.getElementById('incorrectCount');
+        
+        // 檢測localStorage是否可用
+        function checkStorageAvailability() {
+            try {
+                const testKey = 'test-storage';
+                localStorage.setItem(testKey, '1');
+                localStorage.removeItem(testKey);
+                storageAvailable = true;
+                return true;
+            } catch (e) {
+                storageAvailable = false;
+                return false;
+            }
+        }
+        
+        // 本地存儲鍵
+        const STORAGE_KEY = 'muscleStretchFlashcards';
+        
+        // 保存進度到本地存儲
+        function saveProgress() {
+            if (!storageAvailable) return;
+            
+            try {
+                // 只保存問題文本，而不是整個對象
+                const correctQuestions = correctAnswers.map(q => q.question);
+                const incorrectQuestions = incorrectAnswers.map(q => q.question);
+                
+                const data = {
+                    correctQuestions,
+                    incorrectQuestions
+                };
+                
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.error('保存進度時出錯：', e);
+                storageAvailable = false;
+            }
+        }
+        
+        // 從本地存儲加載進度
+        function loadProgress() {
+            if (!storageAvailable) return;
+            
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                if (!data) return;
+                
+                const { correctQuestions, incorrectQuestions } = JSON.parse(data);
+                
+                // 根據問題文本還原對象引用
+                correctAnswers = qaData.filter(q => correctQuestions.includes(q.question));
+                incorrectAnswers = qaData.filter(q => incorrectQuestions.includes(q.question));
+                
+                // 更新統計
+                updateStats();
+            } catch (e) {
+                console.error('加載進度時出錯：', e);
+                storageAvailable = false;
+            }
+        }
+        
+        // 更新統計數據
+        function updateStats() {
+            totalCountElem.textContent = qaData.length;
+            remainingCountElem.textContent = qaData.length - correctAnswers.length;
+            correctCountElem.textContent = correctAnswers.length;
+            incorrectCountElem.textContent = incorrectAnswers.length;
+        }
+        
+        // 初始化 - 檢測存儲可用性並加載保存的進度
+        checkStorageAvailability();
+        if (storageAvailable) {
+            loadProgress();
+        }
+        updateStats();
+        
+        // 隨機抽題
+        function drawRandomQuestion() {
+            // 重置顯示答案按鈕狀態
+            showAnswerBtn.textContent = "顯示答案";
+            answerContainer.style.maxHeight = "0";
+            feedbackControls.style.maxHeight = "0";
+            isAnswerShowing = false;
+            
+            // 過濾掉已經回答正確的問題
+            const availableQuestions = qaData.filter(q => !correctAnswers.includes(q));
+            
+            // 如果所有問題都回答正確，提示用戶
+            if (availableQuestions.length === 0) {
+                questionElem.textContent = "恭喜！所有問題都已經答對了！點擊「重設」重新開始。";
+                answerElem.innerHTML = "";
+                currentQuestion = null;
+                return;
+            }
+            
+            // 隨機選取一個問題
+            const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+            currentQuestion = availableQuestions[randomIndex];
+            
+            // 更新界面
+            questionElem.textContent = currentQuestion.question;
+            answerElem.innerHTML = currentQuestion.answer;
+        }
+        
+        // 顯示答案
+        function toggleAnswer() {
+            if (!currentQuestion) return;
+            
+            if (isAnswerShowing) {
+                answerContainer.style.maxHeight = "0";
+                feedbackControls.style.maxHeight = "0";
+                showAnswerBtn.textContent = "顯示答案";
+            } else {
+                answerContainer.style.maxHeight = "1000px";
+                feedbackControls.style.maxHeight = "100px";
+                showAnswerBtn.textContent = "隱藏答案";
+            }
+            
+            isAnswerShowing = !isAnswerShowing;
+        }
+        
+        // 標記為正確答案
+        function markAsCorrect() {
+            if (!currentQuestion) return;
+            
+            // 從不正確列表中移除（如果存在）
+            const incorrectIndex = incorrectAnswers.indexOf(currentQuestion);
+            if (incorrectIndex !== -1) {
+                incorrectAnswers.splice(incorrectIndex, 1);
+            }
+            
+            // 加入正確列表（如果尚未加入）
+            if (!correctAnswers.includes(currentQuestion)) {
+                correctAnswers.push(currentQuestion);
+            }
+            
+            // 更新統計數據
+            updateStats();
+            
+            // 保存進度
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            // 抽取下一題
+            drawRandomQuestion();
+        }
+        
+        // 標記為錯誤答案
+        function markAsIncorrect() {
+            if (!currentQuestion) return;
+            
+            // 加入不正確列表（如果尚未加入）
+            if (!incorrectAnswers.includes(currentQuestion)) {
+                incorrectAnswers.push(currentQuestion);
+            }
+            
+            // 更新統計數據
+            updateStats();
+            
+            // 保存進度
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            // 抽取下一題
+            drawRandomQuestion();
+        }
+        
+        // 切換問題列表中的答案顯示
+        function toggleQuestionAnswer(index, type) {
+            const answerId = `${type}-answer-${index}`;
+            const answerElement = document.getElementById(answerId);
+            const buttonId = `${type}-btn-${index}`;
+            const buttonElement = document.getElementById(buttonId);
+            
+            if (answerElement.classList.contains('show')) {
+                answerElement.classList.remove('show');
+                buttonElement.textContent = '顯示答案';
+            } else {
+                answerElement.classList.add('show');
+                buttonElement.textContent = '隱藏答案';
+            }
+        }
+        
+        // 顯示待答題目列表
+        function showRemainingQuestions() {
+            const availableQuestions = qaData.filter(q => !correctAnswers.includes(q));
+            remainingQuestionCount.textContent = `待答題目 (${availableQuestions.length} 題)`;
+            
+            if (availableQuestions.length === 0) {
+                remainingQuestionList.innerHTML = '<div class="question-item">所有題目都已經答對了！</div>';
+            } else {
+                remainingQuestionList.innerHTML = availableQuestions
+                    .map((q, index) => `
+                        <div class="question-item remaining">
+                            <div class="question-header">
+                                <div class="question-text">${q.question}</div>
+                                <button id="remaining-btn-${index}" class="btn btn-small" onclick="toggleQuestionAnswer(${index}, 'remaining')">顯示答案</button>
+                            </div>
+                            <div id="remaining-answer-${index}" class="question-answer">
+                                ${q.answer}
+                            </div>
+                        </div>
+                    `)
+                    .join('');
+            }
+            
+            remainingModal.style.display = 'flex';
+        }
+        
+        // 顯示已答對題目列表
+        function showCorrectQuestions() {
+            correctQuestionCount.textContent = `已答對題目 (${correctAnswers.length} 題)`;
+            
+            if (correctAnswers.length === 0) {
+                correctQuestionList.innerHTML = '<div class="question-item">尚未答對任何題目</div>';
+            } else {
+                correctQuestionList.innerHTML = correctAnswers
+                    .map((q, index) => `
+                        <div class="question-item correct">
+                            <div class="question-header">
+                                <div class="question-text">${q.question}</div>
+                                <button id="correct-btn-${index}" class="btn btn-small" onclick="toggleQuestionAnswer(${index}, 'correct')">顯示答案</button>
+                            </div>
+                            <div id="correct-answer-${index}" class="question-answer">
+                                ${q.answer}
+                            </div>
+                        </div>
+                    `)
+                    .join('');
+            }
+            
+            correctModal.style.display = 'flex';
+        }
+        
+        // 顯示重設確認模態框
+        function showResetModal() {
+            resetModal.style.display = 'flex';
+        }
+        
+        // 隱藏重設確認模態框
+        function hideResetModal() {
+            resetModal.style.display = 'none';
+        }
+        
+        // 隱藏待答題目模態框
+        function hideRemainingModal() {
+            remainingModal.style.display = 'none';
+        }
+        
+        // 隱藏已答對題目模態框
+        function hideCorrectModal() {
+            correctModal.style.display = 'none';
+        }
+        
+        // 執行重設功能
+        function doResetQuiz() {
+            correctAnswers = [];
+            incorrectAnswers = [];
+            currentQuestion = null;
+            isAnswerShowing = false;
+            
+            questionElem.textContent = "按下「隨機抽題」按鈕開始";
+            answerElem.innerHTML = "";
+            answerContainer.style.maxHeight = "0";
+            feedbackControls.style.maxHeight = "0";
+            showAnswerBtn.textContent = "顯示答案";
+            
+            // 更新統計並保存進度
+            updateStats();
+            if (storageAvailable) {
+                saveProgress();
+            }
+            
+            hideResetModal();
+        }
+        
+        // 將toggleQuestionAnswer綁定到window以供HTML onclick使用
+        window.toggleQuestionAnswer = toggleQuestionAnswer;
+        
+        // 綁定事件
+        drawBtn.addEventListener('click', drawRandomQuestion);
+        showAnswerBtn.addEventListener('click', toggleAnswer);
+        resetBtn.addEventListener('click', showResetModal);
+        showRemainingBtn.addEventListener('click', showRemainingQuestions);
+        showCorrectBtn.addEventListener('click', showCorrectQuestions);
+        confirmResetBtn.addEventListener('click', doResetQuiz);
+        cancelResetBtn.addEventListener('click', hideResetModal);
+        correctBtn.addEventListener('click', markAsCorrect);
+        incorrectBtn.addEventListener('click', markAsIncorrect);
+        closeRemainingBtn.addEventListener('click', hideRemainingModal);
+        closeCorrectBtn.addEventListener('click', hideCorrectModal);
+        
+        // 點擊模態框背景時關閉模態框
+        resetModal.addEventListener('click', function(e) {
+            if (e.target === resetModal) {
+                hideResetModal();
+            }
+        });
+        
+        remainingModal.addEventListener('click', function(e) {
+            if (e.target === remainingModal) {
+                hideRemainingModal();
+            }
+        });
+        
+        correctModal.addEventListener('click', function(e) {
+            if (e.target === correctModal) {
+                hideCorrectModal();
+            }
+        });
+    </script>
+</body>
+</html>
