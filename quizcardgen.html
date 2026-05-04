@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Table → JSON</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 920px;
+      margin: 2rem auto;
+      padding: 0 1.2rem;
+      background: #f5f5f5;
+      color: #222;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 1.2rem; }
+    .section { margin-bottom: 0.6rem; }
+    label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9rem; }
+    textarea {
+      width: 100%;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 12.5px;
+      line-height: 1.5;
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+      resize: vertical;
+    }
+    textarea:focus { outline: none; border-color: #0078d4; box-shadow: 0 0 0 2px #0078d420; }
+    .buttons {
+      display: flex;
+      gap: 0.6rem;
+      margin: 0.8rem 0;
+    }
+    button {
+      padding: 0.45rem 1.2rem;
+      font-size: 0.9rem;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    #btnConvert {
+      background: #0078d4;
+      color: #fff;
+      border: none;
+    }
+    #btnConvert:hover { background: #005fa3; }
+    #btnCopy {
+      background: #fff;
+      color: #333;
+      border: 1px solid #bbb;
+    }
+    #btnCopy:hover { background: #f0f0f0; }
+    #btnCopy.copied {
+      background: #d4edda;
+      border-color: #28a745;
+      color: #155724;
+    }
+    #status {
+      font-size: 0.8rem;
+      color: #666;
+      margin-left: 0.5rem;
+      align-self: center;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Markdown Table → JSON Converter</h1>
+
+<div class="section">
+  <label for="inputArea">Input — Markdown Table</label>
+  <textarea id="inputArea" rows="16" placeholder="Paste your markdown table here…"></textarea>
+</div>
+
+<div class="buttons">
+  <button id="btnConvert" onclick="convert()">Convert</button>
+  <button id="btnCopy" onclick="copyOutput()">Copy Output</button>
+  <span id="status"></span>
+</div>
+
+<div class="section">
+  <label for="outputArea">Output — JSON</label>
+  <textarea id="outputArea" rows="20" readonly placeholder="JSON output will appear here…"></textarea>
+</div>
+
+<script>
+  // ── Inline markdown → HTML fragment ───────────────────────────────────────
+
+  function cellToHTML(raw) {
+    let text = raw.trim();
+
+    // 1. Images: ![alt](url) → <img src="url" alt="alt">
+    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+
+    // 2. Links: [text](url) → <a href="url">text</a>  (after images are gone)
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+    // 3. Bullet list: every <br>-separated segment starts with "- "
+    const brParts = text.split('<br>').map(p => p.trim()).filter(p => p !== '');
+    if (brParts.length > 0 && brParts.every(p => /^- /.test(p))) {
+      return '<ul>' + brParts.map(p => '<li>' + p.slice(2) + '</li>').join('') + '</ul>';
+    }
+
+    // 4. Ordered list: every <br><br>-separated segment starts with "N  "
+    const dblParts = text.split('<br><br>').map(p => p.trim()).filter(p => p !== '');
+    if (dblParts.length > 1 && dblParts.every(p => /^\d+\s+\S/.test(p))) {
+      return '<ol>' + dblParts.map(p => '<li>' + p.replace(/^\d+\s+/, '') + '</li>').join('') + '</ol>';
+    }
+
+    return text;
+  }
+
+  // ── Markdown table parser ─────────────────────────────────────────────────
+
+  function isSeparator(cells) {
+    return cells.length > 0 && cells.every(c => /^[-:\s]+$/.test(c));
+  }
+
+  function parseRow(line) {
+    const parts = line.split('|');
+    // Strip the empty strings produced by the leading/trailing |
+    return parts.slice(1, parts.length - 1).map(c => c.trim());
+  }
+
+  function convert() {
+    const input = document.getElementById('inputArea').value;
+    const lines  = input.split('\n');
+    const result = [];
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('|')) continue;
+
+      const cells = parseRow(trimmed);
+      if (cells.length < 2) continue;
+
+      // Skip separator rows  (| --- | --- |)
+      if (isSeparator(cells)) continue;
+
+      // Skip the header row if it literally says "question" / "answer"
+      if (cells[0].toLowerCase() === 'question' &&
+          cells[1].toLowerCase() === 'answer') continue;
+
+      result.push({
+        question: cellToHTML(cells[0]),
+        answer:   cellToHTML(cells[1])
+      });
+    }
+
+    document.getElementById('outputArea').value = JSON.stringify(result, null, 2);
+    document.getElementById('status').textContent =
+      result.length > 0 ? `${result.length} item(s) converted.` : 'No data rows found.';
+  }
+
+  // ── Clipboard ─────────────────────────────────────────────────────────────
+
+  function copyOutput() {
+    const text = document.getElementById('outputArea').value;
+    if (!text) return;
+
+    const btn = document.getElementById('btnCopy');
+
+    const markCopied = () => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy Output';
+        btn.classList.remove('copied');
+      }, 2000);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(markCopied).catch(() => fallbackCopy(text, markCopied));
+    } else {
+      fallbackCopy(text, markCopied);
+    }
+  }
+
+  function fallbackCopy(text, cb) {
+    const ta = document.getElementById('outputArea');
+    ta.select();
+    ta.setSelectionRange(0, 99999);
+    try { document.execCommand('copy'); cb(); } catch (_) {}
+  }
+</script>
+
+</body>
+</html>
