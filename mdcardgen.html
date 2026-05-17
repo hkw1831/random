@@ -228,151 +228,168 @@
 
 <script src="https://cdn.jsdelivr.net/npm/marked@4/marked.min.js"></script>
 <script>
-const renderer = new marked.Renderer();
 
-// Use self-closing <img /> for XHTML compatibility
-renderer.image = function(href, title, text) {
-  const src  = (href  || '').replace(/^["']|["']$/g, '');
-  const alt  = text  ? ` alt="${text}"`  : '';
-  const titl = title ? ` title="${title}"` : '';
-  return `<img src="${src}"${alt}${titl} />`;
-};
-
-renderer.hr = function() { return ''; };
-
-marked.setOptions({
-  renderer,
-  gfm:       true,
-  breaks:    true,
-  headerIds: false,
-  mangle:    false,
-});
-
-function cleanHtml(html) {
-  return html
-    // Normalise all <br> variants to self-closing <br />
-    .replace(/<br\s*\/?>/gi, '<br />')
-    // Strip <br /> immediately before a closing block tag
-    .replace(/<br \/>\s*(<\/(?:p|li|td|th|blockquote|div)>)/gi, '$1')
-    .replace(/(<\/[^>]+>)\s+(<[^/])/g, '$1$2')
-    .replace(/\r?\n/g, '')
-    .trim();
-}
-
-let _lastRawHtmls = [];
-
-function mdToJson(raw) {
-  _lastRawHtmls = [];
-
-  const stripped = raw.replace(/^---[\s\S]*?---[ \t]*(\r?\n|$)/, '');
-
-  const chunks = stripped
-    .split(/(?=^## )/m)
-    .map(c => c.trim())
-    .filter(c => c.length > 0);
-
-  if (chunks.length === 0) {
-    throw new Error('No ## headings found. Make sure sections start with "## Title".');
+  // ── Attribute escaper ────────────────────────────────────────────────────────
+  // Escapes characters that are unsafe inside HTML attribute values so that
+  // double quotes (and other specials) in content never break the markup.
+  function escAttr(str) {
+    return String(str)
+      .replace(/&/g,  '&amp;')   // must be first
+      .replace(/"/g,  '&quot;')
+      .replace(/'/g,  '&#39;')
+      .replace(/</g,  '&lt;')
+      .replace(/>/g,  '&gt;');
   }
 
-  const result = [];
+  // ── Custom renderer ──────────────────────────────────────────────────────────
+  const renderer = new marked.Renderer();
 
-  for (const chunk of chunks) {
-    const headingMatch = chunk.match(/^## (.+?)[ \t]*(\r?\n|$)/);
-    if (!headingMatch) continue;
+  renderer.image = function(href, title, text) {
+    // marked sometimes wraps the URL in quotes -- strip them first, then escape
+    const src  = escAttr((href  || '').replace(/^["']|["']$/g, ''));
+    const alt  = text  ? ` alt="${escAttr(text)}"`    : '';
+    const titl = title ? ` title="${escAttr(title)}"` : '';
+    return `<img src="${src}"${alt}${titl} />`;
+  };
 
-    const question = headingMatch[1].trim();
-    const body = chunk.slice(headingMatch[0].length).trim();
+  renderer.hr = function() { return ''; };
 
-    if (!body) {
-      result.push({ question, answer: '' });
-      continue;
+  marked.setOptions({
+    renderer,
+    gfm:       true,
+    breaks:    true,
+    headerIds: false,
+    mangle:    false,
+  });
+
+  // ── HTML cleanup ─────────────────────────────────────────────────────────────
+  function cleanHtml(html) {
+    return html
+      // Normalise all <br> variants to self-closing <br />
+      .replace(/<br\s*\/?>/gi, '<br />')
+      // Strip <br /> immediately before a closing block tag
+      .replace(/<br \/>\s*(<\/(?:p|li|td|th|blockquote|div)>)/gi, '$1')
+      .replace(/(<\/[^>]+>)\s+(<[^/])/g, '$1$2')
+      .replace(/\r?\n/g, '')
+      .trim();
+  }
+
+  // ── Core conversion ──────────────────────────────────────────────────────────
+  let _lastRawHtmls = [];
+
+  function mdToJson(raw) {
+    _lastRawHtmls = [];
+
+    const stripped = raw.replace(/^---[\s\S]*?---[ \t]*(\r?\n|$)/, '');
+
+    const chunks = stripped
+      .split(/(?=^## )/m)
+      .map(c => c.trim())
+      .filter(c => c.length > 0);
+
+    if (chunks.length === 0) {
+      throw new Error('No ## headings found. Make sure sections start with "## Title".');
     }
 
-    const rawHtml = marked.parse(body);
-    _lastRawHtmls.push({ question, rawHtml });
+    const result = [];
 
-    const answer = cleanHtml(rawHtml);
-    result.push({ question, answer });
+    for (const chunk of chunks) {
+      const headingMatch = chunk.match(/^## (.+?)[ \t]*(\r?\n|$)/);
+      if (!headingMatch) continue;
+
+      const question = headingMatch[1].trim();
+      const body = chunk.slice(headingMatch[0].length).trim();
+
+      if (!body) {
+        result.push({ question, answer: '' });
+        continue;
+      }
+
+      const rawHtml = marked.parse(body);
+      _lastRawHtmls.push({ question, rawHtml });
+
+      const answer = cleanHtml(rawHtml);
+      result.push({ question, answer });
+    }
+
+    return result;
   }
 
-  return result;
-}
+  // ── UI wiring ────────────────────────────────────────────────────────────────
+  const inputEl      = document.getElementById('input');
+  const outputEl     = document.getElementById('output');
+  const statusEl     = document.getElementById('status');
+  const debugWrap    = document.getElementById('debugWrap');
+  const debugContent = document.getElementById('debugContent');
 
-const inputEl      = document.getElementById('input');
-const outputEl     = document.getElementById('output');
-const statusEl     = document.getElementById('status');
-const debugWrap    = document.getElementById('debugWrap');
-const debugContent = document.getElementById('debugContent');
+  function setStatus(msg, type) {
+    statusEl.textContent = msg;
+    statusEl.className   = 'status ' + (type || '');
+  }
 
-function setStatus(msg, type) {
-  statusEl.textContent = msg;
-  statusEl.className   = 'status ' + (type || '');
-}
-
-function clearAll() {
-  inputEl.value  = '';
-  outputEl.value = '';
-  _lastRawHtmls  = [];
-  debugWrap.classList.remove('visible');
-  setStatus('');
-}
-
-document.getElementById('btnConvert').addEventListener('click', () => {
-  const raw = inputEl.value;
-  if (!raw.trim()) { setStatus('⚠ Input is empty', 'err'); return; }
-
-  try {
-    const json = mdToJson(raw);
-    outputEl.value = JSON.stringify(json, null, 2);
-    setStatus(`✓ ${json.length} section${json.length !== 1 ? 's' : ''} converted`, 'ok');
-    if (debugWrap.classList.contains('visible')) showDebug();
-  } catch (e) {
+  function clearAll() {
+    inputEl.value  = '';
     outputEl.value = '';
-    setStatus('✗ ' + e.message, 'err');
+    _lastRawHtmls  = [];
+    debugWrap.classList.remove('visible');
+    setStatus('');
   }
-});
 
-document.getElementById('btnCopy').addEventListener('click', () => {
-  if (!outputEl.value) return;
-  navigator.clipboard.writeText(outputEl.value).then(() => {
-    const b = document.getElementById('btnCopy');
-    const orig = b.textContent;
-    b.textContent = '✓ Copied!';
-    setTimeout(() => (b.textContent = orig), 2000);
+  document.getElementById('btnConvert').addEventListener('click', () => {
+    const raw = inputEl.value;
+    if (!raw.trim()) { setStatus('⚠ Input is empty', 'err'); return; }
+
+    try {
+      const json = mdToJson(raw);
+      outputEl.value = JSON.stringify(json, null, 2);
+      setStatus(`✓ ${json.length} section${json.length !== 1 ? 's' : ''} converted`, 'ok');
+      if (debugWrap.classList.contains('visible')) showDebug();
+    } catch (e) {
+      outputEl.value = '';
+      setStatus('✗ ' + e.message, 'err');
+    }
   });
-});
 
-document.getElementById('btnClearInput').addEventListener('click', () => {
-  inputEl.value = '';
-  inputEl.focus();
-  setStatus('');
-});
+  document.getElementById('btnCopy').addEventListener('click', () => {
+    if (!outputEl.value) return;
+    navigator.clipboard.writeText(outputEl.value).then(() => {
+      const b = document.getElementById('btnCopy');
+      const orig = b.textContent;
+      b.textContent = '✓ Copied!';
+      setTimeout(() => (b.textContent = orig), 2000);
+    });
+  });
 
-document.getElementById('btnClearOutput').addEventListener('click', () => {
-  outputEl.value = '';
-  _lastRawHtmls  = [];
-  debugWrap.classList.remove('visible');
-  setStatus('');
-});
+  document.getElementById('btnClearInput').addEventListener('click', () => {
+    inputEl.value = '';
+    inputEl.focus();
+    setStatus('');
+  });
 
-document.getElementById('btnClearAll').addEventListener('click', clearAll);
+  document.getElementById('btnClearOutput').addEventListener('click', () => {
+    outputEl.value = '';
+    _lastRawHtmls  = [];
+    debugWrap.classList.remove('visible');
+    setStatus('');
+  });
 
-function showDebug() {
-  if (_lastRawHtmls.length === 0) {
-    debugContent.textContent = 'Run a conversion first.';
-  } else {
-    debugContent.textContent = _lastRawHtmls
-      .map(({question, rawHtml}) => `── ${question} ──\n${rawHtml}`)
-      .join('\n\n');
+  document.getElementById('btnClearAll').addEventListener('click', clearAll);
+
+  function showDebug() {
+    if (_lastRawHtmls.length === 0) {
+      debugContent.textContent = 'Run a conversion first.';
+    } else {
+      debugContent.textContent = _lastRawHtmls
+        .map(({question, rawHtml}) => `── ${question} ──\n${rawHtml}`)
+        .join('\n\n');
+    }
+    debugWrap.classList.add('visible');
   }
-  debugWrap.classList.add('visible');
-}
 
-document.getElementById('btnDebug').addEventListener('click', showDebug);
-document.getElementById('btnCloseDebug').addEventListener('click', () => {
-  debugWrap.classList.remove('visible');
-});
+  document.getElementById('btnDebug').addEventListener('click', showDebug);
+  document.getElementById('btnCloseDebug').addEventListener('click', () => {
+    debugWrap.classList.remove('visible');
+  });
 </script>
 </body>
 </html>
