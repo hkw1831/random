@@ -1301,7 +1301,7 @@
                 showAnswerBtn.textContent = "顯示答案";
             } else {
                 answerContainer.style.maxHeight = answerContainer.scrollHeight + "px";
-                feedbackControls.style.maxHeight = (feedbackControls.scrollHeight+50) + "px";
+                feedbackControls.style.maxHeight = (feedbackControls.scrollHeight) + "px";
                 showAnswerBtn.textContent = "隱藏答案";
                 // Re-expand after images load in case scrollHeight was underestimated
                 answerContainer.querySelectorAll('img').forEach(img => {
