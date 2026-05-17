@@ -230,9 +230,12 @@
 <script>
 const renderer = new marked.Renderer();
 
+// Use self-closing <img /> for XHTML compatibility
 renderer.image = function(href, title, text) {
-  const src = (href || '').replace(/^["']|["']$/g, '');
-  return `<img src="${src}">`;
+  const src  = (href  || '').replace(/^["']|["']$/g, '');
+  const alt  = text  ? ` alt="${text}"`  : '';
+  const titl = title ? ` title="${title}"` : '';
+  return `<img src="${src}"${alt}${titl} />`;
 };
 
 renderer.hr = function() { return ''; };
@@ -247,7 +250,10 @@ marked.setOptions({
 
 function cleanHtml(html) {
   return html
-    .replace(/<br\s*\/?>\s*(<\/(?:p|li|td|th|blockquote|div)>)/gi, '$1')
+    // Normalise all <br> variants to self-closing <br />
+    .replace(/<br\s*\/?>/gi, '<br />')
+    // Strip <br /> immediately before a closing block tag
+    .replace(/<br \/>\s*(<\/(?:p|li|td|th|blockquote|div)>)/gi, '$1')
     .replace(/(<\/[^>]+>)\s+(<[^/])/g, '$1$2')
     .replace(/\r?\n/g, '')
     .trim();
