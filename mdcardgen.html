@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown → JSON Converter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      min-height: 100vh;
+      padding: 24px;
+      color: #e2e8f0;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #818cf8 0%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .container { max-width: 1500px; margin: 0 auto; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 72px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel { display: flex; flex-direction: column; gap: 8px; }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .badge-md  { background: #1e3a5f; color: #60a5fa; }
+    .badge-json{ background: #14532d; color: #4ade80; }
+
+    textarea {
+      width: 100%;
+      height: 72vh;
+      padding: 14px 16px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+      font-size: 12.5px;
+      line-height: 1.75;
+      resize: vertical;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #818cf8;
+      box-shadow: 0 0 0 3px rgba(129,140,248,.15);
+    }
+    #output { color: #86efac; }
+
+    /* ── Middle column ── */
+    .middle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding-top: 30px;
+    }
+
+    .btn-convert {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1;
+      background: linear-gradient(135deg, #818cf8, #34d399);
+      color: #0f172a;
+      box-shadow: 0 4px 18px rgba(129,140,248,.45);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-convert:hover { transform: scale(1.12); box-shadow: 0 6px 24px rgba(129,140,248,.6); }
+    .btn-convert:active { transform: scale(.97); }
+
+    .btn-small {
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #94a3b8;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-small:hover { background: #334155; color: #e2e8f0; }
+
+    .status {
+      font-size: 11px;
+      color: #64748b;
+      text-align: center;
+      min-height: 16px;
+    }
+    .status.ok  { color: #34d399; }
+    .status.err { color: #f87171; }
+
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
+      .middle { flex-direction: row; padding-top: 0; }
+      textarea { height: 40vh; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>✦ Markdown → JSON Converter</h1>
+
+  <div class="grid">
+
+    <!-- INPUT -->
+    <div class="panel">
+      <div class="panel-header">
+        <label>Input</label>
+        <span class="badge badge-md">Markdown</span>
+      </div>
+      <textarea id="input" spellcheck="false"
+        placeholder="Paste markdown with ## H2 sections…"></textarea>
+    </div>
+
+    <!-- MIDDLE -->
+    <div class="middle">
+      <button class="btn-convert" id="btnConvert" title="Convert">→</button>
+      <div class="status" id="status"></div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="panel">
+      <div class="panel-header">
+        <label>Output</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-json">JSON</span>
+          <button class="btn-small" id="btnCopy">⎘ Copy</button>
+        </div>
+      </div>
+      <textarea id="output" readonly spellcheck="false"
+        placeholder="JSON output will appear here…"></textarea>
+    </div>
+
+  </div>
+</div>
+
+<!--
+  Library: marked v4
+  CDN: https://cdn.jsdelivr.net/npm/marked@4/marked.min.js
+  Supports: paragraphs, br (breaks:true), nested lists, images, code, tables, etc.
+-->
+<script src="https://cdn.jsdelivr.net/npm/marked@4/marked.min.js"></script>
+<script>
+// ─────────────────────────────────────────────
+//  Custom renderer
+// ─────────────────────────────────────────────
+const renderer = new marked.Renderer();
+
+// Strip alt/title from images -- just emit <img src="…">
+renderer.image = (href, _title, _text) => `<img src="${href}">`;
+
+// Suppress <hr> produced by "---" section dividers
+renderer.hr = () => '';
+
+// ─────────────────────────────────────────────
+//  Configure marked
+// ─────────────────────────────────────────────
+marked.setOptions({
+  renderer,
+  gfm: true,         // GitHub-flavoured markdown (tables, task lists, strikethrough)
+  breaks: true,      // single \n inside a paragraph → <br>
+  headerIds: false,  // no id="…" on headings
+  mangle: false
+});
+
+// ─────────────────────────────────────────────
+//  Core conversion
+// ─────────────────────────────────────────────
+function mdToJson(raw) {
+  // 1. Strip YAML / TOML front-matter  (--- … ---)
+  const stripped = raw.replace(/^---[\s\S]*?---[ \t]*(\r?\n)/, '');
+
+  // 2. Split on every line that starts with "## "
+  //    Using a lookahead so the delimiter stays with each chunk
+  const chunks = stripped.split(/(?=^## )/m).filter(c => c.trim().length);
+
+  const result = [];
+
+  for (const chunk of chunks) {
+    // 3. Pull out the H2 heading text
+    const m = chunk.match(/^## (.+?)[ \t]*(\r?\n|$)/);
+    if (!m) continue;
+
+    const question = m[1].trim();
+    const body = chunk.slice(m[0].length); // everything after the heading line
+
+    // 4. Parse markdown → HTML
+    let html = marked.parse(body);
+
+    // 5. Tighten whitespace between tags for compact single-line answer
+    html = html
+      .replace(/>\s+</g, '><')   // no gaps between adjacent tags
+      .replace(/\r?\n/g, '')     // no stray newlines
+      .trim();
+
+    result.push({ question, answer: html });
+  }
+
+  return result;
+}
+
+// ─────────────────────────────────────────────
+//  UI
+// ─────────────────────────────────────────────
+const inputEl  = document.getElementById('input');
+const outputEl = document.getElementById('output');
+const statusEl = document.getElementById('status');
+
+document.getElementById('btnConvert').addEventListener('click', () => {
+  const raw = inputEl.value;
+  if (!raw.trim()) {
+    setStatus('⚠ Input is empty', 'err');
+    return;
+  }
+  try {
+    const json = mdToJson(raw);
+    outputEl.value = JSON.stringify(json, null, 2);
+    setStatus(`✓ ${json.length} section${json.length !== 1 ? 's' : ''} converted`, 'ok');
+  } catch (e) {
+    outputEl.value = '';
+    setStatus('✗ ' + e.message, 'err');
+  }
+});
+
+document.getElementById('btnCopy').addEventListener('click', () => {
+  if (!outputEl.value) return;
+  navigator.clipboard.writeText(outputEl.value).then(() => {
+    const b = document.getElementById('btnCopy');
+    b.textContent = '✓ Copied!';
+    setTimeout(() => (b.textContent = '⎘ Copy'), 2000);
+  });
+});
+
+function setStatus(msg, type) {
+  statusEl.textContent = msg;
+  statusEl.className = 'status ' + (type || '');
+}
+
+// ─────────────────────────────────────────────
+//  Pre-fill with example
+// ─────────────────────────────────────────────
+inputEl.value = `---
+tags: b/k/d
+---
+
+## IR-CP1
+
+眉尾，眼眶外，眼輪匝肌外上角
+
+TE23，絲竹空穴
+
+眼下斜肌
+
+头部的内旋运动分为3个次级肌筋膜
+单元：1=眼的上斜肌，其ce 点位于眼眉
+的外侧端；2=嵌人颞下颔关节盘的翼外
+肌，其cc 点位于耳屏和下颌骨头部之间；
+3=翼内肌，其cc 点位于耳垂和下颌骨颈
+之间。后两个次级肌筋膜单元的连接要素 是翼肌筋膜（图47）。
+
+![Ir-cp1](https://pfst.cf2.poecdn.net/base/image/97f0413f9e5352daaf20cd6e3537cab475150b506c94ab8c64a9c7dca98b77e2?w=640&h=624)
+
+---
+
+## ER-CP1
+
+眉毛中，外側1/3交界處上方，蝶額縫前側
+
+GB14，陽白穴
+
+眼上斜肌
+
+头部的外旋运动分为3个次级肌筋膜
+单元：1=眼的下斜肌，其cc 点在眼眉中央；
+2=耳上肌，其cc 点在耳轮上方；
+3=耳后肌。
+
+- 次级单元 A
+  - 子项目 1
+  - 子项目 2
+- 次级单元 B
+
+![Er-cp1](https://pfst.cf2.poecdn.net/base/image/example-er-cp1.jpg)`;
+</script>
+</body>
+</html>
