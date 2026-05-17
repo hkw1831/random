@@ -1299,19 +1299,28 @@
                 answerContainer.style.maxHeight = "0";
                 feedbackControls.style.maxHeight = "0";
                 showAnswerBtn.textContent = "顯示答案";
-            } else {
-                answerContainer.style.maxHeight = answerContainer.scrollHeight + "px";
-                feedbackControls.style.maxHeight = (feedbackControls.scrollHeight) + "px";
-                showAnswerBtn.textContent = "隱藏答案";
-                // Re-expand after images load in case scrollHeight was underestimated
-                answerContainer.querySelectorAll('img').forEach(img => {
-                    if (!img.complete) {
-                        img.addEventListener('load', () => {
-                            answerContainer.style.maxHeight = answerContainer.scrollHeight + "px";
-                        }, { once: true });
-                    }
-                });
-            }
+} else {
+    // feedbackControls.scrollHeight 即使在 max-height:0 時仍回傳自然高度
+    const feedbackH = feedbackControls.scrollHeight;
+    feedbackControls.style.maxHeight = feedbackH + "px";
+    
+    // answerContainer.scrollHeight 此時不含被隱藏的 feedbackControls，
+    // 所以要手動加上 feedbackH + margin-top(1.5rem≈24px)
+    answerContainer.style.maxHeight = (answerContainer.scrollHeight + feedbackH + 30) + "px";
+    
+    showAnswerBtn.textContent = "隱藏答案";
+    
+    // 圖片載入後重新計算
+    answerContainer.querySelectorAll('img').forEach(img => {
+        if (!img.complete) {
+            img.addEventListener('load', () => {
+                const newFeedbackH = feedbackControls.scrollHeight;
+                feedbackControls.style.maxHeight = newFeedbackH + "px";
+                answerContainer.style.maxHeight = (answerContainer.scrollHeight + newFeedbackH + 30) + "px";
+            }, { once: true });
+        }
+    });
+}
             
             isAnswerShowing = !isAnswerShowing;
         }
