@@ -30,7 +30,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: 1fr 72px 1fr;
+      grid-template-columns: 1fr 80px 1fr;
       gap: 16px;
       align-items: start;
     }
@@ -57,12 +57,12 @@
       border-radius: 4px;
       font-weight: 600;
     }
-    .badge-md  { background: #1e3a5f; color: #60a5fa; }
-    .badge-json{ background: #14532d; color: #4ade80; }
+    .badge-md   { background: #1e3a5f; color: #60a5fa; }
+    .badge-json { background: #14532d; color: #4ade80; }
 
     textarea {
       width: 100%;
-      height: 72vh;
+      height: 74vh;
       padding: 14px 16px;
       background: #1e293b;
       border: 1px solid #334155;
@@ -81,14 +81,13 @@
     }
     #output { color: #86efac; }
 
-    /* ── Middle column ── */
     .middle {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 14px;
-      padding-top: 30px;
+      gap: 12px;
+      padding-top: 28px;
     }
 
     .btn-convert {
@@ -97,14 +96,13 @@
       border: none;
       cursor: pointer;
       font-size: 22px;
-      font-weight: 900;
-      line-height: 1;
       background: linear-gradient(135deg, #818cf8, #34d399);
       color: #0f172a;
+      font-weight: 900;
       box-shadow: 0 4px 18px rgba(129,140,248,.45);
       transition: transform .2s, box-shadow .2s;
     }
-    .btn-convert:hover { transform: scale(1.12); box-shadow: 0 6px 24px rgba(129,140,248,.6); }
+    .btn-convert:hover  { transform: scale(1.12); box-shadow: 0 6px 24px rgba(129,140,248,.6); }
     .btn-convert:active { transform: scale(.97); }
 
     .btn-small {
@@ -119,6 +117,18 @@
     }
     .btn-small:hover { background: #334155; color: #e2e8f0; }
 
+    .btn-clear {
+      background: #2d1a1a;
+      border: 1px solid #7f1d1d;
+      color: #f87171;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-clear:hover { background: #3f1a1a; color: #fca5a5; border-color: #ef4444; }
+
     .status {
       font-size: 11px;
       color: #64748b;
@@ -128,10 +138,42 @@
     .status.ok  { color: #34d399; }
     .status.err { color: #f87171; }
 
+    #debugWrap {
+      margin-top: 20px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      overflow: hidden;
+      display: none;
+    }
+    #debugWrap.visible { display: block; }
+    .debug-header {
+      padding: 8px 16px;
+      background: #0f172a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #debugContent {
+      padding: 14px 16px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #fbbf24;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
     @media (max-width: 800px) {
       .grid { grid-template-columns: 1fr; }
       .middle { flex-direction: row; padding-top: 0; }
-      textarea { height: 40vh; }
+      textarea { height: 42vh; }
     }
   </style>
 </head>
@@ -140,21 +182,24 @@
   <h1>✦ Markdown → JSON Converter</h1>
 
   <div class="grid">
-
     <!-- INPUT -->
     <div class="panel">
       <div class="panel-header">
         <label>Input</label>
-        <span class="badge badge-md">Markdown</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-md">Markdown</span>
+          <button class="btn-clear" id="btnClearInput">✕ Clear</button>
+        </div>
       </div>
-      <textarea id="input" spellcheck="false"
-        placeholder="Paste markdown with ## H2 sections…"></textarea>
+      <textarea id="input" spellcheck="false" placeholder="Paste markdown with ## H2 sections…"></textarea>
     </div>
 
     <!-- MIDDLE -->
     <div class="middle">
       <button class="btn-convert" id="btnConvert" title="Convert">→</button>
       <div class="status" id="status"></div>
+      <button class="btn-small" id="btnDebug" title="Show raw HTML before cleanup">🔍</button>
+      <button class="btn-clear" id="btnClearAll" title="Clear all">🗑</button>
     </div>
 
     <!-- OUTPUT -->
@@ -164,97 +209,118 @@
         <div style="display:flex;gap:8px;align-items:center">
           <span class="badge badge-json">JSON</span>
           <button class="btn-small" id="btnCopy">⎘ Copy</button>
+          <button class="btn-clear" id="btnClearOutput">✕ Clear</button>
         </div>
       </div>
-      <textarea id="output" readonly spellcheck="false"
-        placeholder="JSON output will appear here…"></textarea>
+      <textarea id="output" readonly spellcheck="false" placeholder="JSON output will appear here…"></textarea>
     </div>
+  </div>
 
+  <!-- DEBUG panel -->
+  <div id="debugWrap">
+    <div class="debug-header">
+      <span>🔍 Raw marked.parse() output (before cleanup)</span>
+      <button class="btn-small" id="btnCloseDebug">✕ Close</button>
+    </div>
+    <div id="debugContent"></div>
   </div>
 </div>
 
-<!--
-  Library: marked v4
-  CDN: https://cdn.jsdelivr.net/npm/marked@4/marked.min.js
-  Supports: paragraphs, br (breaks:true), nested lists, images, code, tables, etc.
--->
 <script src="https://cdn.jsdelivr.net/npm/marked@4/marked.min.js"></script>
 <script>
-// ─────────────────────────────────────────────
-//  Custom renderer
-// ─────────────────────────────────────────────
 const renderer = new marked.Renderer();
 
-// Strip alt/title from images -- just emit <img src="…">
-renderer.image = (href, _title, _text) => `<img src="${href}">`;
+renderer.image = function(href, title, text) {
+  const src = (href || '').replace(/^["']|["']$/g, '');
+  return `<img src="${src}">`;
+};
 
-// Suppress <hr> produced by "---" section dividers
-renderer.hr = () => '';
+renderer.hr = function() { return ''; };
 
-// ─────────────────────────────────────────────
-//  Configure marked
-// ─────────────────────────────────────────────
 marked.setOptions({
   renderer,
-  gfm: true,         // GitHub-flavoured markdown (tables, task lists, strikethrough)
-  breaks: true,      // single \n inside a paragraph → <br>
-  headerIds: false,  // no id="…" on headings
-  mangle: false
+  gfm:       true,
+  breaks:    true,
+  headerIds: false,
+  mangle:    false,
 });
 
-// ─────────────────────────────────────────────
-//  Core conversion
-// ─────────────────────────────────────────────
-function mdToJson(raw) {
-  // 1. Strip YAML / TOML front-matter  (--- … ---)
-  const stripped = raw.replace(/^---[\s\S]*?---[ \t]*(\r?\n)/, '');
+function cleanHtml(html) {
+  return html
+    .replace(/<br\s*\/?>\s*(<\/(?:p|li|td|th|blockquote|div)>)/gi, '$1')
+    .replace(/(<\/[^>]+>)\s+(<[^/])/g, '$1$2')
+    .replace(/\r?\n/g, '')
+    .trim();
+}
 
-  // 2. Split on every line that starts with "## "
-  //    Using a lookahead so the delimiter stays with each chunk
-  const chunks = stripped.split(/(?=^## )/m).filter(c => c.trim().length);
+let _lastRawHtmls = [];
+
+function mdToJson(raw) {
+  _lastRawHtmls = [];
+
+  const stripped = raw.replace(/^---[\s\S]*?---[ \t]*(\r?\n|$)/, '');
+
+  const chunks = stripped
+    .split(/(?=^## )/m)
+    .map(c => c.trim())
+    .filter(c => c.length > 0);
+
+  if (chunks.length === 0) {
+    throw new Error('No ## headings found. Make sure sections start with "## Title".');
+  }
 
   const result = [];
 
   for (const chunk of chunks) {
-    // 3. Pull out the H2 heading text
-    const m = chunk.match(/^## (.+?)[ \t]*(\r?\n|$)/);
-    if (!m) continue;
+    const headingMatch = chunk.match(/^## (.+?)[ \t]*(\r?\n|$)/);
+    if (!headingMatch) continue;
 
-    const question = m[1].trim();
-    const body = chunk.slice(m[0].length); // everything after the heading line
+    const question = headingMatch[1].trim();
+    const body = chunk.slice(headingMatch[0].length).trim();
 
-    // 4. Parse markdown → HTML
-    let html = marked.parse(body);
+    if (!body) {
+      result.push({ question, answer: '' });
+      continue;
+    }
 
-    // 5. Tighten whitespace between tags for compact single-line answer
-    html = html
-      .replace(/>\s+</g, '><')   // no gaps between adjacent tags
-      .replace(/\r?\n/g, '')     // no stray newlines
-      .trim();
+    const rawHtml = marked.parse(body);
+    _lastRawHtmls.push({ question, rawHtml });
 
-    result.push({ question, answer: html });
+    const answer = cleanHtml(rawHtml);
+    result.push({ question, answer });
   }
 
   return result;
 }
 
-// ─────────────────────────────────────────────
-//  UI
-// ─────────────────────────────────────────────
-const inputEl  = document.getElementById('input');
-const outputEl = document.getElementById('output');
-const statusEl = document.getElementById('status');
+const inputEl      = document.getElementById('input');
+const outputEl     = document.getElementById('output');
+const statusEl     = document.getElementById('status');
+const debugWrap    = document.getElementById('debugWrap');
+const debugContent = document.getElementById('debugContent');
+
+function setStatus(msg, type) {
+  statusEl.textContent = msg;
+  statusEl.className   = 'status ' + (type || '');
+}
+
+function clearAll() {
+  inputEl.value  = '';
+  outputEl.value = '';
+  _lastRawHtmls  = [];
+  debugWrap.classList.remove('visible');
+  setStatus('');
+}
 
 document.getElementById('btnConvert').addEventListener('click', () => {
   const raw = inputEl.value;
-  if (!raw.trim()) {
-    setStatus('⚠ Input is empty', 'err');
-    return;
-  }
+  if (!raw.trim()) { setStatus('⚠ Input is empty', 'err'); return; }
+
   try {
     const json = mdToJson(raw);
     outputEl.value = JSON.stringify(json, null, 2);
     setStatus(`✓ ${json.length} section${json.length !== 1 ? 's' : ''} converted`, 'ok');
+    if (debugWrap.classList.contains('visible')) showDebug();
   } catch (e) {
     outputEl.value = '';
     setStatus('✗ ' + e.message, 'err');
@@ -265,61 +331,42 @@ document.getElementById('btnCopy').addEventListener('click', () => {
   if (!outputEl.value) return;
   navigator.clipboard.writeText(outputEl.value).then(() => {
     const b = document.getElementById('btnCopy');
+    const orig = b.textContent;
     b.textContent = '✓ Copied!';
-    setTimeout(() => (b.textContent = '⎘ Copy'), 2000);
+    setTimeout(() => (b.textContent = orig), 2000);
   });
 });
 
-function setStatus(msg, type) {
-  statusEl.textContent = msg;
-  statusEl.className = 'status ' + (type || '');
+document.getElementById('btnClearInput').addEventListener('click', () => {
+  inputEl.value = '';
+  inputEl.focus();
+  setStatus('');
+});
+
+document.getElementById('btnClearOutput').addEventListener('click', () => {
+  outputEl.value = '';
+  _lastRawHtmls  = [];
+  debugWrap.classList.remove('visible');
+  setStatus('');
+});
+
+document.getElementById('btnClearAll').addEventListener('click', clearAll);
+
+function showDebug() {
+  if (_lastRawHtmls.length === 0) {
+    debugContent.textContent = 'Run a conversion first.';
+  } else {
+    debugContent.textContent = _lastRawHtmls
+      .map(({question, rawHtml}) => `── ${question} ──\n${rawHtml}`)
+      .join('\n\n');
+  }
+  debugWrap.classList.add('visible');
 }
 
-// ─────────────────────────────────────────────
-//  Pre-fill with example
-// ─────────────────────────────────────────────
-inputEl.value = `---
-tags: b/k/d
----
-
-## IR-CP1
-
-眉尾，眼眶外，眼輪匝肌外上角
-
-TE23，絲竹空穴
-
-眼下斜肌
-
-头部的内旋运动分为3个次级肌筋膜
-单元：1=眼的上斜肌，其ce 点位于眼眉
-的外侧端；2=嵌人颞下颔关节盘的翼外
-肌，其cc 点位于耳屏和下颌骨头部之间；
-3=翼内肌，其cc 点位于耳垂和下颌骨颈
-之间。后两个次级肌筋膜单元的连接要素 是翼肌筋膜（图47）。
-
-![Ir-cp1](https://pfst.cf2.poecdn.net/base/image/97f0413f9e5352daaf20cd6e3537cab475150b506c94ab8c64a9c7dca98b77e2?w=640&h=624)
-
----
-
-## ER-CP1
-
-眉毛中，外側1/3交界處上方，蝶額縫前側
-
-GB14，陽白穴
-
-眼上斜肌
-
-头部的外旋运动分为3个次级肌筋膜
-单元：1=眼的下斜肌，其cc 点在眼眉中央；
-2=耳上肌，其cc 点在耳轮上方；
-3=耳后肌。
-
-- 次级单元 A
-  - 子项目 1
-  - 子项目 2
-- 次级单元 B
-
-![Er-cp1](https://pfst.cf2.poecdn.net/base/image/example-er-cp1.jpg)`;
+document.getElementById('btnDebug').addEventListener('click', showDebug);
+document.getElementById('btnCloseDebug').addEventListener('click', () => {
+  debugWrap.classList.remove('visible');
+});
 </script>
 </body>
 </html>
