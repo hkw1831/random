@@ -814,15 +814,16 @@
     function toggleQuestionAnswer(idx,type){
         var ans=document.getElementById(type+"-answer-"+idx);
         var btn=document.getElementById(type+"-btn-"+idx);
+        if(!ans||!btn)return;
         if(ans.classList.contains("show")){ans.classList.remove("show");btn.textContent="顯示答案";}
         else{ans.classList.add("show");btn.textContent="隱藏答案";}
     }
     window.toggleQuestionAnswer=toggleQuestionAnswer;
 
     function buildQuestionList(list,type){
-        if(list.length===0)return"<div class=\"question-item\">無</div>";
+        if(list.length===0)return'<div class="question-item">無</div>';
         return list.map(function(q,i){
-            return'<div class="question-item '+(type==="correct"?"correct":"remaining")+'"><div class="question-header"><div class="question-text">'+q.question+'</div><button id="'+type+'-btn-'+i+'" class="btn btn-small" onclick="toggleQuestionAnswer('+i+',\"'+type+'\")" >顯示答案</button></div><div id="'+type+'-answer-'+i+'" class="question-answer">'+q.answer+'</div></div>';
+            return'<div class="question-item '+(type==="correct"?"correct":"remaining")+'"><div class="question-header"><div class="question-text">'+q.question+'</div><button id="'+type+'-btn-'+i+'" class="btn btn-small" onclick="toggleQuestionAnswer('+i+',&#39;'+type+'&#39;)">顯示答案</button></div><div id="'+type+'-answer-'+i+'" class="question-answer">'+q.answer+'</div></div>';
         }).join("");
     }
 
