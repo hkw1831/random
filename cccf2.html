@@ -41,7 +41,7 @@
         
         header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 0;
         }
         
         h1 {
@@ -165,7 +165,7 @@
             display: flex;
             justify-content: center;
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 0.5rem;
             flex-wrap: wrap;
         }
         
@@ -173,7 +173,7 @@
             display: flex;
             justify-content: center;
             gap: 1rem;
-            margin-top: 1.5rem;
+            margin-top: 0;
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.5s ease;
@@ -190,7 +190,7 @@
             display: flex;
             justify-content: center;
             gap: 1.5rem;
-            margin: 1rem 0;
+            padding: 0.25rem 0;
             flex-wrap: nowrap;
             overflow-x: auto;
         }
@@ -234,8 +234,8 @@
         }
         
         .info {
-            margin: 1rem 0;
-            padding: 1rem;
+            margin: 0 0;
+            padding: 0.25rem;
             background-color: rgba(67, 97, 238, 0.05);
             border-radius: 8px;
             font-size: 0.9rem;
@@ -361,13 +361,22 @@
             }
 
             .stats {
-                flex-wrap: wrap;
-                gap: 0.5rem;
+                flex-wrap: nowrap;
+                gap: 0.3rem;
             }
             
             .stat-item {
-                min-width: calc(50% - 0.5rem);
-                flex: none;
+                flex: 1 1 0;
+                min-width: 0;
+                padding: 0.5rem 0.25rem;
+            }
+
+            .stat-label {
+                font-size: 0.7rem;
+            }
+
+            .stat-value {
+                font-size: 1.1rem;
             }
             
             .card {
@@ -454,7 +463,6 @@
     <div class="container">
         <header>
             <h1>CC CF 點位隨機抽題卡</h1>
-            <p>隨機抽取FM相關問題並測試自己的知識</p>
         </header>
         
         <div class="stats">
@@ -481,13 +489,6 @@
             <button id="resetBtn" class="btn">重設</button>
             <button id="showRemainingBtn" class="btn btn-info">查看待答題目</button>
             <button id="showCorrectBtn" class="btn btn-info">查看已答對題目</button>
-        </div>
-        
-        <div class="info">
-            <p>✓ 正確回答的問題將不再出現</p>
-            <p>✓ 回答錯誤的問題將保留在題庫中再次抽取</p>
-            <p>✓ 按「重設」按鈕可重新開始</p>
-            <p>✓ 可查看待答題目和已答對題目列表</p>
         </div>
         
         <div id="card" class="card">
@@ -542,11 +543,6 @@
             </div>
         </div>
     </div>
-    
-    <footer>
-        <p>© FM 筋膜手法 CC 點和 CF 點 Q&A 隨機抽題卡</p>
-    </footer>
-    
     <script>
         const qaData =
 [
@@ -1329,12 +1325,12 @@
             
             if (isAnswerShowing) {
                 answerContainer.style.maxHeight = "0";
-                feedbackControls.style.maxHeight = "0";
+                feedbackControls.style.maxHeight = "80px";
                 showAnswerBtn.textContent = "顯示答案";
 } else {
     // feedbackControls.scrollHeight 即使在 max-height:0 時仍回傳自然高度
     const feedbackH = feedbackControls.scrollHeight;
-    feedbackControls.style.maxHeight = feedbackH + "px";
+    feedbackControls.style.maxHeight = "80px";
     
     // answerContainer.scrollHeight 此時不含被隱藏的 feedbackControls，
     // 所以要手動加上 feedbackH + margin-top(1.5rem≈24px)
