@@ -10,13 +10,11 @@
         body{font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.7;color:var(--text);background:var(--background);padding:0.5rem 0.35rem;}
         .container{max-width:100%;margin:0;width:100%;padding:0;}
         h1{font-size:1.8rem;font-weight:700;color:var(--primary);text-align:center;margin:0.5rem 0;}
-        /* ── Stats ── */
         .stats{display:flex;gap:0.35rem;margin:0.5rem 0;flex-wrap:nowrap;}
         .stat-item{background:var(--card-bg);border-radius:8px;padding:0.4rem 0.5rem;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;flex:1;}
         .stat-label{font-size:0.75rem;color:#6c757d;}
         .stat-value{font-size:1.3rem;font-weight:700;color:var(--primary);}
         .stat-value.correct{color:var(--success);}.stat-value.incorrect{color:var(--error);}
-        /* ── Controls ── */
         .controls{display:flex;gap:0.35rem;margin:0.5rem 0;flex-wrap:wrap;}
         .btn{background:var(--primary);color:#fff;border:none;padding:0.6rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.95rem;font-weight:500;transition:background .2s,transform .15s;}
         .btn:hover{background:var(--secondary);transform:translateY(-1px);}
@@ -25,26 +23,21 @@
         .btn-error{background:var(--error);}.btn-error:hover{background:#b00000;}
         .btn-info{background:#6c757d;}.btn-info:hover{background:#5a6268;}
         .btn-small{padding:0.35rem 0.6rem;font-size:0.82rem;}
-        /* ── Question area ── */
         .question-box{background:var(--card-bg);border-radius:10px;padding:0.85rem 0.75rem;margin:0.5rem 0;box-shadow:0 2px 8px rgba(0,0,0,.07);}
         .question{font-size:1.35rem;font-weight:600;color:var(--primary);margin-bottom:0.75rem;}
         .question img,.answer-content img,.question-text img,.question-answer img{max-width:100%;height:auto;display:block;margin:0.5rem 0;border-radius:6px;}
         .show-answer-btn-wrap{text-align:center;margin:0.5rem 0;}
-        /* ── Answer ── */
         .answer-content{display:none;background:rgba(67,97,238,.08);border-left:4px solid var(--primary);padding:0.6rem 0.75rem;border-radius:0 8px 8px 0;margin-top:0.6rem;}
         .answer-content.show{display:block;}
         .answer-content ul{padding-left:1.2rem;}
         .answer-content li{margin-bottom:0.4rem;}
-        /* ── Feedback ── */
         .feedback-controls{display:none;gap:0.5rem;justify-content:center;margin-top:0.6rem;flex-wrap:wrap;}
         .feedback-controls.show{display:flex;}
-        /* ── Modal ── */
         .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;justify-content:center;align-items:flex-start;padding:1rem 0.35rem;overflow-y:auto;}
         .modal.open{display:flex;}
         .modal-content{background:var(--card-bg);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:1rem 0.75rem;max-width:100%;width:100%;}
         .modal-title{font-size:1.3rem;font-weight:700;color:var(--primary);text-align:center;margin-bottom:0.6rem;}
         .modal-buttons{display:flex;justify-content:center;gap:0.75rem;margin-top:1rem;flex-wrap:wrap;}
-        /* ── Question list inside modal ── */
         .question-count{font-weight:700;margin-bottom:0.6rem;text-align:center;}
         .question-count.correct{color:var(--success);}.question-count.remaining{color:var(--primary);}
         .question-list{display:flex;flex-direction:column;gap:0.5rem;}
@@ -84,7 +77,7 @@
     </div>
     <div class="question-box">
         <div id="question" class="question">按下「隨機抽題」按鈕開始</div>
-        <div class="show-answer-btn-wrap">
+        <div id="showAnswerBtnWrap" class="show-answer-btn-wrap" style="display:none">
             <button id="showAnswerBtn" class="btn">顯示答案</button>
         </div>
         <div id="answerContent" class="answer-content"></div>
@@ -95,7 +88,6 @@
     </div>
 </div>
 
-<!-- Reset modal -->
 <div id="resetModal" class="modal">
     <div class="modal-content">
         <div class="modal-title">確定要重設？</div>
@@ -107,7 +99,6 @@
     </div>
 </div>
 
-<!-- Remaining modal -->
 <div id="remainingModal" class="modal">
     <div class="modal-content">
         <div class="modal-title">待答題目列表</div>
@@ -117,7 +108,6 @@
     </div>
 </div>
 
-<!-- Correct modal -->
 <div id="correctModal" class="modal">
     <div class="modal-content">
         <div class="modal-title">已答對題目列表</div>
@@ -760,23 +750,24 @@
     var storageAvailable = false;
     var STORAGE_KEY = "quizCardFlashcards";
 
-    var questionElem       = document.getElementById("question");
-    var answerContent      = document.getElementById("answerContent");
-    var feedbackControls   = document.getElementById("feedbackControls");
-    var showAnswerBtn      = document.getElementById("showAnswerBtn");
-    var drawBtn            = document.getElementById("drawBtn");
-    var resetBtn           = document.getElementById("resetBtn");
-    var showRemainingBtn   = document.getElementById("showRemainingBtn");
-    var showCorrectBtn     = document.getElementById("showCorrectBtn");
-    var correctBtn         = document.getElementById("correctBtn");
-    var incorrectBtn       = document.getElementById("incorrectBtn");
-    var totalCountElem     = document.getElementById("totalCount");
-    var remainingCountElem = document.getElementById("remainingCount");
-    var correctCountElem   = document.getElementById("correctCount");
-    var incorrectCountElem = document.getElementById("incorrectCount");
-    var resetModal         = document.getElementById("resetModal");
-    var remainingModal     = document.getElementById("remainingModal");
-    var correctModal       = document.getElementById("correctModal");
+    var questionElem        = document.getElementById("question");
+    var answerContent       = document.getElementById("answerContent");
+    var feedbackControls    = document.getElementById("feedbackControls");
+    var showAnswerBtn       = document.getElementById("showAnswerBtn");
+    var showAnswerBtnWrap   = document.getElementById("showAnswerBtnWrap");
+    var drawBtn             = document.getElementById("drawBtn");
+    var resetBtn            = document.getElementById("resetBtn");
+    var showRemainingBtn    = document.getElementById("showRemainingBtn");
+    var showCorrectBtn      = document.getElementById("showCorrectBtn");
+    var correctBtn          = document.getElementById("correctBtn");
+    var incorrectBtn        = document.getElementById("incorrectBtn");
+    var totalCountElem      = document.getElementById("totalCount");
+    var remainingCountElem  = document.getElementById("remainingCount");
+    var correctCountElem    = document.getElementById("correctCount");
+    var incorrectCountElem  = document.getElementById("incorrectCount");
+    var resetModal          = document.getElementById("resetModal");
+    var remainingModal      = document.getElementById("remainingModal");
+    var correctModal        = document.getElementById("correctModal");
 
     function checkStorage(){try{localStorage.setItem("t","1");localStorage.removeItem("t");storageAvailable=true;}catch(e){storageAvailable=false;}}
     function saveProgress(){if(!storageAvailable)return;try{localStorage.setItem(STORAGE_KEY,JSON.stringify({c:correctAnswers.map(function(q){return q.question;}),i:incorrectAnswers.map(function(q){return q.question;})}));}catch(e){}}
@@ -793,10 +784,17 @@
     function drawRandomQuestion(){
         hideAnswer();
         var available=qaData.filter(function(q){return correctAnswers.indexOf(q)===-1;});
-        if(available.length===0){questionElem.innerHTML="恭喜！所有問題都已經答對了！點擊「重設」重新開始。";answerContent.innerHTML="";currentQuestion=null;return;}
+        if(available.length===0){
+            questionElem.innerHTML="恭喜！所有問題都已經答對了！點擊「重設」重新開始。";
+            answerContent.innerHTML="";
+            currentQuestion=null;
+            showAnswerBtnWrap.style.display="none";
+            return;
+        }
         currentQuestion=available[Math.floor(Math.random()*available.length)];
         questionElem.innerHTML=currentQuestion.question;
         answerContent.innerHTML=currentQuestion.answer;
+        showAnswerBtnWrap.style.display="block";
     }
 
     function toggleAnswer(){
@@ -824,7 +822,7 @@
     function buildQuestionList(list,type){
         if(list.length===0)return"<div class=\"question-item\">無</div>";
         return list.map(function(q,i){
-            return'<div class="question-item '+(type==="correct"?"correct":"remaining")+'"><div class="question-header"><div class="question-text">'+q.question+'</div><button id="'+type+'-btn-'+i+'" class="btn btn-small" onclick="toggleQuestionAnswer('+i+',\"'+type+'\")"  >顯示答案</button></div><div id="'+type+'-answer-'+i+'" class="question-answer">'+q.answer+'</div></div>';
+            return'<div class="question-item '+(type==="correct"?"correct":"remaining")+'"><div class="question-header"><div class="question-text">'+q.question+'</div><button id="'+type+'-btn-'+i+'" class="btn btn-small" onclick="toggleQuestionAnswer('+i+',\"'+type+'\")" >顯示答案</button></div><div id="'+type+'-answer-'+i+'" class="question-answer">'+q.answer+'</div></div>';
         }).join("");
     }
 
@@ -840,7 +838,15 @@
         correctModal.classList.add("open");
     }
 
-    function doReset(){correctAnswers=[];incorrectAnswers=[];currentQuestion=null;hideAnswer();questionElem.innerHTML="按下「隨機抽題」按鈕開始";answerContent.innerHTML="";updateStats();saveProgress();resetModal.classList.remove("open");}
+    function doReset(){
+        correctAnswers=[];incorrectAnswers=[];currentQuestion=null;
+        hideAnswer();
+        questionElem.innerHTML="按下「隨機抽題」按鈕開始";
+        answerContent.innerHTML="";
+        showAnswerBtnWrap.style.display="none";
+        updateStats();saveProgress();
+        resetModal.classList.remove("open");
+    }
 
     checkStorage();loadProgress();updateStats();
 
