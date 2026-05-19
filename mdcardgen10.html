@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown → Quiz Card Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      min-height: 100vh;
+      padding: 24px;
+      color: #e2e8f0;
+    }
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #818cf8 0%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .container { max-width: 1500px; margin: 0 auto; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 84px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .panel { display: flex; flex-direction: column; gap: 8px; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; }
+    label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #94a3b8; }
+    .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+    .badge-md   { background: #1e3a5f; color: #60a5fa; }
+    .badge-json { background: #14532d; color: #4ade80; }
+    .badge-html { background: #3b1f5e; color: #c084fc; }
+    textarea {
+      width: 100%;
+      height: 74vh;
+      padding: 14px 16px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+      font-size: 12.5px;
+      line-height: 1.75;
+      resize: vertical;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    textarea:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,.15); }
+    .middle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding-top: 28px;
+    }
+    .btn-convert {
+      width: 64px;
+      background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+      border: none; color: #fff; padding: 7px 6px; border-radius: 8px;
+      font-size: 11px; font-weight: 700; cursor: pointer; line-height: 1.4; text-align: center;
+      box-shadow: 0 3px 14px rgba(14,165,233,.45);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-convert:hover  { transform: scale(1.08); }
+    .btn-convert:active { transform: scale(.97); }
+    .btn-generate {
+      width: 64px;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      border: none; color: #fff; padding: 7px 6px; border-radius: 8px;
+      font-size: 11px; font-weight: 700; cursor: pointer; line-height: 1.4; text-align: center;
+      box-shadow: 0 3px 14px rgba(124,58,237,.45);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-generate:hover  { transform: scale(1.08); }
+    .btn-generate:active { transform: scale(.97); }
+    .btn-small {
+      background: #1e293b; border: 1px solid #475569; color: #94a3b8;
+      padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all .15s;
+    }
+    .btn-small:hover { background: #334155; color: #e2e8f0; }
+    .btn-clear {
+      background: #2d1a1a; border: 1px solid #7f1d1d; color: #f87171;
+      padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all .15s;
+    }
+    .btn-clear:hover { background: #3f1a1a; color: #fca5a5; border-color: #ef4444; }
+    .status-bar {
+      margin-top: 12px; padding: 8px 16px; border-radius: 8px; text-align: center;
+      font-size: 12.5px; min-height: 36px; line-height: 20px;
+      color: transparent; border: 1px solid transparent; transition: all .2s;
+    }
+    .status-bar.ok  { color: #34d399; background: rgba(52,211,153,.07); border-color: rgba(52,211,153,.2); }
+    .status-bar.err { color: #f87171; background: rgba(248,113,113,.07); border-color: rgba(248,113,113,.2); }
+    .error-banner {
+      display: none; align-items: center; gap: 12px;
+      background: #2d1a1a; border: 1px solid #ef4444; border-radius: 10px;
+      padding: 14px 18px; margin-bottom: 16px; color: #fca5a5; font-size: 13px; line-height: 1.5;
+    }
+    .error-banner.visible { display: flex; }
+    .error-banner-icon { font-size: 22px; flex-shrink: 0; }
+    .error-banner-text strong { display: block; color: #f87171; font-size: 14px; margin-bottom: 2px; }
+    .error-banner-close {
+      margin-left: auto; background: none; border: none; color: #f87171;
+      font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 6px;
+      border-radius: 4px; transition: background .15s; flex-shrink: 0;
+    }
+    .error-banner-close:hover { background: #3f1a1a; }
+    #debugWrap {
+      margin-top: 16px; background: #1e293b; border: 1px solid #334155;
+      border-radius: 10px; overflow: hidden; display: none;
+    }
+    #debugWrap.visible { display: block; }
+    .debug-header {
+      padding: 8px 16px; background: #0f172a; font-size: 11px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase; color: #94a3b8;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    #debugContent {
+      padding: 14px 16px; font-family: monospace; font-size: 12px; color: #fbbf24;
+      white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto;
+    }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
+      .middle { flex-direction: row; padding-top: 0; flex-wrap: wrap; justify-content: center; }
+      textarea { height: 42vh; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>✦ Markdown → Quiz Card Generator</h1>
+
+  <div class="error-banner" id="noH1Banner">
+    <span class="error-banner-icon">⚠️</span>
+    <div class="error-banner-text">
+      <strong>No H1 title found in the Markdown</strong>
+      Add a title at the top of your markdown using <code style="background:#3f1a1a;padding:1px 5px;border-radius:3px;color:#fcd34d;"># Your Title</code>, then try again.
+    </div>
+    <button class="error-banner-close" id="noH1BannerClose" title="Dismiss">✕</button>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-header">
+        <label>Input</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-md">Markdown</span>
+          <button class="btn-clear" id="btnClearInput">✕ Clear</button>
+        </div>
+      </div>
+      <textarea id="input" spellcheck="false"
+        placeholder="# Your Quiz Title&#10;&#10;## Question one&#10;Answer content here…&#10;&#10;## Question two&#10;Answer content here…"></textarea>
+    </div>
+
+    <div class="middle">
+      <button class="btn-convert"  id="btnConvert"  title="Convert MD → JSON">→<br>Gen JSON</button>
+      <button class="btn-generate" id="btnGenerate" title="Generate Quiz HTML">📄<br>Gen HTML</button>
+      <button class="btn-small"    id="btnDebug">🔍</button>
+      <button class="btn-clear"    id="btnClearAll">🗑</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <label>Output</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-json" id="outputBadge">JSON</span>
+          <button class="btn-small" id="btnCopy">⎘ Copy</button>
+          <button class="btn-clear" id="btnClearOutput">✕ Clear</button>
+        </div>
+      </div>
+      <textarea id="output" readonly spellcheck="false"
+        placeholder="JSON or HTML output will appear here…"></textarea>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status"></div>
+
+  <div id="debugWrap">
+    <div class="debug-header">
+      <span>🔍 Raw marked.parse() output</span>
+      <button class="btn-small" id="btnCloseDebug">✕ Close</button>
+    </div>
+    <div id="debugContent"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@4/marked.min.js"></script>
+<script>
+  function escAttr(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function safeJson(data) {
+    return JSON.stringify(data, null, 2)
+      .replace(/</g,'\\u003C').replace(/>/g,'\\u003E');
+  }
+
+  var renderer = new marked.Renderer();
+  renderer.image = function(href, title, text) {
+    var src  = escAttr((href  || '').replace(/^["']|["']$/g,''));
+    var alt  = text  ? ' alt="'   + escAttr(text)  + '"' : '';
+    var titl = title ? ' title="' + escAttr(title) + '"' : '';
+    return '<img src="' + src + '"' + alt + titl + ' />';
+  };
+  renderer.hr = function() { return ''; };
+  marked.setOptions({ renderer: renderer, gfm: true, breaks: true, headerIds: false, mangle: false });
+
+  function cleanHtml(html) {
+    return html
+      .replace(/<br\s*\/?>/gi, '<br />')
+      .replace(/<br \/>\s*(<\/(?:p|li|td|th|blockquote|div)>)/gi, '$1')
+      .replace(/(<\/[^>]+>)\s+(<[^/])/g, '$1$2')
+      .replace(/\r?\n/g, '')
+      .trim();
+  }
+
+  function extractTitle(raw) {
+    var m = raw.match(/^# (.+?)[ \t]*$/m);
+    return m ? m[1].trim() : null;
+  }
+
+  // ─── QUIZ TEMPLATE ────────────────────────────────────────────────────────
+  // Key changes vs previous version:
+  //   • buildQuestionList uses a plain for-loop + data-* attributes
+  //   • setupModalDelegation uses event delegation (no onclick= string at all)
+  //   • No inline comments inside the array (avoids any encoding edge-cases)
+  //   • All horizontal padding/margin values reduced for wider content
+  // ──────────────────────────────────────────────────────────────────────────
+  var QUIZ_TEMPLATE = [
+    '<!DOCTYPE html>',
+    '<html lang="zh-Hant">',
+    '<head>',
+    '    <meta charset="UTF-8">',
+    '    <meta name="viewport" content="width=device-width, initial-scale=1.0">',
+    '    <title>%%TITLE%%<\/title>',
+    '    <style>',
+    '        :root{--primary:#4361ee;--primary-light:#4895ef;--secondary:#3f37c9;--background:#f0f4ff;--card-bg:#ffffff;--text:#212529;--success:#38b000;--error:#d00000;}',
+    '        *{box-sizing:border-box;margin:0;padding:0;}',
+    '        body{font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.7;color:var(--text);background:var(--background);padding:0.5rem 0;}',
+    '        .container{max-width:100%;margin:0;width:100%;padding:0;}',
+    '        h1{font-size:1.8rem;font-weight:700;color:var(--primary);text-align:center;margin:0.5rem 0;}',
+    '        .stats{display:flex;gap:0.2rem;margin:0.5rem 0;flex-wrap:nowrap;}',
+    '        .stat-item{background:var(--card-bg);border-radius:8px;padding:0.4rem 0.15rem;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;flex:1;}',
+    '        .stat-label{font-size:0.75rem;color:#6c757d;}',
+    '        .stat-value{font-size:1.3rem;font-weight:700;color:var(--primary);}',
+    '        .stat-value.correct{color:var(--success);}.stat-value.incorrect{color:var(--error);}',
+    '        .controls{display:flex;gap:0.2rem;margin:0.5rem 0;flex-wrap:wrap;}',
+    '        .btn{background:var(--primary);color:#fff;border:none;padding:0.6rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.95rem;font-weight:500;transition:background .2s,transform .15s;}',
+    '        .btn:hover{background:var(--secondary);transform:translateY(-1px);}',
+    '        .btn:active{transform:translateY(0);}',
+    '        .btn-success{background:var(--success);}.btn-success:hover{background:#2d9600;}',
+    '        .btn-error{background:var(--error);}.btn-error:hover{background:#b00000;}',
+    '        .btn-info{background:#6c757d;}.btn-info:hover{background:#5a6268;}',
+    '        .btn-small{padding:0.35rem 0.6rem;font-size:0.82rem;}',
+    '        .question-box{background:var(--card-bg);border-radius:10px;padding:0.85rem 0.25rem;margin:0.5rem 0;box-shadow:0 2px 8px rgba(0,0,0,.07);}',
+    '        .question{font-size:1.35rem;font-weight:600;color:var(--primary);margin-bottom:0.75rem;}',
+    '        .question img,.answer-content img,.question-text img,.question-answer img{max-width:100%;height:auto;display:block;margin:0.5rem 0;border-radius:6px;}',
+    '        .show-answer-btn-wrap{text-align:center;margin:0.5rem 0;}',
+    '        .answer-content{display:none;background:rgba(67,97,238,.08);border-left:4px solid var(--primary);padding:0.6rem 0.35rem;border-radius:0 8px 8px 0;margin-top:0.6rem;}',
+    '        .answer-content.show{display:block;}',
+    '        .answer-content ul{padding-left:1.2rem;}',
+    '        .answer-content li{margin-bottom:0.4rem;}',
+    '        .feedback-controls{display:none;gap:0.5rem;justify-content:center;margin-top:0.6rem;flex-wrap:wrap;}',
+    '        .feedback-controls.show{display:flex;}',
+    '        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;justify-content:center;align-items:flex-start;padding:1rem 0;overflow-y:auto;}',
+    '        .modal.open{display:flex;}',
+    '        .modal-content{background:var(--card-bg);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:1rem 0.4rem;max-width:100%;width:100%;}',
+    '        .modal-title{font-size:1.3rem;font-weight:700;color:var(--primary);text-align:center;margin-bottom:0.6rem;}',
+    '        .modal-buttons{display:flex;justify-content:center;gap:0.75rem;margin-top:1rem;flex-wrap:wrap;}',
+    '        .question-count{font-weight:700;margin-bottom:0.6rem;text-align:center;}',
+    '        .question-count.correct{color:var(--success);}.question-count.remaining{color:var(--primary);}',
+    '        .question-list{display:flex;flex-direction:column;gap:0.5rem;}',
+    '        .question-item{background:rgba(67,97,238,.05);border-left:4px solid var(--primary);padding:0.6rem 0.25rem;border-radius:0 8px 8px 0;font-size:0.93rem;}',
+    '        .question-item.correct{border-color:var(--success);background:rgba(56,176,0,.05);}',
+    '        .question-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;}',
+    '        .question-text{flex:1;font-weight:500;}',
+    '        .question-answer{display:none;margin-top:0.6rem;padding:0.6rem 0.25rem;background:rgba(255,255,255,.9);border-radius:5px;border:1px solid rgba(67,97,238,.2);}',
+    '        .question-answer.show{display:block;}',
+    '        .question-answer ul{margin:0;padding-left:1.2rem;}',
+    '        .question-answer li{margin-bottom:0.4rem;}',
+    '        @media(max-width:600px){h1{font-size:1.3rem;}.stat-label{font-size:0.65rem;}.stat-value{font-size:1rem;}.stat-item{padding:0.35rem 0.1rem;}.question{font-size:1.05rem;}.btn{padding:0.5rem 0.6rem;font-size:0.83rem;}.controls{flex-wrap:nowrap;overflow-x:auto;}.controls .btn{flex:1;white-space:nowrap;}}',
+    '    <\/style>',
+    '<\/head>',
+    '<body>',
+    '<div class="container">',
+    '    <h1>%%TITLE%%<\/h1>',
+    '    <div class="stats">',
+    '        <div class="stat-item"><div class="stat-label">總題數<\/div><div id="totalCount" class="stat-value">0<\/div><\/div>',
+    '        <div class="stat-item"><div class="stat-label">待答題數<\/div><div id="remainingCount" class="stat-value">0<\/div><\/div>',
+    '        <div class="stat-item"><div class="stat-label">答對<\/div><div id="correctCount" class="stat-value correct">0<\/div><\/div>',
+    '        <div class="stat-item"><div class="stat-label">答錯<\/div><div id="incorrectCount" class="stat-value incorrect">0<\/div><\/div>',
+    '    <\/div>',
+    '    <div class="controls">',
+    '        <button id="drawBtn" class="btn">隨機抽題<\/button>',
+    '        <button id="resetBtn" class="btn">重設<\/button>',
+    '        <button id="showRemainingBtn" class="btn btn-info">查看待答題目<\/button>',
+    '        <button id="showCorrectBtn" class="btn btn-info">查看已答對題目<\/button>',
+    '    <\/div>',
+    '    <div class="question-box">',
+    '        <div id="question" class="question">按下「隨機抽題」按鈕開始<\/div>',
+    '        <div id="showAnswerBtnWrap" class="show-answer-btn-wrap" style="display:none">',
+    '            <button id="showAnswerBtn" class="btn">顯示答案<\/button>',
+    '        <\/div>',
+    '        <div id="answerContent" class="answer-content"><\/div>',
+    '        <div id="feedbackControls" class="feedback-controls">',
+    '            <button id="correctBtn" class="btn btn-success">我答對了<\/button>',
+    '            <button id="incorrectBtn" class="btn btn-error">我答錯了<\/button>',
+    '        <\/div>',
+    '    <\/div>',
+    '<\/div>',
+    '',
+    '<div id="resetModal" class="modal">',
+    '    <div class="modal-content">',
+    '        <div class="modal-title">確定要重設？<\/div>',
+    '        <p style="text-align:center">這將清除所有答題進度，此操作無法撤銷。<\/p>',
+    '        <div class="modal-buttons">',
+    '            <button id="confirmResetBtn" class="btn btn-error">確定重設<\/button>',
+    '            <button id="cancelResetBtn" class="btn">取消<\/button>',
+    '        <\/div>',
+    '    <\/div>',
+    '<\/div>',
+    '',
+    '<div id="remainingModal" class="modal">',
+    '    <div class="modal-content">',
+    '        <div class="modal-title">待答題目列表<\/div>',
+    '        <div id="remainingQuestionCount" class="question-count remaining"><\/div>',
+    '        <div id="remainingQuestionList" class="question-list"><\/div>',
+    '        <div class="modal-buttons"><button id="closeRemainingBtn" class="btn">關閉<\/button><\/div>',
+    '    <\/div>',
+    '<\/div>',
+    '',
+    '<div id="correctModal" class="modal">',
+    '    <div class="modal-content">',
+    '        <div class="modal-title">已答對題目列表<\/div>',
+    '        <div id="correctQuestionCount" class="question-count correct"><\/div>',
+    '        <div id="correctQuestionList" class="question-list"><\/div>',
+    '        <div class="modal-buttons"><button id="closeCorrectBtn" class="btn">關閉<\/button><\/div>',
+    '    <\/div>',
+    '<\/div>',
+    '',
+    '<script>',
+    'var qaData=%%JSON%%;',
+    'var currentQuestion=null;',
+    'var correctAnswers=[],incorrectAnswers=[];',
+    'var answerVisible=false,storageAvailable=false;',
+    'var STORAGE_KEY="quizCardFlashcards";',
+    'var questionElem=document.getElementById("question");',
+    'var answerContent=document.getElementById("answerContent");',
+    'var feedbackControls=document.getElementById("feedbackControls");',
+    'var showAnswerBtn=document.getElementById("showAnswerBtn");',
+    'var showAnswerBtnWrap=document.getElementById("showAnswerBtnWrap");',
+    'var drawBtn=document.getElementById("drawBtn");',
+    'var resetBtn=document.getElementById("resetBtn");',
+    'var showRemainingBtn=document.getElementById("showRemainingBtn");',
+    'var showCorrectBtn=document.getElementById("showCorrectBtn");',
+    'var correctBtn=document.getElementById("correctBtn");',
+    'var incorrectBtn=document.getElementById("incorrectBtn");',
+    'var totalCountElem=document.getElementById("totalCount");',
+    'var remainingCountElem=document.getElementById("remainingCount");',
+    'var correctCountElem=document.getElementById("correctCount");',
+    'var incorrectCountElem=document.getElementById("incorrectCount");',
+    'var resetModal=document.getElementById("resetModal");',
+    'var remainingModal=document.getElementById("remainingModal");',
+    'var correctModal=document.getElementById("correctModal");',
+    'function checkStorage(){try{localStorage.setItem("t","1");localStorage.removeItem("t");storageAvailable=true;}catch(e){storageAvailable=false;}}',
+    'function saveProgress(){if(!storageAvailable)return;try{localStorage.setItem(STORAGE_KEY,JSON.stringify({c:correctAnswers.map(function(q){return q.question;}),i:incorrectAnswers.map(function(q){return q.question;})}));}catch(e){}}',
+    'function loadProgress(){if(!storageAvailable)return;try{var d=localStorage.getItem(STORAGE_KEY);if(!d)return;var p=JSON.parse(d);correctAnswers=qaData.filter(function(q){return p.c.indexOf(q.question)!==-1;});incorrectAnswers=qaData.filter(function(q){return p.i.indexOf(q.question)!==-1;});}catch(e){}}',
+    'function updateStats(){totalCountElem.textContent=qaData.length;remainingCountElem.textContent=qaData.length-correctAnswers.length;correctCountElem.textContent=correctAnswers.length;incorrectCountElem.textContent=incorrectAnswers.length;}',
+    'function hideAnswer(){answerContent.classList.remove("show");feedbackControls.classList.remove("show");showAnswerBtn.textContent="顯示答案";answerVisible=false;}',
+    'function drawRandomQuestion(){',
+    '  hideAnswer();',
+    '  var available=qaData.filter(function(q){return correctAnswers.indexOf(q)===-1;});',
+    '  if(available.length===0){',
+    '    questionElem.innerHTML="恭喜！所有問題都已經答對了！點擊「重設」重新開始。";',
+    '    answerContent.innerHTML="";currentQuestion=null;showAnswerBtnWrap.style.display="none";return;',
+    '  }',
+    '  currentQuestion=available[Math.floor(Math.random()*available.length)];',
+    '  questionElem.innerHTML=currentQuestion.question;',
+    '  answerContent.innerHTML=currentQuestion.answer;',
+    '  showAnswerBtnWrap.style.display="block";',
+    '}',
+    'function toggleAnswer(){',
+    '  if(!currentQuestion)return;',
+    '  if(answerVisible){hideAnswer();}',
+    '  else{answerContent.classList.add("show");feedbackControls.classList.add("show");showAnswerBtn.textContent="隱藏答案";answerVisible=true;}',
+    '}',
+    'function markAsCorrect(){if(!currentQuestion)return;var i=incorrectAnswers.indexOf(currentQuestion);if(i!==-1)incorrectAnswers.splice(i,1);if(correctAnswers.indexOf(currentQuestion)===-1)correctAnswers.push(currentQuestion);updateStats();saveProgress();drawRandomQuestion();}',
+    'function markAsIncorrect(){if(!currentQuestion)return;if(incorrectAnswers.indexOf(currentQuestion)===-1)incorrectAnswers.push(currentQuestion);updateStats();saveProgress();drawRandomQuestion();}',
+    'function toggleQuestionAnswer(idx,type){',
+    '  var ans=document.getElementById(type+"-answer-"+idx);',
+    '  var btn=document.getElementById(type+"-btn-"+idx);',
+    '  if(!ans||!btn)return;',
+    '  if(ans.classList.contains("show")){ans.classList.remove("show");btn.textContent="顯示答案";}',
+    '  else{ans.classList.add("show");btn.textContent="隱藏答案";}',
+    '}',
+    'function buildQuestionList(list,type){',
+    '  if(list.length===0)return\'<div class="question-item">無<\/div>\';',
+    '  var html="";',
+    '  for(var i=0;i<list.length;i++){',
+    '    var q=list[i];',
+    '    var cls="question-item"+(type==="correct"?" correct":"");',
+    '    html+=\'<div class="\'+cls+\'"><div class="question-header">\';',
+    '    html+=\'<div class="question-text">\'+q.question+\'<\/div>\';',
+    '    html+=\'<button id="\'+type+\'-btn-\'+i+\'" class="btn btn-small qa-toggle" data-type="\'+type+\'" data-idx="\'+i+\'">顯示答案<\/button>\';',
+    '    html+=\'<\/div><div id="\'+type+\'-answer-\'+i+\'" class="question-answer">\'+q.answer+\'<\/div><\/div>\';',
+    '  }',
+    '  return html;',
+    '}',
+    'function showRemainingQuestions(){',
+    '  var avail=qaData.filter(function(q){return correctAnswers.indexOf(q)===-1;});',
+    '  document.getElementById("remainingQuestionCount").textContent="待答題目（"+avail.length+" 題）";',
+    '  document.getElementById("remainingQuestionList").innerHTML=buildQuestionList(avail,"remaining");',
+    '  remainingModal.classList.add("open");',
+    '}',
+    'function showCorrectQuestions(){',
+    '  document.getElementById("correctQuestionCount").textContent="已答對題目（"+correctAnswers.length+" 題）";',
+    '  document.getElementById("correctQuestionList").innerHTML=buildQuestionList(correctAnswers,"correct");',
+    '  correctModal.classList.add("open");',
+    '}',
+    'function doReset(){',
+    '  correctAnswers=[];incorrectAnswers=[];currentQuestion=null;',
+    '  hideAnswer();questionElem.innerHTML="按下「隨機抽題」按鈕開始";',
+    '  answerContent.innerHTML="";showAnswerBtnWrap.style.display="none";',
+    '  updateStats();saveProgress();resetModal.classList.remove("open");',
+    '}',
+    'function setupModalDelegation(modal){',
+    '  modal.addEventListener("click",function(e){',
+    '    if(e.target===modal){modal.classList.remove("open");return;}',
+    '    if(e.target.classList.contains("qa-toggle")){',
+    '      var idx=parseInt(e.target.getAttribute("data-idx"),10);',
+    '      var type=e.target.getAttribute("data-type");',
+    '      toggleQuestionAnswer(idx,type);',
+    '    }',
+    '  });',
+    '}',
+    'checkStorage();loadProgress();updateStats();',
+    'drawBtn.addEventListener("click",drawRandomQuestion);',
+    'showAnswerBtn.addEventListener("click",toggleAnswer);',
+    'correctBtn.addEventListener("click",markAsCorrect);',
+    'incorrectBtn.addEventListener("click",markAsIncorrect);',
+    'resetBtn.addEventListener("click",function(){resetModal.classList.add("open");});',
+    'document.getElementById("confirmResetBtn").addEventListener("click",doReset);',
+    'document.getElementById("cancelResetBtn").addEventListener("click",function(){resetModal.classList.remove("open");});',
+    'showRemainingBtn.addEventListener("click",showRemainingQuestions);',
+    'showCorrectBtn.addEventListener("click",showCorrectQuestions);',
+    'document.getElementById("closeRemainingBtn").addEventListener("click",function(){remainingModal.classList.remove("open");});',
+    'document.getElementById("closeCorrectBtn").addEventListener("click",function(){correctModal.classList.remove("open");});',
+    'setupModalDelegation(resetModal);',
+    'setupModalDelegation(remainingModal);',
+    'setupModalDelegation(correctModal);',
+    '<\/script>',
+    '<\/body>',
+    '<\/html>'
+  ].join('\n');
+
+  var _lastRawHtmls = [];
+
+  function mdToJson(raw) {
+    _lastRawHtmls = [];
+    var stripped = raw.replace(/^---[\s\S]*?---[ \t]*(\r?\n|$)/, '');
+    var chunks = stripped.split(/(?=^## )/m).map(function(c){ return c.trim(); }).filter(function(c){ return c.length > 0; });
+    if (chunks.length === 0) throw new Error('No ## headings found. Sections must start with "## Title".');
+    var result = [];
+    for (var k = 0; k < chunks.length; k++) {
+      var chunk = chunks[k];
+      var m = chunk.match(/^## (.+?)[ \t]*(\r?\n|$)/);
+      if (!m) continue;
+      var question = m[1].trim();
+      var body = chunk.slice(m[0].length).trim();
+      if (!body) { result.push({ question: question, answer: '' }); continue; }
+      var rawHtml = marked.parse(body);
+      _lastRawHtmls.push({ question: question, rawHtml: rawHtml });
+      result.push({ question: question, answer: cleanHtml(rawHtml) });
+    }
+    return result;
+  }
+
+  function generateQuizHtml(title, json) {
+    return QUIZ_TEMPLATE
+      .replace(/%%TITLE%%/g, escHtml(title))
+      .replace('%%JSON%%', safeJson(json));
+  }
+
+  var inputEl      = document.getElementById('input');
+  var outputEl     = document.getElementById('output');
+  var statusEl     = document.getElementById('status');
+  var outputBadge  = document.getElementById('outputBadge');
+  var debugWrap    = document.getElementById('debugWrap');
+  var debugContent = document.getElementById('debugContent');
+  var noH1Banner   = document.getElementById('noH1Banner');
+
+  function setStatus(msg, type) { statusEl.textContent = msg; statusEl.className = 'status-bar ' + (type || ''); }
+  function setOutputMode(mode) {
+    if (mode === 'html') { outputEl.style.color = '#fcd34d'; outputBadge.textContent = 'HTML'; outputBadge.className = 'badge badge-html'; }
+    else { outputEl.style.color = '#86efac'; outputBadge.textContent = 'JSON'; outputBadge.className = 'badge badge-json'; }
+  }
+  function showNoH1Banner() { noH1Banner.classList.add('visible'); noH1Banner.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+  function hideNoH1Banner() { noH1Banner.classList.remove('visible'); }
+
+  document.getElementById('noH1BannerClose').addEventListener('click', hideNoH1Banner);
+  inputEl.addEventListener('input', hideNoH1Banner);
+
+  function clearAll() {
+    inputEl.value = ''; outputEl.value = ''; _lastRawHtmls = [];
+    debugWrap.classList.remove('visible'); hideNoH1Banner(); setStatus(''); setOutputMode('json');
+  }
+
+  document.getElementById('btnConvert').addEventListener('click', function() {
+    var raw = inputEl.value;
+    if (!raw.trim()) { setStatus('⚠ Input is empty', 'err'); return; }
+    hideNoH1Banner();
+    try {
+      var json = mdToJson(raw);
+      outputEl.value = JSON.stringify(json, null, 2);
+      setOutputMode('json');
+      setStatus('✓ ' + json.length + ' section' + (json.length !== 1 ? 's' : '') + ' converted to JSON', 'ok');
+    } catch(e) { outputEl.value = ''; setStatus('✗ ' + e.message, 'err'); }
+  });
+
+  document.getElementById('btnGenerate').addEventListener('click', function() {
+    var raw = inputEl.value;
+    if (!raw.trim()) { setStatus('⚠ Input is empty', 'err'); return; }
+    var title = extractTitle(raw);
+    if (!title) { showNoH1Banner(); setStatus('✗ No H1 title found', 'err'); return; }
+    hideNoH1Banner();
+    try {
+      var json = mdToJson(raw);
+      outputEl.value = generateQuizHtml(title, json);
+      setOutputMode('html');
+      setStatus('✓ HTML generated -- "' + title + '" (' + json.length + ' card' + (json.length !== 1 ? 's' : '') + ')', 'ok');
+    } catch(e) { setStatus('✗ ' + e.message, 'err'); }
+  });
+
+  document.getElementById('btnCopy').addEventListener('click', function() {
+    if (!outputEl.value) return;
+    navigator.clipboard.writeText(outputEl.value).then(function() {
+      var b = document.getElementById('btnCopy'); var o = b.textContent;
+      b.textContent = '✓ Copied!'; setTimeout(function(){ b.textContent = o; }, 2000);
+    });
+  });
+
+  document.getElementById('btnClearInput').addEventListener('click',  function() { inputEl.value = ''; hideNoH1Banner(); inputEl.focus(); setStatus(''); });
+  document.getElementById('btnClearOutput').addEventListener('click', function() { outputEl.value = ''; _lastRawHtmls = []; debugWrap.classList.remove('visible'); setOutputMode('json'); setStatus(''); });
+  document.getElementById('btnClearAll').addEventListener('click', clearAll);
+
+  document.getElementById('btnDebug').addEventListener('click', function() {
+    debugContent.textContent = _lastRawHtmls.length === 0
+      ? 'Run a conversion first.'
+      : _lastRawHtmls.map(function(x){ return '── ' + x.question + ' ──\n' + x.rawHtml; }).join('\n\n');
+    debugWrap.classList.add('visible');
+  });
+  document.getElementById('btnCloseDebug').addEventListener('click', function(){ debugWrap.classList.remove('visible'); });
+</script>
+</body>
+</html>

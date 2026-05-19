@@ -7,15 +7,15 @@
     <style>
         :root{--primary:#4361ee;--primary-light:#4895ef;--secondary:#3f37c9;--background:#f0f4ff;--card-bg:#ffffff;--text:#212529;--success:#38b000;--error:#d00000;}
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.7;color:var(--text);background:var(--background);padding:0.5rem 0.35rem;}
+        body{font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.7;color:var(--text);background:var(--background);padding:0.5rem 0;}
         .container{max-width:100%;margin:0;width:100%;padding:0;}
         h1{font-size:1.8rem;font-weight:700;color:var(--primary);text-align:center;margin:0.5rem 0;}
-        .stats{display:flex;gap:0.35rem;margin:0.5rem 0;flex-wrap:nowrap;}
-        .stat-item{background:var(--card-bg);border-radius:8px;padding:0.4rem 0.5rem;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;flex:1;}
+        .stats{display:flex;gap:0.2rem;margin:0.5rem 0;flex-wrap:nowrap;}
+        .stat-item{background:var(--card-bg);border-radius:8px;padding:0.4rem 0.15rem;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;flex:1;}
         .stat-label{font-size:0.75rem;color:#6c757d;}
         .stat-value{font-size:1.3rem;font-weight:700;color:var(--primary);}
         .stat-value.correct{color:var(--success);}.stat-value.incorrect{color:var(--error);}
-        .controls{display:flex;gap:0.35rem;margin:0.5rem 0;flex-wrap:wrap;}
+        .controls{display:flex;gap:0.2rem;margin:0.5rem 0;flex-wrap:wrap;}
         .btn{background:var(--primary);color:#fff;border:none;padding:0.6rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.95rem;font-weight:500;transition:background .2s,transform .15s;}
         .btn:hover{background:var(--secondary);transform:translateY(-1px);}
         .btn:active{transform:translateY(0);}
@@ -23,41 +23,33 @@
         .btn-error{background:var(--error);}.btn-error:hover{background:#b00000;}
         .btn-info{background:#6c757d;}.btn-info:hover{background:#5a6268;}
         .btn-small{padding:0.35rem 0.6rem;font-size:0.82rem;}
-        .question-box{background:var(--card-bg);border-radius:10px;padding:0.85rem 0.75rem;margin:0.5rem 0;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+        .question-box{background:var(--card-bg);border-radius:10px;padding:0.85rem 0.25rem;margin:0.5rem 0;box-shadow:0 2px 8px rgba(0,0,0,.07);}
         .question{font-size:1.35rem;font-weight:600;color:var(--primary);margin-bottom:0.75rem;}
         .question img,.answer-content img,.question-text img,.question-answer img{max-width:100%;height:auto;display:block;margin:0.5rem 0;border-radius:6px;}
         .show-answer-btn-wrap{text-align:center;margin:0.5rem 0;}
-        .answer-content{display:none;background:rgba(67,97,238,.08);border-left:4px solid var(--primary);padding:0.6rem 0.75rem;border-radius:0 8px 8px 0;margin-top:0.6rem;}
+        .answer-content{display:none;background:rgba(67,97,238,.08);border-left:4px solid var(--primary);padding:0.6rem 0.35rem;border-radius:0 8px 8px 0;margin-top:0.6rem;}
         .answer-content.show{display:block;}
         .answer-content ul{padding-left:1.2rem;}
         .answer-content li{margin-bottom:0.4rem;}
         .feedback-controls{display:none;gap:0.5rem;justify-content:center;margin-top:0.6rem;flex-wrap:wrap;}
         .feedback-controls.show{display:flex;}
-        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;justify-content:center;align-items:flex-start;padding:1rem 0.35rem;overflow-y:auto;}
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;justify-content:center;align-items:flex-start;padding:1rem 0;overflow-y:auto;}
         .modal.open{display:flex;}
-        .modal-content{background:var(--card-bg);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:1rem 0.75rem;max-width:100%;width:100%;}
+        .modal-content{background:var(--card-bg);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:1rem 0.4rem;max-width:100%;width:100%;}
         .modal-title{font-size:1.3rem;font-weight:700;color:var(--primary);text-align:center;margin-bottom:0.6rem;}
         .modal-buttons{display:flex;justify-content:center;gap:0.75rem;margin-top:1rem;flex-wrap:wrap;}
         .question-count{font-weight:700;margin-bottom:0.6rem;text-align:center;}
         .question-count.correct{color:var(--success);}.question-count.remaining{color:var(--primary);}
         .question-list{display:flex;flex-direction:column;gap:0.5rem;}
-        .question-item{background:rgba(67,97,238,.05);border-left:4px solid var(--primary);padding:0.6rem 0.6rem;border-radius:0 8px 8px 0;font-size:0.93rem;}
+        .question-item{background:rgba(67,97,238,.05);border-left:4px solid var(--primary);padding:0.6rem 0.25rem;border-radius:0 8px 8px 0;font-size:0.93rem;}
         .question-item.correct{border-color:var(--success);background:rgba(56,176,0,.05);}
         .question-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;}
         .question-text{flex:1;font-weight:500;}
-        .question-answer{display:none;margin-top:0.6rem;padding:0.6rem 0.6rem;background:rgba(255,255,255,.9);border-radius:5px;border:1px solid rgba(67,97,238,.2);}
+        .question-answer{display:none;margin-top:0.6rem;padding:0.6rem 0.25rem;background:rgba(255,255,255,.9);border-radius:5px;border:1px solid rgba(67,97,238,.2);}
         .question-answer.show{display:block;}
         .question-answer ul{margin:0;padding-left:1.2rem;}
         .question-answer li{margin-bottom:0.4rem;}
-        @media(max-width:600px){
-            h1{font-size:1.3rem;}
-            .stat-label{font-size:0.65rem;}.stat-value{font-size:1rem;}
-            .stat-item{padding:0.35rem 0.2rem;}
-            .question{font-size:1.05rem;}
-            .btn{padding:0.5rem 0.6rem;font-size:0.83rem;}
-            .controls{flex-wrap:nowrap;overflow-x:auto;}
-            .controls .btn{flex:1;white-space:nowrap;}
-        }
+        @media(max-width:600px){h1{font-size:1.3rem;}.stat-label{font-size:0.65rem;}.stat-value{font-size:1rem;}.stat-item{padding:0.35rem 0.1rem;}.question{font-size:1.05rem;}.btn{padding:0.5rem 0.6rem;font-size:0.83rem;}.controls{flex-wrap:nowrap;overflow-x:auto;}.controls .btn{flex:1;white-space:nowrap;}}
     </style>
 </head>
 <body>
@@ -118,7 +110,7 @@
 </div>
 
 <script>
-    var qaData = [
+var qaData=[
   {
     "question": "IR-CP1",
     "answer": "\u003Cp\u003E眉尾，眼眶外，眼輪匝肌外上角\u003C/p\u003E\u003Cp\u003ETE23，絲竹空穴\u003C/p\u003E\u003Cp\u003E眼下斜肌\u003C/p\u003E\u003Cp\u003E頭部的內旋運動分為3個次級肌筋膜單元：\u003C/p\u003E\u003Cul\u003E\u003Cli\u003E1=眼的上斜肌，其ce 點位於眼眉的外側端\u003C/li\u003E\u003Cli\u003E2=嵌人顳下頷關節盤的翼外肌，其cc 點位於耳屏和下頜骨頭部之間\u003C/li\u003E\u003Cli\u003E3=翼內肌，其cc 點位於耳垂和下頜骨頸之間。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E後兩個次級肌筋膜單元的連接要素是翼肌筋膜\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260411080455-Ir-cp1.jpeg\" alt=\"Ir-cp1\" /\u003E\u003C/p\u003E"
@@ -744,127 +736,114 @@
     "answer": "\u003Cp\u003ECF點位置\u003Cbr /\u003E腕模紋背側遠端，指伸肌肌腱和小指伸肌肌腱之間\u003Cbr /\u003E中醫穴位\u003Cbr /\u003ESI3，後溪穴\u003Cbr /\u003E相關問題\u003Cbr /\u003E仲肌肌腱損傷，尺骨莖突遠端疼痛\u003C/p\u003E\u003Cp\u003E後-內一指cf點位於腕骨，在指伸肌與小指伸肌的肌腱之間。在這里它控制這些肌腱的伸展軌跡，以及由尺側腕屈肌和尺側腕伸肌驅動的尺偏部分。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260411090437-Re-me-di.jpeg\" alt=\"Re-me-di\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260516110516-Re-me-di1.jpeg\" alt=\"Re-me-di1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260516110519-Re-me-di2.jpeg\" alt=\"Re-me-di2\" /\u003E\u003C/p\u003E"
   }
 ];
-    var currentQuestion = null;
-    var correctAnswers = [], incorrectAnswers = [];
-    var answerVisible = false;
-    var storageAvailable = false;
-    var STORAGE_KEY = "quizCardFlashcards";
-
-    var questionElem        = document.getElementById("question");
-    var answerContent       = document.getElementById("answerContent");
-    var feedbackControls    = document.getElementById("feedbackControls");
-    var showAnswerBtn       = document.getElementById("showAnswerBtn");
-    var showAnswerBtnWrap   = document.getElementById("showAnswerBtnWrap");
-    var drawBtn             = document.getElementById("drawBtn");
-    var resetBtn            = document.getElementById("resetBtn");
-    var showRemainingBtn    = document.getElementById("showRemainingBtn");
-    var showCorrectBtn      = document.getElementById("showCorrectBtn");
-    var correctBtn          = document.getElementById("correctBtn");
-    var incorrectBtn        = document.getElementById("incorrectBtn");
-    var totalCountElem      = document.getElementById("totalCount");
-    var remainingCountElem  = document.getElementById("remainingCount");
-    var correctCountElem    = document.getElementById("correctCount");
-    var incorrectCountElem  = document.getElementById("incorrectCount");
-    var resetModal          = document.getElementById("resetModal");
-    var remainingModal      = document.getElementById("remainingModal");
-    var correctModal        = document.getElementById("correctModal");
-
-    function checkStorage(){try{localStorage.setItem("t","1");localStorage.removeItem("t");storageAvailable=true;}catch(e){storageAvailable=false;}}
-    function saveProgress(){if(!storageAvailable)return;try{localStorage.setItem(STORAGE_KEY,JSON.stringify({c:correctAnswers.map(function(q){return q.question;}),i:incorrectAnswers.map(function(q){return q.question;})}));}catch(e){}}
-    function loadProgress(){if(!storageAvailable)return;try{var d=localStorage.getItem(STORAGE_KEY);if(!d)return;var p=JSON.parse(d);correctAnswers=qaData.filter(function(q){return p.c.indexOf(q.question)!==-1;});incorrectAnswers=qaData.filter(function(q){return p.i.indexOf(q.question)!==-1;});}catch(e){}}
-    function updateStats(){totalCountElem.textContent=qaData.length;remainingCountElem.textContent=qaData.length-correctAnswers.length;correctCountElem.textContent=correctAnswers.length;incorrectCountElem.textContent=incorrectAnswers.length;}
-
-    function hideAnswer(){
-        answerContent.classList.remove("show");
-        feedbackControls.classList.remove("show");
-        showAnswerBtn.textContent="顯示答案";
-        answerVisible=false;
+var currentQuestion=null;
+var correctAnswers=[],incorrectAnswers=[];
+var answerVisible=false,storageAvailable=false;
+var STORAGE_KEY="quizCardFlashcards";
+var questionElem=document.getElementById("question");
+var answerContent=document.getElementById("answerContent");
+var feedbackControls=document.getElementById("feedbackControls");
+var showAnswerBtn=document.getElementById("showAnswerBtn");
+var showAnswerBtnWrap=document.getElementById("showAnswerBtnWrap");
+var drawBtn=document.getElementById("drawBtn");
+var resetBtn=document.getElementById("resetBtn");
+var showRemainingBtn=document.getElementById("showRemainingBtn");
+var showCorrectBtn=document.getElementById("showCorrectBtn");
+var correctBtn=document.getElementById("correctBtn");
+var incorrectBtn=document.getElementById("incorrectBtn");
+var totalCountElem=document.getElementById("totalCount");
+var remainingCountElem=document.getElementById("remainingCount");
+var correctCountElem=document.getElementById("correctCount");
+var incorrectCountElem=document.getElementById("incorrectCount");
+var resetModal=document.getElementById("resetModal");
+var remainingModal=document.getElementById("remainingModal");
+var correctModal=document.getElementById("correctModal");
+function checkStorage(){try{localStorage.setItem("t","1");localStorage.removeItem("t");storageAvailable=true;}catch(e){storageAvailable=false;}}
+function saveProgress(){if(!storageAvailable)return;try{localStorage.setItem(STORAGE_KEY,JSON.stringify({c:correctAnswers.map(function(q){return q.question;}),i:incorrectAnswers.map(function(q){return q.question;})}));}catch(e){}}
+function loadProgress(){if(!storageAvailable)return;try{var d=localStorage.getItem(STORAGE_KEY);if(!d)return;var p=JSON.parse(d);correctAnswers=qaData.filter(function(q){return p.c.indexOf(q.question)!==-1;});incorrectAnswers=qaData.filter(function(q){return p.i.indexOf(q.question)!==-1;});}catch(e){}}
+function updateStats(){totalCountElem.textContent=qaData.length;remainingCountElem.textContent=qaData.length-correctAnswers.length;correctCountElem.textContent=correctAnswers.length;incorrectCountElem.textContent=incorrectAnswers.length;}
+function hideAnswer(){answerContent.classList.remove("show");feedbackControls.classList.remove("show");showAnswerBtn.textContent="顯示答案";answerVisible=false;}
+function drawRandomQuestion(){
+  hideAnswer();
+  var available=qaData.filter(function(q){return correctAnswers.indexOf(q)===-1;});
+  if(available.length===0){
+    questionElem.innerHTML="恭喜！所有問題都已經答對了！點擊「重設」重新開始。";
+    answerContent.innerHTML="";currentQuestion=null;showAnswerBtnWrap.style.display="none";return;
+  }
+  currentQuestion=available[Math.floor(Math.random()*available.length)];
+  questionElem.innerHTML=currentQuestion.question;
+  answerContent.innerHTML=currentQuestion.answer;
+  showAnswerBtnWrap.style.display="block";
+}
+function toggleAnswer(){
+  if(!currentQuestion)return;
+  if(answerVisible){hideAnswer();}
+  else{answerContent.classList.add("show");feedbackControls.classList.add("show");showAnswerBtn.textContent="隱藏答案";answerVisible=true;}
+}
+function markAsCorrect(){if(!currentQuestion)return;var i=incorrectAnswers.indexOf(currentQuestion);if(i!==-1)incorrectAnswers.splice(i,1);if(correctAnswers.indexOf(currentQuestion)===-1)correctAnswers.push(currentQuestion);updateStats();saveProgress();drawRandomQuestion();}
+function markAsIncorrect(){if(!currentQuestion)return;if(incorrectAnswers.indexOf(currentQuestion)===-1)incorrectAnswers.push(currentQuestion);updateStats();saveProgress();drawRandomQuestion();}
+function toggleQuestionAnswer(idx,type){
+  var ans=document.getElementById(type+"-answer-"+idx);
+  var btn=document.getElementById(type+"-btn-"+idx);
+  if(!ans||!btn)return;
+  if(ans.classList.contains("show")){ans.classList.remove("show");btn.textContent="顯示答案";}
+  else{ans.classList.add("show");btn.textContent="隱藏答案";}
+}
+function buildQuestionList(list,type){
+  if(list.length===0)return'<div class="question-item">無</div>';
+  var html="";
+  for(var i=0;i<list.length;i++){
+    var q=list[i];
+    var cls="question-item"+(type==="correct"?" correct":"");
+    html+='<div class="'+cls+'"><div class="question-header">';
+    html+='<div class="question-text">'+q.question+'</div>';
+    html+='<button id="'+type+'-btn-'+i+'" class="btn btn-small qa-toggle" data-type="'+type+'" data-idx="'+i+'">顯示答案</button>';
+    html+='</div><div id="'+type+'-answer-'+i+'" class="question-answer">'+q.answer+'</div></div>';
+  }
+  return html;
+}
+function showRemainingQuestions(){
+  var avail=qaData.filter(function(q){return correctAnswers.indexOf(q)===-1;});
+  document.getElementById("remainingQuestionCount").textContent="待答題目（"+avail.length+" 題）";
+  document.getElementById("remainingQuestionList").innerHTML=buildQuestionList(avail,"remaining");
+  remainingModal.classList.add("open");
+}
+function showCorrectQuestions(){
+  document.getElementById("correctQuestionCount").textContent="已答對題目（"+correctAnswers.length+" 題）";
+  document.getElementById("correctQuestionList").innerHTML=buildQuestionList(correctAnswers,"correct");
+  correctModal.classList.add("open");
+}
+function doReset(){
+  correctAnswers=[];incorrectAnswers=[];currentQuestion=null;
+  hideAnswer();questionElem.innerHTML="按下「隨機抽題」按鈕開始";
+  answerContent.innerHTML="";showAnswerBtnWrap.style.display="none";
+  updateStats();saveProgress();resetModal.classList.remove("open");
+}
+function setupModalDelegation(modal){
+  modal.addEventListener("click",function(e){
+    if(e.target===modal){modal.classList.remove("open");return;}
+    if(e.target.classList.contains("qa-toggle")){
+      var idx=parseInt(e.target.getAttribute("data-idx"),10);
+      var type=e.target.getAttribute("data-type");
+      toggleQuestionAnswer(idx,type);
     }
-
-    function drawRandomQuestion(){
-        hideAnswer();
-        var available=qaData.filter(function(q){return correctAnswers.indexOf(q)===-1;});
-        if(available.length===0){
-            questionElem.innerHTML="恭喜！所有問題都已經答對了！點擊「重設」重新開始。";
-            answerContent.innerHTML="";
-            currentQuestion=null;
-            showAnswerBtnWrap.style.display="none";
-            return;
-        }
-        currentQuestion=available[Math.floor(Math.random()*available.length)];
-        questionElem.innerHTML=currentQuestion.question;
-        answerContent.innerHTML=currentQuestion.answer;
-        showAnswerBtnWrap.style.display="block";
-    }
-
-    function toggleAnswer(){
-        if(!currentQuestion)return;
-        if(answerVisible){hideAnswer();}
-        else{
-            answerContent.classList.add("show");
-            feedbackControls.classList.add("show");
-            showAnswerBtn.textContent="隱藏答案";
-            answerVisible=true;
-        }
-    }
-
-    function markAsCorrect(){if(!currentQuestion)return;var i=incorrectAnswers.indexOf(currentQuestion);if(i!==-1)incorrectAnswers.splice(i,1);if(correctAnswers.indexOf(currentQuestion)===-1)correctAnswers.push(currentQuestion);updateStats();saveProgress();drawRandomQuestion();}
-    function markAsIncorrect(){if(!currentQuestion)return;if(incorrectAnswers.indexOf(currentQuestion)===-1)incorrectAnswers.push(currentQuestion);updateStats();saveProgress();drawRandomQuestion();}
-
-    function toggleQuestionAnswer(idx,type){
-        var ans=document.getElementById(type+"-answer-"+idx);
-        var btn=document.getElementById(type+"-btn-"+idx);
-        if(!ans||!btn)return;
-        if(ans.classList.contains("show")){ans.classList.remove("show");btn.textContent="顯示答案";}
-        else{ans.classList.add("show");btn.textContent="隱藏答案";}
-    }
-    window.toggleQuestionAnswer=toggleQuestionAnswer;
-
-    function buildQuestionList(list,type){
-        if(list.length===0)return'<div class="question-item">無</div>';
-        return list.map(function(q,i){
-            return'<div class="question-item '+(type==="correct"?"correct":"remaining")+'"><div class="question-header"><div class="question-text">'+q.question+'</div><button id="'+type+'-btn-'+i+'" class="btn btn-small" onclick="toggleQuestionAnswer('+i+',&#39;'+type+'&#39;)">顯示答案</button></div><div id="'+type+'-answer-'+i+'" class="question-answer">'+q.answer+'</div></div>';
-        }).join("");
-    }
-
-    function showRemainingQuestions(){
-        var avail=qaData.filter(function(q){return correctAnswers.indexOf(q)===-1;});
-        document.getElementById("remainingQuestionCount").textContent="待答題目（"+avail.length+" 題）";
-        document.getElementById("remainingQuestionList").innerHTML=buildQuestionList(avail,"remaining");
-        remainingModal.classList.add("open");
-    }
-    function showCorrectQuestions(){
-        document.getElementById("correctQuestionCount").textContent="已答對題目（"+correctAnswers.length+" 題）";
-        document.getElementById("correctQuestionList").innerHTML=buildQuestionList(correctAnswers,"correct");
-        correctModal.classList.add("open");
-    }
-
-    function doReset(){
-        correctAnswers=[];incorrectAnswers=[];currentQuestion=null;
-        hideAnswer();
-        questionElem.innerHTML="按下「隨機抽題」按鈕開始";
-        answerContent.innerHTML="";
-        showAnswerBtnWrap.style.display="none";
-        updateStats();saveProgress();
-        resetModal.classList.remove("open");
-    }
-
-    checkStorage();loadProgress();updateStats();
-
-    drawBtn.addEventListener("click",drawRandomQuestion);
-    showAnswerBtn.addEventListener("click",toggleAnswer);
-    correctBtn.addEventListener("click",markAsCorrect);
-    incorrectBtn.addEventListener("click",markAsIncorrect);
-    resetBtn.addEventListener("click",function(){resetModal.classList.add("open");});
-    document.getElementById("confirmResetBtn").addEventListener("click",doReset);
-    document.getElementById("cancelResetBtn").addEventListener("click",function(){resetModal.classList.remove("open");});
-    showRemainingBtn.addEventListener("click",showRemainingQuestions);
-    showCorrectBtn.addEventListener("click",showCorrectQuestions);
-    document.getElementById("closeRemainingBtn").addEventListener("click",function(){remainingModal.classList.remove("open");});
-    document.getElementById("closeCorrectBtn").addEventListener("click",function(){correctModal.classList.remove("open");});
-    resetModal.addEventListener("click",function(e){if(e.target===resetModal)resetModal.classList.remove("open");});
-    remainingModal.addEventListener("click",function(e){if(e.target===remainingModal)remainingModal.classList.remove("open");});
-    correctModal.addEventListener("click",function(e){if(e.target===correctModal)correctModal.classList.remove("open");});
+  });
+}
+checkStorage();loadProgress();updateStats();
+drawBtn.addEventListener("click",drawRandomQuestion);
+showAnswerBtn.addEventListener("click",toggleAnswer);
+correctBtn.addEventListener("click",markAsCorrect);
+incorrectBtn.addEventListener("click",markAsIncorrect);
+resetBtn.addEventListener("click",function(){resetModal.classList.add("open");});
+document.getElementById("confirmResetBtn").addEventListener("click",doReset);
+document.getElementById("cancelResetBtn").addEventListener("click",function(){resetModal.classList.remove("open");});
+showRemainingBtn.addEventListener("click",showRemainingQuestions);
+showCorrectBtn.addEventListener("click",showCorrectQuestions);
+document.getElementById("closeRemainingBtn").addEventListener("click",function(){remainingModal.classList.remove("open");});
+document.getElementById("closeCorrectBtn").addEventListener("click",function(){correctModal.classList.remove("open");});
+setupModalDelegation(resetModal);
+setupModalDelegation(remainingModal);
+setupModalDelegation(correctModal);
 </script>
 </body>
 </html>
