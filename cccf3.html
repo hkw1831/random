@@ -5,130 +5,130 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CC CF 點位隨機抽題卡</title>
     <style>
-        :root{--primary:#4361ee;--primary-light:#4895ef;--secondary:#3f37c9;--background:#f8f9fa;--card-bg:#ffffff;--text:#212529;--success:#38b000;--error:#d00000;}
+        :root{--primary:#4361ee;--primary-light:#4895ef;--secondary:#3f37c9;--background:#f0f4ff;--card-bg:#ffffff;--text:#212529;--success:#38b000;--error:#d00000;}
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.6;color:var(--text);background-color:var(--background);padding:1rem;min-height:100vh;display:flex;flex-direction:column;}
-        .container{max-width:800px;margin:0 auto;width:100%;}
-        header{text-align:center;margin-bottom:0;}
-        h1{font-size:2rem;margin-bottom:0.5rem;color:var(--primary);}
-        .card{background-color:var(--card-bg);border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,0.1);padding:0.5rem;margin-bottom:2rem;transition:transform 0.3s ease;}
-        .card:hover{transform:translateY(-5px);}
-        .question{font-size:1.5rem;font-weight:600;margin-bottom:1.5rem;color:var(--primary);}
-        .question img,.answer-content img,.question-text img,.question-answer img{max-width:100%;height:auto;display:block;margin:0;border-radius:6px;}
-        .show-answer-btn-container{display:flex;justify-content:center;margin-top:1.5rem;}
-        .answer-container{margin-top:1rem;overflow:hidden;max-height:0;transition:max-height 0.5s ease;}
-        .answer-content{background-color:rgba(67,97,238,0.1);border-left:4px solid var(--primary);padding:0.25rem;border-radius:0 8px 8px 0;}
-        .answer-content ul{padding-left:1.5rem;}
-        .answer-content li{margin-bottom:0.5rem;}
-        .btn{background-color:var(--primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:5px;cursor:pointer;font-size:1rem;font-weight:500;transition:background-color 0.3s,transform 0.2s;display:inline-block;margin:0.5rem 0.5rem 0.5rem 0;}
-        .btn:hover{background-color:var(--secondary);transform:translateY(-2px);}
-        .btn:active{transform:translateY(0);}
-        .btn-success{background-color:var(--success);}.btn-success:hover{background-color:#2d9600;}
-        .btn-error{background-color:var(--error);}.btn-error:hover{background-color:#b00000;}
-        .btn-info{background-color:#6c757d;}.btn-info:hover{background-color:#5a6268;}
-        .btn-small{padding:0.5rem 1rem;font-size:0.875rem;}
-        .controls{display:flex;justify-content:center;gap:1rem;margin-bottom:0.5rem;flex-wrap:wrap;}
-        .feedback-controls{display:flex;justify-content:center;gap:1rem;margin-top:0;max-height:0;overflow:hidden;transition:max-height 0.5s ease;}
-        .stats{display:flex;justify-content:center;gap:1.5rem;padding:0.25rem 0;flex-wrap:nowrap;overflow-x:auto;}
-        .stat-item{background-color:var(--card-bg);border-radius:8px;padding:0.75rem 1.5rem;box-shadow:0 2px 5px rgba(0,0,0,0.1);text-align:center;flex:1;min-width:80px;}
-        .stat-label{font-size:0.85rem;color:#6c757d;white-space:nowrap;}
-        .stat-value{font-size:1.5rem;font-weight:bold;color:var(--primary);}
+        body{font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.7;color:var(--text);background:var(--background);padding:1rem;}
+        .container{max-width:740px;margin:0 auto;width:100%;}
+        h1{font-size:1.8rem;font-weight:700;color:var(--primary);text-align:center;margin:0.75rem 0;}
+        /* ── Stats ── */
+        .stats{display:flex;gap:0.5rem;margin:0.75rem 0;flex-wrap:nowrap;}
+        .stat-item{background:var(--card-bg);border-radius:8px;padding:0.5rem 0.75rem;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;flex:1;}
+        .stat-label{font-size:0.75rem;color:#6c757d;}
+        .stat-value{font-size:1.3rem;font-weight:700;color:var(--primary);}
         .stat-value.correct{color:var(--success);}.stat-value.incorrect{color:var(--error);}
-        footer{margin-top:auto;text-align:center;padding:1rem 0;font-size:0.9rem;color:#6c757d;}
-        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.5);z-index:100;justify-content:center;align-items:center;overflow-y:auto;}
-        .modal-content{background-color:var(--card-bg);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);padding:2rem;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;margin:2rem auto;}
-        .modal-title{font-size:1.5rem;margin-bottom:1rem;color:var(--primary);text-align:center;}
-        .modal-buttons{display:flex;justify-content:center;gap:1rem;margin-top:1.5rem;}
-        .question-list{margin-top:1rem;}
-        .question-item{background-color:rgba(67,97,238,0.05);border-left:4px solid var(--primary);padding:1rem;margin-bottom:1rem;border-radius:0 8px 8px 0;font-size:0.95rem;}
-        .question-item.correct{border-left-color:var(--success);background-color:rgba(56,176,0,0.05);}
-        .question-item.remaining{border-left-color:var(--primary);background-color:rgba(67,97,238,0.05);}
-        .question-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;gap:1rem;}
-        .question-text{flex:1;font-weight:500;}
-        .question-answer{margin-top:1rem;padding:1rem;background-color:rgba(255,255,255,0.8);border-radius:5px;border:1px solid rgba(67,97,238,0.2);display:none;}
-        .question-answer.show{display:block;}
-        .question-answer ul{margin:0;padding-left:1.5rem;}
-        .question-answer li{margin-bottom:0.5rem;}
-        .question-count{font-weight:bold;color:var(--primary);margin-bottom:1rem;text-align:center;}
+        /* ── Controls ── */
+        .controls{display:flex;gap:0.5rem;margin:0.75rem 0;flex-wrap:wrap;}
+        .btn{background:var(--primary);color:#fff;border:none;padding:0.65rem 1.1rem;border-radius:6px;cursor:pointer;font-size:0.95rem;font-weight:500;transition:background .2s,transform .15s;}
+        .btn:hover{background:var(--secondary);transform:translateY(-1px);}
+        .btn:active{transform:translateY(0);}
+        .btn-success{background:var(--success);}.btn-success:hover{background:#2d9600;}
+        .btn-error{background:var(--error);}.btn-error:hover{background:#b00000;}
+        .btn-info{background:#6c757d;}.btn-info:hover{background:#5a6268;}
+        .btn-small{padding:0.4rem 0.75rem;font-size:0.82rem;}
+        /* ── Question area ── */
+        .question-box{background:var(--card-bg);border-radius:10px;padding:1.25rem 1rem;margin:0.75rem 0;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+        .question{font-size:1.35rem;font-weight:600;color:var(--primary);margin-bottom:1rem;}
+        .question img,.answer-content img,.question-text img,.question-answer img{max-width:100%;height:auto;display:block;margin:0.5rem 0;border-radius:6px;}
+        .show-answer-btn-wrap{text-align:center;margin:0.5rem 0;}
+        /* ── Answer -- plain show/hide, no height animation ── */
+        .answer-content{display:none;background:rgba(67,97,238,.08);border-left:4px solid var(--primary);padding:0.75rem 1rem;border-radius:0 8px 8px 0;margin-top:0.75rem;}
+        .answer-content.show{display:block;}
+        .answer-content ul{padding-left:1.4rem;}
+        .answer-content li{margin-bottom:0.4rem;}
+        /* ── Feedback buttons -- plain show/hide ── */
+        .feedback-controls{display:none;gap:0.5rem;justify-content:center;margin-top:0.75rem;flex-wrap:wrap;}
+        .feedback-controls.show{display:flex;}
+        /* ── Modal ── */
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;justify-content:center;align-items:flex-start;padding:2rem 1rem;overflow-y:auto;}
+        .modal.open{display:flex;}
+        .modal-content{background:var(--card-bg);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:1.5rem;max-width:680px;width:100%;}
+        .modal-title{font-size:1.3rem;font-weight:700;color:var(--primary);text-align:center;margin-bottom:0.75rem;}
+        .modal-buttons{display:flex;justify-content:center;gap:0.75rem;margin-top:1.25rem;flex-wrap:wrap;}
+        /* ── Question list inside modal ── */
+        .question-count{font-weight:700;margin-bottom:0.75rem;text-align:center;}
         .question-count.correct{color:var(--success);}.question-count.remaining{color:var(--primary);}
+        .question-list{display:flex;flex-direction:column;gap:0.75rem;}
+        .question-item{background:rgba(67,97,238,.05);border-left:4px solid var(--primary);padding:0.75rem;border-radius:0 8px 8px 0;font-size:0.93rem;}
+        .question-item.correct{border-color:var(--success);background:rgba(56,176,0,.05);}
+        .question-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;flex-wrap:wrap;}
+        .question-text{flex:1;font-weight:500;}
+        .question-answer{display:none;margin-top:0.75rem;padding:0.75rem;background:rgba(255,255,255,.9);border-radius:5px;border:1px solid rgba(67,97,238,.2);}
+        .question-answer.show{display:block;}
+        .question-answer ul{margin:0;padding-left:1.4rem;}
+        .question-answer li{margin-bottom:0.4rem;}
         @media(max-width:600px){
-            body{padding-left:0.5rem;padding-right:0.5rem;}
-            .stats{flex-wrap:nowrap;gap:0.3rem;}
-            .stat-item{flex:1 1 0;min-width:0;padding:0.5rem 0.25rem;}
-            .stat-label{font-size:0.7rem;}.stat-value{font-size:1.1rem;}
-            .card{padding:1.5rem 0.75rem;}.answer-content{padding:0.75rem 0.5rem;}
-            .question-item{padding:0.75rem 0.5rem;}.question-answer{padding:0.75rem 0.5rem;}
-            .question{font-size:1.25rem;}
-            .btn{padding:0.5rem 0.6rem;font-size:0.8rem;margin:0.25rem 0;}
-            .btn-small{padding:0.4rem 0.5rem;font-size:0.75rem;}
-            .controls{flex-direction:row;flex-wrap:nowrap;gap:0.4rem;overflow-x:auto;}
-            .controls .btn{flex:1 1 0;min-width:0;width:auto;margin-right:0;white-space:nowrap;}
-            .feedback-controls{flex-direction:row;flex-wrap:nowrap;gap:0.4rem;}
-            .feedback-controls .btn{flex:1 1 0;min-width:0;white-space:nowrap;}
-            .modal-buttons{flex-direction:column;}
-            .modal-content{margin:1rem auto;padding:1.5rem 0.75rem;max-width:95%;}
-            .question-header{flex-direction:column;align-items:stretch;gap:0.5rem;}
-            .question-text{margin-bottom:0.5rem;}
+            h1{font-size:1.4rem;}
+            .stat-label{font-size:0.68rem;}.stat-value{font-size:1.1rem;}
+            .stat-item{padding:0.4rem 0.3rem;}
+            .question{font-size:1.1rem;}
+            .btn{padding:0.55rem 0.75rem;font-size:0.85rem;}
+            .controls{flex-wrap:nowrap;overflow-x:auto;}
+            .controls .btn{flex:1;white-space:nowrap;}
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header><h1>CC CF 點位隨機抽題卡</h1></header>
-        <div class="stats">
-            <div class="stat-item"><div class="stat-label">總題數</div><div id="totalCount" class="stat-value">0</div></div>
-            <div class="stat-item"><div class="stat-label">待答題數</div><div id="remainingCount" class="stat-value">0</div></div>
-            <div class="stat-item"><div class="stat-label">答對</div><div id="correctCount" class="stat-value correct">0</div></div>
-            <div class="stat-item"><div class="stat-label">答錯</div><div id="incorrectCount" class="stat-value incorrect">0</div></div>
+<div class="container">
+    <h1>CC CF 點位隨機抽題卡</h1>
+    <div class="stats">
+        <div class="stat-item"><div class="stat-label">總題數</div><div id="totalCount" class="stat-value">0</div></div>
+        <div class="stat-item"><div class="stat-label">待答題數</div><div id="remainingCount" class="stat-value">0</div></div>
+        <div class="stat-item"><div class="stat-label">答對</div><div id="correctCount" class="stat-value correct">0</div></div>
+        <div class="stat-item"><div class="stat-label">答錯</div><div id="incorrectCount" class="stat-value incorrect">0</div></div>
+    </div>
+    <div class="controls">
+        <button id="drawBtn" class="btn">隨機抽題</button>
+        <button id="resetBtn" class="btn">重設</button>
+        <button id="showRemainingBtn" class="btn btn-info">查看待答題目</button>
+        <button id="showCorrectBtn" class="btn btn-info">查看已答對題目</button>
+    </div>
+    <div class="question-box">
+        <div id="question" class="question">按下「隨機抽題」按鈕開始</div>
+        <div class="show-answer-btn-wrap">
+            <button id="showAnswerBtn" class="btn">顯示答案</button>
         </div>
-        <div class="controls">
-            <button id="drawBtn" class="btn">隨機抽題</button>
-            <button id="resetBtn" class="btn">重設</button>
-            <button id="showRemainingBtn" class="btn btn-info">查看待答題目</button>
-            <button id="showCorrectBtn" class="btn btn-info">查看已答對題目</button>
-        </div>
-        <div id="card" class="card">
-            <div id="question" class="question">按下「隨機抽題」按鈕開始</div>
-            <div class="show-answer-btn-container">
-                <button id="showAnswerBtn" class="btn">顯示答案</button>
-            </div>
-            <div id="answerContainer" class="answer-container">
-                <div id="answer" class="answer-content"></div>
-                <div id="feedbackControls" class="feedback-controls">
-                    <button id="correctBtn" class="btn btn-success">我答對了</button>
-                    <button id="incorrectBtn" class="btn btn-error">我答錯了</button>
-                </div>
-            </div>
+        <div id="answerContent" class="answer-content"></div>
+        <div id="feedbackControls" class="feedback-controls">
+            <button id="correctBtn" class="btn btn-success">我答對了</button>
+            <button id="incorrectBtn" class="btn btn-error">我答錯了</button>
         </div>
     </div>
-    <div id="resetModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-title">確定要重設？</div>
-            <p>這將清除所有答題進度，此操作無法撤銷。</p>
-            <div class="modal-buttons">
-                <button id="confirmResetBtn" class="btn btn-error">確定重設</button>
-                <button id="cancelResetBtn" class="btn">取消</button>
-            </div>
+</div>
+
+<!-- Reset modal -->
+<div id="resetModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">確定要重設？</div>
+        <p style="text-align:center">這將清除所有答題進度，此操作無法撤銷。</p>
+        <div class="modal-buttons">
+            <button id="confirmResetBtn" class="btn btn-error">確定重設</button>
+            <button id="cancelResetBtn" class="btn">取消</button>
         </div>
     </div>
-    <div id="remainingModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-title">待答題目列表</div>
-            <div id="remainingQuestionCount" class="question-count remaining"></div>
-            <div id="remainingQuestionList" class="question-list"></div>
-            <div class="modal-buttons"><button id="closeRemainingBtn" class="btn">關閉</button></div>
-        </div>
+</div>
+
+<!-- Remaining modal -->
+<div id="remainingModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">待答題目列表</div>
+        <div id="remainingQuestionCount" class="question-count remaining"></div>
+        <div id="remainingQuestionList" class="question-list"></div>
+        <div class="modal-buttons"><button id="closeRemainingBtn" class="btn">關閉</button></div>
     </div>
-    <div id="correctModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-title">已答對題目列表</div>
-            <div id="correctQuestionCount" class="question-count correct"></div>
-            <div id="correctQuestionList" class="question-list"></div>
-            <div class="modal-buttons"><button id="closeCorrectBtn" class="btn">關閉</button></div>
-        </div>
+</div>
+
+<!-- Correct modal -->
+<div id="correctModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">已答對題目列表</div>
+        <div id="correctQuestionCount" class="question-count correct"></div>
+        <div id="correctQuestionList" class="question-list"></div>
+        <div class="modal-buttons"><button id="closeCorrectBtn" class="btn">關閉</button></div>
     </div>
-    <script>
-        var qaData=[
+</div>
+
+<script>
+    var qaData = [
   {
     "question": "IR-CP1",
     "answer": "\u003Cp\u003E眉尾，眼眶外，眼輪匝肌外上角\u003C/p\u003E\u003Cp\u003ETE23，絲竹空穴\u003C/p\u003E\u003Cp\u003E眼下斜肌\u003C/p\u003E\u003Cp\u003E頭部的內旋運動分為3個次級肌筋膜單元：\u003C/p\u003E\u003Cul\u003E\u003Cli\u003E1=眼的上斜肌，其ce 點位於眼眉的外側端\u003C/li\u003E\u003Cli\u003E2=嵌人顳下頷關節盤的翼外肌，其cc 點位於耳屏和下頜骨頭部之間\u003C/li\u003E\u003Cli\u003E3=翼內肌，其cc 點位於耳垂和下頜骨頸之間。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E後兩個次級肌筋膜單元的連接要素是翼肌筋膜\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260411080455-Ir-cp1.jpeg\" alt=\"Ir-cp1\" /\u003E\u003C/p\u003E"
@@ -754,67 +754,110 @@
     "answer": "\u003Cp\u003ECF點位置\u003Cbr /\u003E腕模紋背側遠端，指伸肌肌腱和小指伸肌肌腱之間\u003Cbr /\u003E中醫穴位\u003Cbr /\u003ESI3，後溪穴\u003Cbr /\u003E相關問題\u003Cbr /\u003E仲肌肌腱損傷，尺骨莖突遠端疼痛\u003C/p\u003E\u003Cp\u003E後-內一指cf點位於腕骨，在指伸肌與小指伸肌的肌腱之間。在這里它控制這些肌腱的伸展軌跡，以及由尺側腕屈肌和尺側腕伸肌驅動的尺偏部分。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260411090437-Re-me-di.jpeg\" alt=\"Re-me-di\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260516110516-Re-me-di1.jpeg\" alt=\"Re-me-di1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260516110519-Re-me-di2.jpeg\" alt=\"Re-me-di2\" /\u003E\u003C/p\u003E"
   }
 ];
-        var currentQuestion=null,correctAnswers=[],incorrectAnswers=[],isAnswerShowing=false,storageAvailable=false;
-        var drawBtn=document.getElementById("drawBtn"),showAnswerBtn=document.getElementById("showAnswerBtn"),resetBtn=document.getElementById("resetBtn"),showRemainingBtn=document.getElementById("showRemainingBtn"),showCorrectBtn=document.getElementById("showCorrectBtn");
-        var questionElem=document.getElementById("question"),answerElem=document.getElementById("answer"),answerContainer=document.getElementById("answerContainer"),feedbackControls=document.getElementById("feedbackControls");
-        var correctBtn=document.getElementById("correctBtn"),incorrectBtn=document.getElementById("incorrectBtn");
-        var resetModal=document.getElementById("resetModal"),confirmResetBtn=document.getElementById("confirmResetBtn"),cancelResetBtn=document.getElementById("cancelResetBtn");
-        var remainingModal=document.getElementById("remainingModal"),closeRemainingBtn=document.getElementById("closeRemainingBtn"),remainingQuestionCount=document.getElementById("remainingQuestionCount"),remainingQuestionList=document.getElementById("remainingQuestionList");
-        var correctModal=document.getElementById("correctModal"),closeCorrectBtn=document.getElementById("closeCorrectBtn"),correctQuestionCount=document.getElementById("correctQuestionCount"),correctQuestionList=document.getElementById("correctQuestionList");
-        var totalCountElem=document.getElementById("totalCount"),remainingCountElem=document.getElementById("remainingCount"),correctCountElem=document.getElementById("correctCount"),incorrectCountElem=document.getElementById("incorrectCount");
-        var STORAGE_KEY="quizCardFlashcards";
-        function checkStorage(){try{localStorage.setItem("t","1");localStorage.removeItem("t");storageAvailable=true;}catch(e){storageAvailable=false;}}
-        function saveProgress(){if(!storageAvailable)return;try{localStorage.setItem(STORAGE_KEY,JSON.stringify({c:correctAnswers.map(function(q){return q.question;}),i:incorrectAnswers.map(function(q){return q.question;})}));}catch(e){storageAvailable=false;}}
-        function loadProgress(){if(!storageAvailable)return;try{var d=localStorage.getItem(STORAGE_KEY);if(!d)return;var p=JSON.parse(d);correctAnswers=qaData.filter(function(q){return p.c.includes(q.question);});incorrectAnswers=qaData.filter(function(q){return p.i.includes(q.question);});updateStats();}catch(e){storageAvailable=false;}}
-        function updateStats(){totalCountElem.textContent=qaData.length;remainingCountElem.textContent=qaData.length-correctAnswers.length;correctCountElem.textContent=correctAnswers.length;incorrectCountElem.textContent=incorrectAnswers.length;}
-        checkStorage();if(storageAvailable)loadProgress();updateStats();
-        function drawRandomQuestion(){
-            showAnswerBtn.textContent="顯示答案";answerContainer.style.maxHeight="0";feedbackControls.style.maxHeight="0";isAnswerShowing=false;
-            var available=qaData.filter(function(q){return!correctAnswers.includes(q);});
-            if(available.length===0){questionElem.innerHTML="恭喜！所有問題都已經答對了！點擊「重設」重新開始。";answerElem.innerHTML="";currentQuestion=null;return;}
-            currentQuestion=available[Math.floor(Math.random()*available.length)];
-            questionElem.innerHTML=currentQuestion.question;answerElem.innerHTML=currentQuestion.answer;
+    var currentQuestion = null;
+    var correctAnswers = [], incorrectAnswers = [];
+    var answerVisible = false;
+    var storageAvailable = false;
+    var STORAGE_KEY = "quizCardFlashcards";
+
+    var questionElem       = document.getElementById("question");
+    var answerContent      = document.getElementById("answerContent");
+    var feedbackControls   = document.getElementById("feedbackControls");
+    var showAnswerBtn      = document.getElementById("showAnswerBtn");
+    var drawBtn            = document.getElementById("drawBtn");
+    var resetBtn           = document.getElementById("resetBtn");
+    var showRemainingBtn   = document.getElementById("showRemainingBtn");
+    var showCorrectBtn     = document.getElementById("showCorrectBtn");
+    var correctBtn         = document.getElementById("correctBtn");
+    var incorrectBtn       = document.getElementById("incorrectBtn");
+    var totalCountElem     = document.getElementById("totalCount");
+    var remainingCountElem = document.getElementById("remainingCount");
+    var correctCountElem   = document.getElementById("correctCount");
+    var incorrectCountElem = document.getElementById("incorrectCount");
+    var resetModal         = document.getElementById("resetModal");
+    var remainingModal     = document.getElementById("remainingModal");
+    var correctModal       = document.getElementById("correctModal");
+
+    function checkStorage(){try{localStorage.setItem("t","1");localStorage.removeItem("t");storageAvailable=true;}catch(e){storageAvailable=false;}}
+    function saveProgress(){if(!storageAvailable)return;try{localStorage.setItem(STORAGE_KEY,JSON.stringify({c:correctAnswers.map(function(q){return q.question;}),i:incorrectAnswers.map(function(q){return q.question;})}));}catch(e){}}
+    function loadProgress(){if(!storageAvailable)return;try{var d=localStorage.getItem(STORAGE_KEY);if(!d)return;var p=JSON.parse(d);correctAnswers=qaData.filter(function(q){return p.c.indexOf(q.question)!==-1;});incorrectAnswers=qaData.filter(function(q){return p.i.indexOf(q.question)!==-1;});}catch(e){}}
+    function updateStats(){totalCountElem.textContent=qaData.length;remainingCountElem.textContent=qaData.length-correctAnswers.length;correctCountElem.textContent=correctAnswers.length;incorrectCountElem.textContent=incorrectAnswers.length;}
+
+    function hideAnswer(){
+        answerContent.classList.remove("show");
+        feedbackControls.classList.remove("show");
+        showAnswerBtn.textContent="顯示答案";
+        answerVisible=false;
+    }
+
+    function drawRandomQuestion(){
+        hideAnswer();
+        var available=qaData.filter(function(q){return correctAnswers.indexOf(q)===-1;});
+        if(available.length===0){questionElem.innerHTML="恭喜！所有問題都已經答對了！點擊「重設」重新開始。";answerContent.innerHTML="";currentQuestion=null;return;}
+        currentQuestion=available[Math.floor(Math.random()*available.length)];
+        questionElem.innerHTML=currentQuestion.question;
+        answerContent.innerHTML=currentQuestion.answer;
+    }
+
+    function toggleAnswer(){
+        if(!currentQuestion)return;
+        if(answerVisible){hideAnswer();}
+        else{
+            answerContent.classList.add("show");
+            feedbackControls.classList.add("show");
+            showAnswerBtn.textContent="隱藏答案";
+            answerVisible=true;
         }
-        function toggleAnswer(){
-            if(!currentQuestion)return;
-            if(isAnswerShowing){answerContainer.style.maxHeight="0";feedbackControls.style.maxHeight="80px";showAnswerBtn.textContent="顯示答案";}
-            else{feedbackControls.style.maxHeight="80px";answerContainer.style.maxHeight=(answerContainer.scrollHeight+feedbackControls.scrollHeight+30)+"px";showAnswerBtn.textContent="隱藏答案";}
-            isAnswerShowing=!isAnswerShowing;
-        }
-        function markAsCorrect(){if(!currentQuestion)return;var i=incorrectAnswers.indexOf(currentQuestion);if(i!==-1)incorrectAnswers.splice(i,1);if(!correctAnswers.includes(currentQuestion))correctAnswers.push(currentQuestion);updateStats();if(storageAvailable)saveProgress();drawRandomQuestion();}
-        function markAsIncorrect(){if(!currentQuestion)return;if(!incorrectAnswers.includes(currentQuestion))incorrectAnswers.push(currentQuestion);updateStats();if(storageAvailable)saveProgress();drawRandomQuestion();}
-        function toggleQuestionAnswer(index,type){var ans=document.getElementById(type+"-answer-"+index);var btn=document.getElementById(type+"-btn-"+index);if(ans.classList.contains("show")){ans.classList.remove("show");btn.textContent="顯示答案";}else{ans.classList.add("show");btn.textContent="隱藏答案";}}
-        function showRemainingQuestions(){
-            var avail=qaData.filter(function(q){return!correctAnswers.includes(q);});
-            remainingQuestionCount.textContent="待答題目 ("+avail.length+" 題)";
-            remainingQuestionList.innerHTML=avail.length===0?"<div class=\"question-item\">所有題目都已經答對了！</div>":avail.map(function(q,i){return'<div class="question-item remaining"><div class="question-header"><div class="question-text">'+q.question+'</div><button id="remaining-btn-'+i+'" class="btn btn-small" onclick="toggleQuestionAnswer('+i+',\'remaining\')">顯示答案</button></div><div id="remaining-answer-'+i+'" class="question-answer">'+q.answer+'</div></div>';}).join("");
-            remainingModal.style.display="flex";
-        }
-        function showCorrectQuestions(){
-            correctQuestionCount.textContent="已答對題目 ("+correctAnswers.length+" 題)";
-            correctQuestionList.innerHTML=correctAnswers.length===0?"<div class=\"question-item\">尚未答對任何題目</div>":correctAnswers.map(function(q,i){return'<div class="question-item correct"><div class="question-header"><div class="question-text">'+q.question+'</div><button id="correct-btn-'+i+'" class="btn btn-small" onclick="toggleQuestionAnswer('+i+',\'correct\')">顯示答案</button></div><div id="correct-answer-'+i+'" class="question-answer">'+q.answer+'</div></div>';}).join("");
-            correctModal.style.display="flex";
-        }
-        function showResetModal(){resetModal.style.display="flex";}
-        function hideResetModal(){resetModal.style.display="none";}
-        function hideRemainingModal(){remainingModal.style.display="none";}
-        function hideCorrectModal(){correctModal.style.display="none";}
-        function doResetQuiz(){correctAnswers=[];incorrectAnswers=[];currentQuestion=null;isAnswerShowing=false;questionElem.innerHTML="按下「隨機抽題」按鈕開始";answerElem.innerHTML="";answerContainer.style.maxHeight="0";feedbackControls.style.maxHeight="0";showAnswerBtn.textContent="顯示答案";updateStats();if(storageAvailable)saveProgress();hideResetModal();}
-        window.toggleQuestionAnswer=toggleQuestionAnswer;
-        drawBtn.addEventListener("click",drawRandomQuestion);
-        showAnswerBtn.addEventListener("click",toggleAnswer);
-        resetBtn.addEventListener("click",showResetModal);
-        showRemainingBtn.addEventListener("click",showRemainingQuestions);
-        showCorrectBtn.addEventListener("click",showCorrectQuestions);
-        confirmResetBtn.addEventListener("click",doResetQuiz);
-        cancelResetBtn.addEventListener("click",hideResetModal);
-        correctBtn.addEventListener("click",markAsCorrect);
-        incorrectBtn.addEventListener("click",markAsIncorrect);
-        closeRemainingBtn.addEventListener("click",hideRemainingModal);
-        closeCorrectBtn.addEventListener("click",hideCorrectModal);
-        resetModal.addEventListener("click",function(e){if(e.target===resetModal)hideResetModal();});
-        remainingModal.addEventListener("click",function(e){if(e.target===remainingModal)hideRemainingModal();});
-        correctModal.addEventListener("click",function(e){if(e.target===correctModal)hideCorrectModal();});
-    </script>
+    }
+
+    function markAsCorrect(){if(!currentQuestion)return;var i=incorrectAnswers.indexOf(currentQuestion);if(i!==-1)incorrectAnswers.splice(i,1);if(correctAnswers.indexOf(currentQuestion)===-1)correctAnswers.push(currentQuestion);updateStats();saveProgress();drawRandomQuestion();}
+    function markAsIncorrect(){if(!currentQuestion)return;if(incorrectAnswers.indexOf(currentQuestion)===-1)incorrectAnswers.push(currentQuestion);updateStats();saveProgress();drawRandomQuestion();}
+
+    function toggleQuestionAnswer(idx,type){
+        var ans=document.getElementById(type+"-answer-"+idx);
+        var btn=document.getElementById(type+"-btn-"+idx);
+        if(ans.classList.contains("show")){ans.classList.remove("show");btn.textContent="顯示答案";}
+        else{ans.classList.add("show");btn.textContent="隱藏答案";}
+    }
+    window.toggleQuestionAnswer=toggleQuestionAnswer;
+
+    function buildQuestionList(list,type){
+        if(list.length===0)return"<div class=\"question-item\">無</div>";
+        return list.map(function(q,i){
+            return'<div class="question-item '+(type==="correct"?"correct":"remaining")+'"><div class="question-header"><div class="question-text">'+q.question+'</div><button id="'+type+'-btn-'+i+'" class="btn btn-small" onclick="toggleQuestionAnswer('+i+',\"'+type+'\")"  >顯示答案</button></div><div id="'+type+'-answer-'+i+'" class="question-answer">'+q.answer+'</div></div>';
+        }).join("");
+    }
+
+    function showRemainingQuestions(){
+        var avail=qaData.filter(function(q){return correctAnswers.indexOf(q)===-1;});
+        document.getElementById("remainingQuestionCount").textContent="待答題目（"+avail.length+" 題）";
+        document.getElementById("remainingQuestionList").innerHTML=buildQuestionList(avail,"remaining");
+        remainingModal.classList.add("open");
+    }
+    function showCorrectQuestions(){
+        document.getElementById("correctQuestionCount").textContent="已答對題目（"+correctAnswers.length+" 題）";
+        document.getElementById("correctQuestionList").innerHTML=buildQuestionList(correctAnswers,"correct");
+        correctModal.classList.add("open");
+    }
+
+    function doReset(){correctAnswers=[];incorrectAnswers=[];currentQuestion=null;hideAnswer();questionElem.innerHTML="按下「隨機抽題」按鈕開始";answerContent.innerHTML="";updateStats();saveProgress();resetModal.classList.remove("open");}
+
+    checkStorage();loadProgress();updateStats();
+
+    drawBtn.addEventListener("click",drawRandomQuestion);
+    showAnswerBtn.addEventListener("click",toggleAnswer);
+    correctBtn.addEventListener("click",markAsCorrect);
+    incorrectBtn.addEventListener("click",markAsIncorrect);
+    resetBtn.addEventListener("click",function(){resetModal.classList.add("open");});
+    document.getElementById("confirmResetBtn").addEventListener("click",doReset);
+    document.getElementById("cancelResetBtn").addEventListener("click",function(){resetModal.classList.remove("open");});
+    showRemainingBtn.addEventListener("click",showRemainingQuestions);
+    showCorrectBtn.addEventListener("click",showCorrectQuestions);
+    document.getElementById("closeRemainingBtn").addEventListener("click",function(){remainingModal.classList.remove("open");});
+    document.getElementById("closeCorrectBtn").addEventListener("click",function(){correctModal.classList.remove("open");});
+    resetModal.addEventListener("click",function(e){if(e.target===resetModal)resetModal.classList.remove("open");});
+    remainingModal.addEventListener("click",function(e){if(e.target===remainingModal)remainingModal.classList.remove("open");});
+    correctModal.addEventListener("click",function(e){if(e.target===correctModal)correctModal.classList.remove("open");});
+</script>
 </body>
 </html>
