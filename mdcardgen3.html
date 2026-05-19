@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown → Quiz Card Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      min-height: 100vh;
+      padding: 24px;
+      color: #e2e8f0;
+    }
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #818cf8 0%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .container { max-width: 1500px; margin: 0 auto; }
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px 16px;
+    }
+    .title-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+    #titleInput {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      color: #e2e8f0;
+      font-size: 14px;
+      padding: 8px 12px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    #titleInput:focus {
+      outline: none;
+      border-color: #818cf8;
+      box-shadow: 0 0 0 3px rgba(129,140,248,.15);
+    }
+    #titleInput::placeholder { color: #475569; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 84px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .panel { display: flex; flex-direction: column; gap: 8px; }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+    .badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .badge-md   { background: #1e3a5f; color: #60a5fa; }
+    .badge-json { background: #14532d; color: #4ade80; }
+    .badge-html { background: #3b1f5e; color: #c084fc; }
+    textarea {
+      width: 100%;
+      height: 74vh;
+      padding: 14px 16px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+      font-size: 12.5px;
+      line-height: 1.75;
+      resize: vertical;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #818cf8;
+      box-shadow: 0 0 0 3px rgba(129,140,248,.15);
+    }
+    #output     { color: #86efac; }
+    #htmlOutput { color: #fcd34d; height: 50vh; }
+    .middle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding-top: 28px;
+    }
+
+    /* ── Convert button: now matches Gen HTML style ── */
+    .btn-convert {
+      width: 64px;
+      background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+      border: none;
+      color: #fff;
+      padding: 7px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1.4;
+      text-align: center;
+      box-shadow: 0 3px 14px rgba(14,165,233,.45);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-convert:hover  { transform: scale(1.08); }
+    .btn-convert:active { transform: scale(.97); }
+
+    .btn-generate {
+      width: 64px;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      border: none;
+      color: #fff;
+      padding: 7px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1.4;
+      text-align: center;
+      box-shadow: 0 3px 14px rgba(124,58,237,.45);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-generate:hover  { transform: scale(1.08); }
+    .btn-generate:active { transform: scale(.97); }
+    .btn-small {
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #94a3b8;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-small:hover { background: #334155; color: #e2e8f0; }
+    .btn-clear {
+      background: #2d1a1a;
+      border: 1px solid #7f1d1d;
+      color: #f87171;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-clear:hover { background: #3f1a1a; color: #fca5a5; border-color: #ef4444; }
+    .status {
+      font-size: 11px;
+      color: #64748b;
+      text-align: center;
+      min-height: 16px;
+    }
+    .status.ok  { color: #34d399; }
+    .status.err { color: #f87171; }
+    .html-section { margin-top: 20px; }
+    #debugWrap {
+      margin-top: 20px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      overflow: hidden;
+      display: none;
+    }
+    #debugWrap.visible { display: block; }
+    .debug-header {
+      padding: 8px 16px;
+      background: #0f172a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #debugContent {
+      padding: 14px 16px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #fbbf24;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
+      .middle { flex-direction: row; padding-top: 0; flex-wrap: wrap; justify-content: center; }
+      textarea { height: 42vh; }
+      #htmlOutput { height: 38vh; }
+      .title-row { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>✦ Markdown → Quiz Card Generator</h1>
+
+  <div class="title-row">
+    <span class="title-label">Card Title</span>
+    <input type="text" id="titleInput"
+      placeholder="Enter the quiz card page title…" />
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-header">
+        <label>Input</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-md">Markdown</span>
+          <button class="btn-clear" id="btnClearInput">✕ Clear</button>
+        </div>
+      </div>
+      <textarea id="input" spellcheck="false"
+        placeholder="Paste markdown with ## H2 sections…"></textarea>
+    </div>
+
+    <div class="middle">
+      <button class="btn-convert" id="btnConvert" title="Convert MD → JSON">→<br>Gen JSON</button>
+      <div class="status" id="status"></div>
+      <button class="btn-generate" id="btnGenerate">📄<br>Gen HTML</button>
+      <button class="btn-small"  id="btnDebug">🔍</button>
+      <button class="btn-clear"  id="btnClearAll">🗑</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <label>JSON Output</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-json">JSON</span>
+          <button class="btn-small" id="btnCopy">⎘ Copy</button>
+          <button class="btn-clear" id="btnClearOutput">✕ Clear</button>
+        </div>
+      </div>
+      <textarea id="output" readonly spellcheck="false"
+        placeholder="JSON output will appear here…"></textarea>
+    </div>
+  </div>
+
+  <div class="html-section panel">
+    <div class="panel-header">
+      <label>Generated Quiz Card HTML</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-html">HTML</span>
+        <button class="btn-small" id="btnCopyHtml">⎘ Copy</button>
+        <button class="btn-clear" id="btnClearHtml">✕ Clear</button>
+      </div>
+    </div>
+    <textarea id="htmlOutput" readonly spellcheck="false"
+      placeholder="The complete quiz card HTML will appear here after clicking 📄 Gen HTML…"></textarea>
+  </div>
+
+  <div id="debugWrap">
+    <div class="debug-header">
+      <span>🔍 Raw marked.parse() output</span>
+      <button class="btn-small" id="btnCloseDebug">✕ Close</button>
+    </div>
+    <div id="debugContent"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@4/marked.min.js"></script>
+<script>
+  function escAttr(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function safeJson(data) {
+    return JSON.stringify(data, null, 2)
+      .replace(/</g,'\\u003C').replace(/>/g,'\\u003E');
+  }
+
+  var renderer = new marked.Renderer();
+  renderer.image = function(href, title, text) {
+    var src  = escAttr((href  || '').replace(/^["']|["']$/g,''));
+    var alt  = text  ? ' alt="'   + escAttr(text)  + '"' : '';
+    var titl = title ? ' title="' + escAttr(title) + '"' : '';
+    return '<img src="' + src + '"' + alt + titl + ' />';
+  };
+  renderer.hr = function() { return ''; };
+  marked.setOptions({ renderer:renderer, gfm:true, breaks:true,
+                      headerIds:false, mangle:false });
+
+  function cleanHtml(html) {
+    return html
+      .replace(/<br\s*\/?>/gi, '<br />')
+      .replace(/<br \/>\s*(<\/(?:p|li|td|th|blockquote|div)>)/gi, '$1')
+      .replace(/(<\/[^>]+>)\s+(<[^/])/g, '$1$2')
+      .replace(/\r?\n/g, '')
+      .trim();
+  }
+
+  var QUIZ_TEMPLATE = [
+    '<!DOCTYPE html>',
+    '<html lang="zh-Hant">',
+    '<head>',
+    '    <meta charset="UTF-8">',
+    '    <meta name="viewport" content="width=device-width, initial-scale=1.0">',
+    '    <title>%%TITLE%%<\/title>',
+    '    <style>',
+    '        :root{--primary:#4361ee;--primary-light:#4895ef;--secondary:#3f37c9;--background:#f8f9fa;--card-bg:#ffffff;--text:#212529;--success:#38b000;--error:#d00000;}',
+    '        *{box-sizing:border-box;margin:0;padding:0;}',
+    '        body{font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.6;color:var(--text);background-color:var(--background);padding:1rem;min-height:100vh;display:flex;flex-direction:column;}',
+    '        .container{max-width:800px;margin:0 auto;width:100%;}',
+    '        header{text-align:center;margin-bottom:0;}',
+    '        h1{font-size:2rem;margin-bottom:0.5rem;color:var(--primary);}',
+    '        .card{background-color:var(--card-bg);border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,0.1);padding:0.5rem;margin-bottom:2rem;transition:transform 0.3s ease;}',
+    '        .card:hover{transform:translateY(-5px);}',
+    '        .question{font-size:1.5rem;font-weight:600;margin-bottom:1.5rem;color:var(--primary);}',
+    '        .question img,.answer-content img,.question-text img,.question-answer img{max-width:100%;height:auto;display:block;margin:0;border-radius:6px;}',
+    '        .show-answer-btn-container{display:flex;justify-content:center;margin-top:1.5rem;}',
+    '        .answer-container{margin-top:1rem;overflow:hidden;max-height:0;transition:max-height 0.5s ease;}',
+    '        .answer-content{background-color:rgba(67,97,238,0.1);border-left:4px solid var(--primary);padding:0.25rem;border-radius:0 8px 8px 0;}',
+    '        .answer-content ul{padding-left:1.5rem;}',
+    '        .answer-content li{margin-bottom:0.5rem;}',
+    '        .btn{background-color:var(--primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:5px;cursor:pointer;font-size:1rem;font-weight:500;transition:background-color 0.3s,transform 0.2s;display:inline-block;margin:0.5rem 0.5rem 0.5rem 0;}',
+    '        .btn:hover{background-color:var(--secondary);transform:translateY(-2px);}',
+    '        .btn:active{transform:translateY(0);}',
+    '        .btn-success{background-color:var(--success);}.btn-success:hover{background-color:#2d9600;}',
+    '        .btn-error{background-color:var(--error);}.btn-error:hover{background-color:#b00000;}',
+    '        .btn-info{background-color:#6c757d;}.btn-info:hover{background-color:#5a6268;}',
+    '        .btn-small{padding:0.5rem 1rem;font-size:0.875rem;}',
+    '        .controls{display:flex;justify-content:center;gap:1rem;margin-bottom:0.5rem;flex-wrap:wrap;}',
+    '        .feedback-controls{display:flex;justify-content:center;gap:1rem;margin-top:0;max-height:0;overflow:hidden;transition:max-height 0.5s ease;}',
+    '        .stats{display:flex;justify-content:center;gap:1.5rem;padding:0.25rem 0;flex-wrap:nowrap;overflow-x:auto;}',
+    '        .stat-item{background-color:var(--card-bg);border-radius:8px;padding:0.75rem 1.5rem;box-shadow:0 2px 5px rgba(0,0,0,0.1);text-align:center;flex:1;min-width:80px;}',
+    '        .stat-label{font-size:0.85rem;color:#6c757d;white-space:nowrap;}',
+    '        .stat-value{font-size:1.5rem;font-weight:bold;color:var(--primary);}',
+    '        .stat-value.correct{color:var(--success);}.stat-value.incorrect{color:var(--error);}',
+    '        footer{margin-top:auto;text-align:center;padding:1rem 0;font-size:0.9rem;color:#6c757d;}',
+    '        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.5);z-index:100;justify-content:center;align-items:center;overflow-y:auto;}',
+    '        .modal-content{background-color:var(--card-bg);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);padding:2rem;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;margin:2rem auto;}',
+    '        .modal-title{font-size:1.5rem;margin-bottom:1rem;color:var(--primary);text-align:center;}',
+    '        .modal-buttons{display:flex;justify-content:center;gap:1rem;margin-top:1.5rem;}',
+    '        .question-list{margin-top:1rem;}',
+    '        .question-item{background-color:rgba(67,97,238,0.05);border-left:4px solid var(--primary);padding:1rem;margin-bottom:1rem;border-radius:0 8px 8px 0;font-size:0.95rem;}',
+    '        .question-item.correct{border-left-color:var(--success);background-color:rgba(56,176,0,0.05);}',
+    '        .question-item.remaining{border-left-color:var(--primary);background-color:rgba(67,97,238,0.05);}',
+    '        .question-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;gap:1rem;}',
+    '        .question-text{flex:1;font-weight:500;}',
+    '        .question-answer{margin-top:1rem;padding:1rem;background-color:rgba(255,255,255,0.8);border-radius:5px;border:1px solid rgba(67,97,238,0.2);display:none;}',
+    '        .question-answer.show{display:block;}',
+    '        .question-answer ul{margin:0;padding-left:1.5rem;}',
+    '        .question-answer li{margin-bottom:0.5rem;}',
+    '        .question-count{font-weight:bold;color:var(--primary);margin-bottom:1rem;text-align:center;}',
+    '        .question-count.correct{color:var(--success);}.question-count.remaining{color:var(--primary);}',
+    '        @media(max-width:600px){',
+    '            body{padding-left:0.5rem;padding-right:0.5rem;}',
+    '            .stats{flex-wrap:nowrap;gap:0.3rem;}',
+    '            .stat-item{flex:1 1 0;min-width:0;padding:0.5rem 0.25rem;}',
+    '            .stat-label{font-size:0.7rem;}.stat-value{font-size:1.1rem;}',
+    '            .card{padding:1.5rem 0.75rem;}.answer-content{padding:0.75rem 0.5rem;}',
+    '            .question-item{padding:0.75rem 0.5rem;}.question-answer{padding:0.75rem 0.5rem;}',
+    '            .question{font-size:1.25rem;}',
+    '            .btn{padding:0.5rem 0.6rem;font-size:0.8rem;margin:0.25rem 0;}',
+    '            .btn-small{padding:0.4rem 0.5rem;font-size:0.75rem;}',
+    '            .controls{flex-direction:row;flex-wrap:nowrap;gap:0.4rem;overflow-x:auto;}',
+    '            .controls .btn{flex:1 1 0;min-width:0;width:auto;margin-right:0;white-space:nowrap;}',
+    '            .feedback-controls{flex-direction:row;flex-wrap:nowrap;gap:0.4rem;}',
+    '            .feedback-controls .btn{flex:1 1 0;min-width:0;white-space:nowrap;}',
+    '            .modal-buttons{flex-direction:column;}',
+    '            .modal-content{margin:1rem auto;padding:1.5rem 0.75rem;max-width:95%;}',
+    '            .question-header{flex-direction:column;align-items:stretch;gap:0.5rem;}',
+    '            .question-text{margin-bottom:0.5rem;}',
+    '        }',
+    '    <\/style>',
+    '<\/head>',
+    '<body>',
+    '    <div class="container">',
+    '        <header><h1>%%TITLE%%<\/h1><\/header>',
+    '        <div class="stats">',
+    '            <div class="stat-item"><div class="stat-label">總題數<\/div><div id="totalCount" class="stat-value">0<\/div><\/div>',
+    '            <div class="stat-item"><div class="stat-label">待答題數<\/div><div id="remainingCount" class="stat-value">0<\/div><\/div>',
+    '            <div class="stat-item"><div class="stat-label">答對<\/div><div id="correctCount" class="stat-value correct">0<\/div><\/div>',
+    '            <div class="stat-item"><div class="stat-label">答錯<\/div><div id="incorrectCount" class="stat-value incorrect">0<\/div><\/div>',
+    '        <\/div>',
+    '        <div class="controls">',
+    '            <button id="drawBtn" class="btn">隨機抽題<\/button>',
+    '            <button id="resetBtn" class="btn">重設<\/button>',
+    '            <button id="showRemainingBtn" class="btn btn-info">查看待答題目<\/button>',
+    '            <button id="showCorrectBtn" class="btn btn-info">查看已答對題目<\/button>',
+    '        <\/div>',
+    '        <div id="card" class="card">',
+    '            <div id="question" class="question">按下「隨機抽題」按鈕開始<\/div>',
+    '            <div class="show-answer-btn-container">',
+    '                <button id="showAnswerBtn" class="btn">顯示答案<\/button>',
+    '            <\/div>',
+    '            <div id="answerContainer" class="answer-container">',
+    '                <div id="answer" class="answer-content"><\/div>',
+    '                <div id="feedbackControls" class="feedback-controls">',
+    '                    <button id="correctBtn" class="btn btn-success">我答對了<\/button>',
+    '                    <button id="incorrectBtn" class="btn btn-error">我答錯了<\/button>',
+    '                <\/div>',
+    '            <\/div>',
+    '        <\/div>',
+    '    <\/div>',
+    '    <div id="resetModal" class="modal">',
+    '        <div class="modal-content">',
+    '            <div class="modal-title">確定要重設？<\/div>',
+    '            <p>這將清除所有答題進度，此操作無法撤銷。<\/p>',
+    '            <div class="modal-buttons">',
+    '                <button id="confirmResetBtn" class="btn btn-error">確定重設<\/button>',
+    '                <button id="cancelResetBtn" class="btn">取消<\/button>',
+    '            <\/div>',
+    '        <\/div>',
+    '    <\/div>',
+    '    <div id="remainingModal" class="modal">',
+    '        <div class="modal-content">',
+    '            <div class="modal-title">待答題目列表<\/div>',
+    '            <div id="remainingQuestionCount" class="question-count remaining"><\/div>',
+    '            <div id="remainingQuestionList" class="question-list"><\/div>',
+    '            <div class="modal-buttons"><button id="closeRemainingBtn" class="btn">關閉<\/button><\/div>',
+    '        <\/div>',
+    '    <\/div>',
+    '    <div id="correctModal" class="modal">',
+    '        <div class="modal-content">',
+    '            <div class="modal-title">已答對題目列表<\/div>',
+    '            <div id="correctQuestionCount" class="question-count correct"><\/div>',
+    '            <div id="correctQuestionList" class="question-list"><\/div>',
+    '            <div class="modal-buttons"><button id="closeCorrectBtn" class="btn">關閉<\/button><\/div>',
+    '        <\/div>',
+    '    <\/div>',
+    '    <script>',
+    '        var qaData=%%JSON%%;',
+    '        var currentQuestion=null,correctAnswers=[],incorrectAnswers=[],isAnswerShowing=false,storageAvailable=false;',
+    '        var drawBtn=document.getElementById("drawBtn"),showAnswerBtn=document.getElementById("showAnswerBtn"),resetBtn=document.getElementById("resetBtn"),showRemainingBtn=document.getElementById("showRemainingBtn"),showCorrectBtn=document.getElementById("showCorrectBtn");',
+    '        var questionElem=document.getElementById("question"),answerElem=document.getElementById("answer"),answerContainer=document.getElementById("answerContainer"),feedbackControls=document.getElementById("feedbackControls");',
+    '        var correctBtn=document.getElementById("correctBtn"),incorrectBtn=document.getElementById("incorrectBtn");',
+    '        var resetModal=document.getElementById("resetModal"),confirmResetBtn=document.getElementById("confirmResetBtn"),cancelResetBtn=document.getElementById("cancelResetBtn");',
+    '        var remainingModal=document.getElementById("remainingModal"),closeRemainingBtn=document.getElementById("closeRemainingBtn"),remainingQuestionCount=document.getElementById("remainingQuestionCount"),remainingQuestionList=document.getElementById("remainingQuestionList");',
+    '        var correctModal=document.getElementById("correctModal"),closeCorrectBtn=document.getElementById("closeCorrectBtn"),correctQuestionCount=document.getElementById("correctQuestionCount"),correctQuestionList=document.getElementById("correctQuestionList");',
+    '        var totalCountElem=document.getElementById("totalCount"),remainingCountElem=document.getElementById("remainingCount"),correctCountElem=document.getElementById("correctCount"),incorrectCountElem=document.getElementById("incorrectCount");',
+    '        var STORAGE_KEY="quizCardFlashcards";',
+    '        function checkStorage(){try{localStorage.setItem("t","1");localStorage.removeItem("t");storageAvailable=true;}catch(e){storageAvailable=false;}}',
+    '        function saveProgress(){if(!storageAvailable)return;try{localStorage.setItem(STORAGE_KEY,JSON.stringify({c:correctAnswers.map(function(q){return q.question;}),i:incorrectAnswers.map(function(q){return q.question;})}));}catch(e){storageAvailable=false;}}',
+    '        function loadProgress(){if(!storageAvailable)return;try{var d=localStorage.getItem(STORAGE_KEY);if(!d)return;var p=JSON.parse(d);correctAnswers=qaData.filter(function(q){return p.c.includes(q.question);});incorrectAnswers=qaData.filter(function(q){return p.i.includes(q.question);});updateStats();}catch(e){storageAvailable=false;}}',
+    '        function updateStats(){totalCountElem.textContent=qaData.length;remainingCountElem.textContent=qaData.length-correctAnswers.length;correctCountElem.textContent=correctAnswers.length;incorrectCountElem.textContent=incorrectAnswers.length;}',
+    '        checkStorage();if(storageAvailable)loadProgress();updateStats();',
+    '        function drawRandomQuestion(){',
+    '            showAnswerBtn.textContent="顯示答案";answerContainer.style.maxHeight="0";feedbackControls.style.maxHeight="0";isAnswerShowing=false;',
+    '            var available=qaData.filter(function(q){return!correctAnswers.includes(q);});',
+    '            if(available.length===0){questionElem.innerHTML="恭喜！所有問題都已經答對了！點擊「重設」重新開始。";answerElem.innerHTML="";currentQuestion=null;return;}',
+    '            currentQuestion=available[Math.floor(Math.random()*available.length)];',
+    '            questionElem.innerHTML=currentQuestion.question;answerElem.innerHTML=currentQuestion.answer;',
+    '        }',
+    '        function toggleAnswer(){',
+    '            if(!currentQuestion)return;',
+    '            if(isAnswerShowing){answerContainer.style.maxHeight="0";feedbackControls.style.maxHeight="80px";showAnswerBtn.textContent="顯示答案";}',
+    '            else{feedbackControls.style.maxHeight="80px";answerContainer.style.maxHeight=(answerContainer.scrollHeight+feedbackControls.scrollHeight+30)+"px";showAnswerBtn.textContent="隱藏答案";}',
+    '            isAnswerShowing=!isAnswerShowing;',
+    '        }',
+    '        function markAsCorrect(){if(!currentQuestion)return;var i=incorrectAnswers.indexOf(currentQuestion);if(i!==-1)incorrectAnswers.splice(i,1);if(!correctAnswers.includes(currentQuestion))correctAnswers.push(currentQuestion);updateStats();if(storageAvailable)saveProgress();drawRandomQuestion();}',
+    '        function markAsIncorrect(){if(!currentQuestion)return;if(!incorrectAnswers.includes(currentQuestion))incorrectAnswers.push(currentQuestion);updateStats();if(storageAvailable)saveProgress();drawRandomQuestion();}',
+    '        function toggleQuestionAnswer(index,type){var ans=document.getElementById(type+"-answer-"+index);var btn=document.getElementById(type+"-btn-"+index);if(ans.classList.contains("show")){ans.classList.remove("show");btn.textContent="顯示答案";}else{ans.classList.add("show");btn.textContent="隱藏答案";}}',
+    '        function showRemainingQuestions(){',
+    '            var avail=qaData.filter(function(q){return!correctAnswers.includes(q);});',
+    '            remainingQuestionCount.textContent="待答題目 ("+avail.length+" 題)";',
+    '            remainingQuestionList.innerHTML=avail.length===0?"<div class=\\"question-item\\">所有題目都已經答對了！<\/div>":avail.map(function(q,i){return\'<div class="question-item remaining"><div class="question-header"><div class="question-text">\'+q.question+\'<\/div><button id="remaining-btn-\'+i+\'" class="btn btn-small" onclick="toggleQuestionAnswer(\'+i+\',\\\'remaining\\\')">顯示答案<\/button><\/div><div id="remaining-answer-\'+i+\'" class="question-answer">\'+q.answer+\'<\/div><\/div>\';}).join("");',
+    '            remainingModal.style.display="flex";',
+    '        }',
+    '        function showCorrectQuestions(){',
+    '            correctQuestionCount.textContent="已答對題目 ("+correctAnswers.length+" 題)";',
+    '            correctQuestionList.innerHTML=correctAnswers.length===0?"<div class=\\"question-item\\">尚未答對任何題目<\/div>":correctAnswers.map(function(q,i){return\'<div class="question-item correct"><div class="question-header"><div class="question-text">\'+q.question+\'<\/div><button id="correct-btn-\'+i+\'" class="btn btn-small" onclick="toggleQuestionAnswer(\'+i+\',\\\'correct\\\')">顯示答案<\/button><\/div><div id="correct-answer-\'+i+\'" class="question-answer">\'+q.answer+\'<\/div><\/div>\';}).join("");',
+    '            correctModal.style.display="flex";',
+    '        }',
+    '        function showResetModal(){resetModal.style.display="flex";}',
+    '        function hideResetModal(){resetModal.style.display="none";}',
+    '        function hideRemainingModal(){remainingModal.style.display="none";}',
+    '        function hideCorrectModal(){correctModal.style.display="none";}',
+    '        function doResetQuiz(){correctAnswers=[];incorrectAnswers=[];currentQuestion=null;isAnswerShowing=false;questionElem.innerHTML="按下「隨機抽題」按鈕開始";answerElem.innerHTML="";answerContainer.style.maxHeight="0";feedbackControls.style.maxHeight="0";showAnswerBtn.textContent="顯示答案";updateStats();if(storageAvailable)saveProgress();hideResetModal();}',
+    '        window.toggleQuestionAnswer=toggleQuestionAnswer;',
+    '        drawBtn.addEventListener("click",drawRandomQuestion);',
+    '        showAnswerBtn.addEventListener("click",toggleAnswer);',
+    '        resetBtn.addEventListener("click",showResetModal);',
+    '        showRemainingBtn.addEventListener("click",showRemainingQuestions);',
+    '        showCorrectBtn.addEventListener("click",showCorrectQuestions);',
+    '        confirmResetBtn.addEventListener("click",doResetQuiz);',
+    '        cancelResetBtn.addEventListener("click",hideResetModal);',
+    '        correctBtn.addEventListener("click",markAsCorrect);',
+    '        incorrectBtn.addEventListener("click",markAsIncorrect);',
+    '        closeRemainingBtn.addEventListener("click",hideRemainingModal);',
+    '        closeCorrectBtn.addEventListener("click",hideCorrectModal);',
+    '        resetModal.addEventListener("click",function(e){if(e.target===resetModal)hideResetModal();});',
+    '        remainingModal.addEventListener("click",function(e){if(e.target===remainingModal)hideRemainingModal();});',
+    '        correctModal.addEventListener("click",function(e){if(e.target===correctModal)hideCorrectModal();});',
+    '    <\/script>',
+    '<\/body>',
+    '<\/html>'
+  ].join('\n');
+
+  var _lastRawHtmls = [];
+
+  function mdToJson(raw) {
+    _lastRawHtmls = [];
+    var stripped = raw.replace(/^---[\s\S]*?---[ \t]*(\r?\n|$)/, '');
+    var chunks = stripped.split(/(?=^## )/m).map(function(c){ return c.trim(); }).filter(function(c){ return c.length > 0; });
+    if (chunks.length === 0) throw new Error('No ## headings found. Sections must start with "## Title".');
+    var result = [];
+    for (var k = 0; k < chunks.length; k++) {
+      var chunk = chunks[k];
+      var m = chunk.match(/^## (.+?)[ \t]*(\r?\n|$)/);
+      if (!m) continue;
+      var question = m[1].trim();
+      var body = chunk.slice(m[0].length).trim();
+      if (!body) { result.push({ question: question, answer: '' }); continue; }
+      var rawHtml = marked.parse(body);
+      _lastRawHtmls.push({ question: question, rawHtml: rawHtml });
+      result.push({ question: question, answer: cleanHtml(rawHtml) });
+    }
+    return result;
+  }
+
+  function generateQuizHtml(title, json) {
+    return QUIZ_TEMPLATE
+      .replace(/%%TITLE%%/g, escHtml(title || 'Quiz Card'))
+      .replace('%%JSON%%', safeJson(json));
+  }
+
+  var inputEl      = document.getElementById('input');
+  var outputEl     = document.getElementById('output');
+  var htmlOutputEl = document.getElementById('htmlOutput');
+  var titleInputEl = document.getElementById('titleInput');
+  var statusEl     = document.getElementById('status');
+  var debugWrap    = document.getElementById('debugWrap');
+  var debugContent = document.getElementById('debugContent');
+
+  function setStatus(msg, type) {
+    statusEl.textContent = msg;
+    statusEl.className = 'status ' + (type || '');
+  }
+
+  function clearAll() {
+    inputEl.value = ''; outputEl.value = ''; htmlOutputEl.value = '';
+    titleInputEl.value = ''; _lastRawHtmls = [];
+    debugWrap.classList.remove('visible'); setStatus('');
+  }
+
+  document.getElementById('btnConvert').addEventListener('click', function() {
+    var raw = inputEl.value;
+    if (!raw.trim()) { setStatus('⚠ Input is empty', 'err'); return; }
+    try {
+      var json = mdToJson(raw);
+      outputEl.value = JSON.stringify(json, null, 2);
+      setStatus('✓ ' + json.length + ' section' + (json.length !== 1 ? 's' : '') + ' converted', 'ok');
+    } catch(e) { outputEl.value = ''; setStatus('✗ ' + e.message, 'err'); }
+  });
+
+  document.getElementById('btnGenerate').addEventListener('click', function() {
+    var title = titleInputEl.value.trim();
+    if (!title) { setStatus('⚠ Enter a card title first', 'err'); return; }
+    var json;
+    var jsonStr = outputEl.value.trim();
+    if (!jsonStr) {
+      var raw = inputEl.value;
+      if (!raw.trim()) { setStatus('⚠ Input is empty', 'err'); return; }
+      try { json = mdToJson(raw); outputEl.value = JSON.stringify(json, null, 2); }
+      catch(e) { setStatus('✗ ' + e.message, 'err'); return; }
+    } else {
+      try { json = JSON.parse(jsonStr); }
+      catch(e) { setStatus('✗ Invalid JSON in output pane', 'err'); return; }
+    }
+    htmlOutputEl.value = generateQuizHtml(title, json);
+    setStatus('✓ HTML generated (' + json.length + ' card' + (json.length !== 1 ? 's' : '') + ')', 'ok');
+    setTimeout(function(){ htmlOutputEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80);
+  });
+
+  document.getElementById('btnCopy').addEventListener('click', function() {
+    if (!outputEl.value) return;
+    navigator.clipboard.writeText(outputEl.value).then(function() {
+      var b = document.getElementById('btnCopy'); var o = b.textContent;
+      b.textContent = '✓ Copied!'; setTimeout(function(){ b.textContent = o; }, 2000);
+    });
+  });
+
+  document.getElementById('btnCopyHtml').addEventListener('click', function() {
+    if (!htmlOutputEl.value) return;
+    navigator.clipboard.writeText(htmlOutputEl.value).then(function() {
+      var b = document.getElementById('btnCopyHtml'); var o = b.textContent;
+      b.textContent = '✓ Copied!'; setTimeout(function(){ b.textContent = o; }, 2000);
+    });
+  });
+
+  document.getElementById('btnClearInput').addEventListener('click',  function(){ inputEl.value = ''; inputEl.focus(); setStatus(''); });
+  document.getElementById('btnClearOutput').addEventListener('click', function(){ outputEl.value = ''; _lastRawHtmls = []; debugWrap.classList.remove('visible'); setStatus(''); });
+  document.getElementById('btnClearHtml').addEventListener('click',   function(){ htmlOutputEl.value = ''; setStatus(''); });
+  document.getElementById('btnClearAll').addEventListener('click', clearAll);
+
+  function showDebug() {
+    debugContent.textContent = _lastRawHtmls.length === 0
+      ? 'Run a conversion first.'
+      : _lastRawHtmls.map(function(x){ return '── ' + x.question + ' ──\n' + x.rawHtml; }).join('\n\n');
+    debugWrap.classList.add('visible');
+  }
+  document.getElementById('btnDebug').addEventListener('click', showDebug);
+  document.getElementById('btnCloseDebug').addEventListener('click', function(){ debugWrap.classList.remove('visible'); });
+</script>
+</body>
+</html>
