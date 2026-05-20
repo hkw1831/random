@@ -53,33 +53,28 @@
         .question-answer li{margin-bottom:0.4rem;}
         .question-answer p{margin-bottom:0.5rem;}
         .question-answer p:last-child{margin-bottom:0;}
-        /* ── H3–H6 sub-headings ── */
         h3{font-size:1.05rem;font-weight:700;color:var(--secondary);margin:0.85rem 0 0.3rem;padding-bottom:0.18rem;border-bottom:1px solid rgba(67,97,238,.2);}
         h4{font-size:0.98rem;font-weight:700;color:var(--primary);margin:0.65rem 0 0.25rem;}
         h5{font-size:0.92rem;font-weight:600;color:#555;margin:0.5rem 0 0.2rem;}
         h6{font-size:0.88rem;font-weight:600;color:#888;margin:0.4rem 0 0.15rem;font-style:italic;}
-        /* ── Tables ── */
         .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0.65rem 0;border-radius:6px;}
         table{width:100%;border-collapse:collapse;font-size:0.88rem;min-width:260px;}
         thead tr{background:rgba(67,97,238,.13);}
         th{padding:0.45rem 0.6rem;text-align:left;font-weight:700;color:var(--primary);border:1px solid rgba(67,97,238,.25);white-space:nowrap;}
         td{padding:0.42rem 0.6rem;border:1px solid rgba(67,97,238,.15);vertical-align:top;}
         tr:nth-child(even) td{background:rgba(67,97,238,.04);}
-        /* ── Code ── */
         pre{background:#f4f6ff;border-radius:6px;padding:0.7rem 0.85rem;overflow-x:auto;margin:0.55rem 0;border:1px solid rgba(67,97,238,.14);font-size:0.85rem;}
         code{font-family:Menlo,Monaco,Consolas,monospace;font-size:0.87em;background:rgba(67,97,238,.09);padding:1px 5px;border-radius:3px;}
         pre code{background:transparent;padding:0;font-size:inherit;}
-        /* ── Blockquote ── */
         blockquote{border-left:3px solid var(--primary-light);margin:0.55rem 0;padding:0.45rem 0.85rem;background:rgba(67,97,238,.05);border-radius:0 6px 6px 0;color:#444;}
         blockquote p{margin:0;}
-        /* ── Filter ── */
+        /* ── Filter row: always single line, buttons never shrink or wrap ── */
         .filter-row{display:flex;gap:0.35rem;margin:0.5rem 0;align-items:stretch;}
+        .filter-row .btn{flex-shrink:0;white-space:nowrap;}
         .filter-input{flex:1;min-width:0;padding:0.55rem 0.75rem;border-radius:6px;border:1px solid rgba(67,97,238,.35);font-size:0.93rem;font-family:Menlo,Monaco,Consolas,monospace;background:#fff;color:var(--text);}
         .filter-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(67,97,238,.18);}
         .filter-input::placeholder{font-family:"Noto Sans TC",-apple-system,sans-serif;color:#aaa;}
-        .filter-status{font-size:0.82rem;min-height:1.3rem;margin:-0.1rem 0 0.35rem;padding:0 0.1rem;}
-        .filter-status.ok{color:var(--success);}.filter-status.err{color:var(--error);font-weight:600;}
-        @media(max-width:600px){h1{font-size:1.3rem;}.stat-label{font-size:0.65rem;}.stat-value{font-size:1rem;}.stat-item{padding:0.35rem 0.1rem;}.question{font-size:1.05rem;}.btn{padding:0.5rem 0.6rem;font-size:0.83rem;}.controls{flex-wrap:nowrap;overflow-x:auto;}.controls .btn{flex:1;white-space:nowrap;}th,td{padding:0.35rem 0.4rem;font-size:0.82rem;}.filter-row{flex-wrap:wrap;}.filter-input{min-width:100%;}}
+        @media(max-width:600px){h1{font-size:1.3rem;}.stat-label{font-size:0.65rem;}.stat-value{font-size:1rem;}.stat-item{padding:0.35rem 0.1rem;}.question{font-size:1.05rem;}.btn{padding:0.5rem 0.6rem;font-size:0.83rem;}.controls{flex-wrap:nowrap;overflow-x:auto;}.controls .btn{flex:1;white-space:nowrap;}th,td{padding:0.35rem 0.4rem;font-size:0.82rem;}}
     </style>
 </head>
 <body>
@@ -96,7 +91,6 @@
         <button id="filterBtn" class="btn">篩選</button>
         <button id="clearFilterBtn" class="btn btn-info">清除篩選</button>
     </div>
-    <div id="filterStatus" class="filter-status"></div>
     <div class="controls">
         <button id="drawBtn" class="btn">隨機抽題</button>
         <button id="resetBtn" class="btn">重設</button>
@@ -880,35 +874,16 @@ function showCorrectQuestions(){
 }
 function applyFilter(){
   var pat=document.getElementById("filterInput").value;
-  var st=document.getElementById("filterStatus");
-  if(!pat.trim()){
-    filteredData=qaData.slice();
-    st.textContent="篩選已清除，顯示全部 "+qaData.length+" 題。";
-    st.className="filter-status ok";
-    updateStats();return;
-  }
+  if(!pat.trim()){filteredData=qaData.slice();updateStats();return;}
   try{
     var re=new RegExp(pat,"i");
     filteredData=qaData.filter(function(q){return re.test(q.question);});
-    if(filteredData.length===0){
-      st.textContent="⚠ 無符合題目（共 "+qaData.length+" 題中 0 題符合）";
-      st.className="filter-status err";
-    }else{
-      st.textContent="符合 "+filteredData.length+" / "+qaData.length+" 題";
-      st.className="filter-status ok";
-    }
     updateStats();
-  }catch(e){
-    st.textContent="無效的 Regex："+e.message;
-    st.className="filter-status err";
-  }
+  }catch(e){}
 }
 function clearFilter(){
   document.getElementById("filterInput").value="";
   filteredData=qaData.slice();
-  var st=document.getElementById("filterStatus");
-  st.textContent="篩選已清除，顯示全部 "+qaData.length+" 題。";
-  st.className="filter-status ok";
   updateStats();
 }
 function doReset(){
