@@ -72,7 +72,14 @@
         /* ── Blockquote ── */
         blockquote{border-left:3px solid var(--primary-light);margin:0.55rem 0;padding:0.45rem 0.85rem;background:rgba(67,97,238,.05);border-radius:0 6px 6px 0;color:#444;}
         blockquote p{margin:0;}
-        @media(max-width:600px){h1{font-size:1.3rem;}.stat-label{font-size:0.65rem;}.stat-value{font-size:1rem;}.stat-item{padding:0.35rem 0.1rem;}.question{font-size:1.05rem;}.btn{padding:0.5rem 0.6rem;font-size:0.83rem;}.controls{flex-wrap:nowrap;overflow-x:auto;}.controls .btn{flex:1;white-space:nowrap;}th,td{padding:0.35rem 0.4rem;font-size:0.82rem;}}
+        /* ── Filter ── */
+        .filter-row{display:flex;gap:0.35rem;margin:0.5rem 0;align-items:stretch;}
+        .filter-input{flex:1;min-width:0;padding:0.55rem 0.75rem;border-radius:6px;border:1px solid rgba(67,97,238,.35);font-size:0.93rem;font-family:Menlo,Monaco,Consolas,monospace;background:#fff;color:var(--text);}
+        .filter-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(67,97,238,.18);}
+        .filter-input::placeholder{font-family:"Noto Sans TC",-apple-system,sans-serif;color:#aaa;}
+        .filter-status{font-size:0.82rem;min-height:1.3rem;margin:-0.1rem 0 0.35rem;padding:0 0.1rem;}
+        .filter-status.ok{color:var(--success);}.filter-status.err{color:var(--error);font-weight:600;}
+        @media(max-width:600px){h1{font-size:1.3rem;}.stat-label{font-size:0.65rem;}.stat-value{font-size:1rem;}.stat-item{padding:0.35rem 0.1rem;}.question{font-size:1.05rem;}.btn{padding:0.5rem 0.6rem;font-size:0.83rem;}.controls{flex-wrap:nowrap;overflow-x:auto;}.controls .btn{flex:1;white-space:nowrap;}th,td{padding:0.35rem 0.4rem;font-size:0.82rem;}.filter-row{flex-wrap:wrap;}.filter-input{min-width:100%;}}
     </style>
 </head>
 <body>
@@ -84,6 +91,12 @@
         <div class="stat-item"><div class="stat-label">答對</div><div id="correctCount" class="stat-value correct">0</div></div>
         <div class="stat-item"><div class="stat-label">答錯</div><div id="incorrectCount" class="stat-value incorrect">0</div></div>
     </div>
+    <div class="filter-row">
+        <input type="text" id="filterInput" class="filter-input" placeholder="Regex 篩選題目（例如 ^什麼 | ^How | keyword）…">
+        <button id="filterBtn" class="btn">篩選</button>
+        <button id="clearFilterBtn" class="btn btn-info">清除篩選</button>
+    </div>
+    <div id="filterStatus" class="filter-status"></div>
     <div class="controls">
         <button id="drawBtn" class="btn">隨機抽題</button>
         <button id="resetBtn" class="btn">重設</button>
@@ -777,6 +790,7 @@ var qaData=[
 ];
 var currentQuestion=null;
 var correctAnswers=[],incorrectAnswers=[];
+var filteredData=qaData.slice();
 var answerVisible=false,storageAvailable=false;
 var STORAGE_KEY="quizCardFlashcards";
 var questionElem=document.getElementById("question");
@@ -800,13 +814,24 @@ var correctModal=document.getElementById("correctModal");
 function checkStorage(){try{localStorage.setItem("t","1");localStorage.removeItem("t");storageAvailable=true;}catch(e){storageAvailable=false;}}
 function saveProgress(){if(!storageAvailable)return;try{localStorage.setItem(STORAGE_KEY,JSON.stringify({c:correctAnswers.map(function(q){return q.question;}),i:incorrectAnswers.map(function(q){return q.question;})}));}catch(e){}}
 function loadProgress(){if(!storageAvailable)return;try{var d=localStorage.getItem(STORAGE_KEY);if(!d)return;var p=JSON.parse(d);correctAnswers=qaData.filter(function(q){return p.c.indexOf(q.question)!==-1;});incorrectAnswers=qaData.filter(function(q){return p.i.indexOf(q.question)!==-1;});}catch(e){}}
-function updateStats(){totalCountElem.textContent=qaData.length;remainingCountElem.textContent=qaData.length-correctAnswers.length;correctCountElem.textContent=correctAnswers.length;incorrectCountElem.textContent=incorrectAnswers.length;}
+function updateStats(){
+  var fc=correctAnswers.filter(function(q){return filteredData.indexOf(q)!==-1;});
+  var fi=incorrectAnswers.filter(function(q){return filteredData.indexOf(q)!==-1;});
+  totalCountElem.textContent=filteredData.length;
+  remainingCountElem.textContent=filteredData.length-fc.length;
+  correctCountElem.textContent=fc.length;
+  incorrectCountElem.textContent=fi.length;
+}
 function hideAnswer(){answerContent.classList.remove("show");feedbackControls.classList.remove("show");showAnswerBtn.textContent="顯示答案";answerVisible=false;}
 function drawRandomQuestion(){
   hideAnswer();
-  var available=qaData.filter(function(q){return correctAnswers.indexOf(q)===-1;});
+  if(filteredData.length===0){
+    questionElem.innerHTML="目前篩選無符合題目，請調整篩選條件。";
+    answerContent.innerHTML="";currentQuestion=null;showAnswerBtnWrap.style.display="none";return;
+  }
+  var available=filteredData.filter(function(q){return correctAnswers.indexOf(q)===-1;});
   if(available.length===0){
-    questionElem.innerHTML="恭喜！所有問題都已經答對了！點擊「重設」重新開始。";
+    questionElem.innerHTML="恭喜！篩選範圍內所有題目都已答對！點擊「重設」重新開始。";
     answerContent.innerHTML="";currentQuestion=null;showAnswerBtnWrap.style.display="none";return;
   }
   currentQuestion=available[Math.floor(Math.random()*available.length)];
@@ -842,15 +867,49 @@ function buildQuestionList(list,type){
   return html;
 }
 function showRemainingQuestions(){
-  var avail=qaData.filter(function(q){return correctAnswers.indexOf(q)===-1;});
+  var avail=filteredData.filter(function(q){return correctAnswers.indexOf(q)===-1;});
   document.getElementById("remainingQuestionCount").textContent="待答題目（"+avail.length+" 題）";
   document.getElementById("remainingQuestionList").innerHTML=buildQuestionList(avail,"remaining");
   remainingModal.classList.add("open");
 }
 function showCorrectQuestions(){
-  document.getElementById("correctQuestionCount").textContent="已答對題目（"+correctAnswers.length+" 題）";
-  document.getElementById("correctQuestionList").innerHTML=buildQuestionList(correctAnswers,"correct");
+  var correct=correctAnswers.filter(function(q){return filteredData.indexOf(q)!==-1;});
+  document.getElementById("correctQuestionCount").textContent="已答對題目（"+correct.length+" 題）";
+  document.getElementById("correctQuestionList").innerHTML=buildQuestionList(correct,"correct");
   correctModal.classList.add("open");
+}
+function applyFilter(){
+  var pat=document.getElementById("filterInput").value;
+  var st=document.getElementById("filterStatus");
+  if(!pat.trim()){
+    filteredData=qaData.slice();
+    st.textContent="篩選已清除，顯示全部 "+qaData.length+" 題。";
+    st.className="filter-status ok";
+    updateStats();return;
+  }
+  try{
+    var re=new RegExp(pat,"i");
+    filteredData=qaData.filter(function(q){return re.test(q.question);});
+    if(filteredData.length===0){
+      st.textContent="⚠ 無符合題目（共 "+qaData.length+" 題中 0 題符合）";
+      st.className="filter-status err";
+    }else{
+      st.textContent="符合 "+filteredData.length+" / "+qaData.length+" 題";
+      st.className="filter-status ok";
+    }
+    updateStats();
+  }catch(e){
+    st.textContent="無效的 Regex："+e.message;
+    st.className="filter-status err";
+  }
+}
+function clearFilter(){
+  document.getElementById("filterInput").value="";
+  filteredData=qaData.slice();
+  var st=document.getElementById("filterStatus");
+  st.textContent="篩選已清除，顯示全部 "+qaData.length+" 題。";
+  st.className="filter-status ok";
+  updateStats();
 }
 function doReset(){
   correctAnswers=[];incorrectAnswers=[];currentQuestion=null;
@@ -880,6 +939,9 @@ showRemainingBtn.addEventListener("click",showRemainingQuestions);
 showCorrectBtn.addEventListener("click",showCorrectQuestions);
 document.getElementById("closeRemainingBtn").addEventListener("click",function(){remainingModal.classList.remove("open");});
 document.getElementById("closeCorrectBtn").addEventListener("click",function(){correctModal.classList.remove("open");});
+document.getElementById("filterBtn").addEventListener("click",applyFilter);
+document.getElementById("clearFilterBtn").addEventListener("click",clearFilter);
+document.getElementById("filterInput").addEventListener("keydown",function(e){if(e.key==="Enter")applyFilter();});
 setupModalDelegation(resetModal);
 setupModalDelegation(remainingModal);
 setupModalDelegation(correctModal);
