@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CC 點位置</title>
+    <style>
+        :root{--primary:#4361ee;--primary-light:#4895ef;--secondary:#3f37c9;--bg:#f0f4ff;--card:#ffffff;--text:#212529;--err:#d00000;--warn:#e67700;--info:#1971c2;--mast:#5c3db8;}
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.7;color:var(--text);background:var(--bg);padding:0.5rem 0;}
+        .container{max-width:100%;width:100%;padding:0;}
+        h1{font-size:1.8rem;font-weight:700;color:var(--primary);text-align:center;margin:0.5rem 0;}
+        .stats{display:flex;gap:0.2rem;margin:0.5rem 0;flex-wrap:nowrap;}
+        .stat-item{background:var(--card);border-radius:8px;padding:0.4rem 0.15rem;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;flex:1;}
+        .stat-label{font-size:0.7rem;color:#6c757d;}
+        .stat-value{font-size:1.25rem;font-weight:700;color:var(--primary);}
+        .sv-new{color:var(--info);} .sv-due{color:var(--warn);} .sv-mast{color:var(--mast);}
+        .prog-wrap{height:5px;background:#dee2e6;border-radius:3px;margin:0.3rem 0;overflow:hidden;}
+        .prog-bar{height:100%;background:linear-gradient(90deg,var(--primary),#7048e8);border-radius:3px;transition:width .5s ease;width:0%;}
+        .btn{background:var(--primary);color:#fff;border:none;padding:0.6rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.95rem;font-weight:500;transition:background .2s,transform .15s;}
+        .btn:hover{background:var(--secondary);transform:translateY(-1px);}
+        .btn:active{transform:translateY(0);}
+        .btn-err{background:var(--err);}.btn-err:hover{background:#b00000;}
+        .btn-sec{background:#6c757d;}.btn-sec:hover{background:#5a6268;}
+        .btn-sm{padding:0.35rem 0.6rem;font-size:0.82rem;}
+        .mode-row{display:flex;gap:0.35rem;margin:0.5rem 0;}
+        .mode-btn{flex:1;padding:0.55rem 0.5rem;border-radius:6px;border:2px solid transparent;background:#e9ecef;color:#495057;font-size:0.88rem;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;}
+        .mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 2px 8px rgba(67,97,238,.35);}
+        .mode-btn:not(.active):hover{background:#dee2e6;}
+        .controls{display:flex;gap:0.2rem;margin:0.5rem 0;}
+        .controls .btn{flex:1;white-space:nowrap;min-width:0;text-align:center;padding:0.6rem 0.3rem;}
+        .filter-row{display:flex;gap:0.35rem;margin:0.5rem 0;align-items:stretch;}
+        .filter-row .btn{flex-shrink:0;white-space:nowrap;}
+        .filter-input{flex:1;min-width:0;padding:0.55rem 0.75rem;border-radius:6px;border:1px solid rgba(67,97,238,.35);font-size:0.93rem;font-family:Menlo,Monaco,Consolas,monospace;background:#fff;color:var(--text);}
+        .filter-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(67,97,238,.18);}
+        .filter-input::placeholder{font-family:"Noto Sans TC",-apple-system,sans-serif;color:#aaa;}
+        .question-box{background:var(--card);border-radius:10px;padding:0.85rem 0.25rem;margin:0.5rem 0;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+        .question{font-size:1.35rem;font-weight:600;color:var(--primary);margin-bottom:0.6rem;}
+        .question img,.answer-content img,.question-text img,.question-answer img{max-width:100%;height:auto;display:block;margin:0.5rem 0;border-radius:6px;}
+        .srs-info{display:none;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.55rem;}
+        .srs-badge{display:inline-flex;align-items:center;gap:0.2rem;font-size:0.73rem;padding:2px 9px;border-radius:10px;font-weight:700;letter-spacing:.3px;}
+        .st-new{background:rgba(25,113,194,.12);color:var(--info);}
+        .st-due{background:rgba(230,119,0,.13);color:var(--warn);}
+        .st-upcoming{background:rgba(56,176,0,.12);color:#2b8a00;}
+        .st-mastered{background:rgba(92,61,184,.12);color:var(--mast);}
+        .srs-meta{font-size:0.71rem;color:#868e96;}
+        .show-ans-wrap{text-align:center;margin:0.5rem 0;}
+        .answer-content{display:none;background:rgba(67,97,238,.08);border-left:4px solid var(--primary);padding:0.6rem 0.5rem;border-radius:0 8px 8px 0;margin-top:0.6rem;}
+        .answer-content.show{display:block;}
+        .answer-content ul,.answer-content ol{padding-left:1.4rem;}
+        .answer-content li{margin-bottom:0.4rem;}
+        .answer-content p{margin-bottom:0.5rem;}
+        .answer-content p:last-child{margin-bottom:0;}
+        .rating-wrap{display:none;margin-top:0.8rem;}
+        .rating-wrap.show{display:block;}
+        .rating-label{font-size:0.75rem;color:#868e96;text-align:center;margin-bottom:0.5rem;line-height:1.5;}
+        .rating-label strong{color:#495057;}
+        .rating-row{display:flex;gap:0.3rem;}
+        .r-btn{flex:1;min-width:0;padding:0.6rem 0.15rem;border:none;border-radius:9px;cursor:pointer;color:#fff;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:0 2px 8px rgba(0,0,0,.18);transition:transform .15s,box-shadow .15s,filter .15s;}
+        .r-btn:hover{transform:translateY(-3px);box-shadow:0 5px 14px rgba(0,0,0,.22);}
+        .r-btn:active{transform:translateY(0);filter:brightness(.88);}
+        .r-again{background:linear-gradient(150deg,#e03131,#c92a2a);}
+        .r-hard{background:linear-gradient(150deg,#e67700,#d9480f);}
+        .r-good{background:linear-gradient(150deg,#2f9e44,#2b8a3e);}
+        .r-easy{background:linear-gradient(150deg,#1971c2,#1864ab);}
+        .r-icon{font-size:1.15rem;}
+        .r-text{font-size:0.88rem;}
+        .r-hint{font-size:0.67rem;font-weight:600;opacity:.92;background:rgba(255,255,255,.2);padding:1px 6px;border-radius:4px;white-space:nowrap;letter-spacing:.2px;}
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;justify-content:center;align-items:flex-start;padding:1rem 0;overflow-y:auto;}
+        .modal.open{display:flex;}
+        .modal-content{background:var(--card);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:1rem 0.4rem;max-width:100%;width:100%;}
+        .modal-title{font-size:1.3rem;font-weight:700;color:var(--primary);text-align:center;margin-bottom:0.6rem;}
+        .modal-buttons{display:flex;justify-content:center;gap:0.75rem;margin-top:1rem;flex-wrap:wrap;}
+        .modal-search-row{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.65rem;}
+        .modal-search-group{display:flex;flex-direction:column;gap:0.2rem;}
+        .modal-search-label{font-size:0.72rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#868e96;margin-bottom:0.15rem;}
+        .modal-search{width:100%;padding:0.48rem 0.75rem;border-radius:6px;border:1px solid rgba(67,97,238,.25);font-size:0.88rem;background:#f8f9ff;color:var(--text);transition:border-color .2s,box-shadow .2s;}
+        .modal-search:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(67,97,238,.15);background:#fff;}
+        .no-results{text-align:center;color:#adb5bd;font-size:0.9rem;padding:1.2rem 0;}
+        .q-count{font-weight:700;margin-bottom:0.6rem;text-align:center;}
+        .q-count.cd{color:var(--warn);} .q-count.cm{color:var(--mast);} .q-count.ca{color:var(--primary);}
+        .question-list{display:flex;flex-direction:column;gap:0.5rem;}
+        .question-item{background:rgba(67,97,238,.05);border-left:4px solid var(--primary);padding:0.6rem 0.4rem;border-radius:0 8px 8px 0;font-size:0.93rem;}
+        .question-item.is-mast{border-color:var(--mast);background:rgba(92,61,184,.05);}
+        .question-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;}
+        .question-text{flex:1;font-weight:500;}
+        .srs-mini{font-size:0.69rem;color:#868e96;margin-top:3px;}
+        .question-answer{display:none;margin-top:0.6rem;padding:0.6rem 0.4rem;background:rgba(255,255,255,.9);border-radius:5px;border:1px solid rgba(67,97,238,.2);}
+        .question-answer.show{display:block;}
+        .question-answer ul,.question-answer ol{margin:0;padding-left:1.4rem;}
+        .question-answer li{margin-bottom:0.4rem;}
+        .question-answer p{margin-bottom:0.5rem;}
+        .question-answer p:last-child{margin-bottom:0;}
+        h4{font-size:1.0rem;font-weight:700;color:var(--secondary);margin:0.85rem 0 0.3rem;padding-bottom:0.18rem;border-bottom:1px solid rgba(67,97,238,.2);}
+        h5{font-size:0.95rem;font-weight:700;color:var(--primary);margin:0.65rem 0 0.25rem;}
+        h6{font-size:0.88rem;font-weight:600;color:#555;margin:0.5rem 0 0.2rem;}
+        .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0.65rem 0;border-radius:6px;}
+        table{width:100%;border-collapse:collapse;font-size:0.88rem;min-width:260px;}
+        thead tr{background:rgba(67,97,238,.13);}
+        th{padding:0.45rem 0.6rem;text-align:left;font-weight:700;color:var(--primary);border:1px solid rgba(67,97,238,.25);white-space:nowrap;}
+        td{padding:0.42rem 0.6rem;border:1px solid rgba(67,97,238,.15);vertical-align:top;}
+        tr:nth-child(even) td{background:rgba(67,97,238,.04);}
+        pre{background:#f4f6ff;border-radius:6px;padding:0.7rem 0.85rem;overflow-x:auto;margin:0.55rem 0;border:1px solid rgba(67,97,238,.14);font-size:0.85rem;}
+        code{font-family:Menlo,Monaco,Consolas,monospace;font-size:0.87em;background:rgba(67,97,238,.09);padding:1px 5px;border-radius:3px;}
+        pre code{background:transparent;padding:0;font-size:inherit;}
+        blockquote{border-left:3px solid var(--primary-light);margin:0.55rem 0;padding:0.45rem 0.85rem;background:rgba(67,97,238,.05);border-radius:0 6px 6px 0;color:#444;}
+        blockquote p{margin:0;}
+        mark{background:rgba(255,214,0,.45);color:inherit;padding:0 3px;border-radius:3px;font-style:normal;}
+        @media(max-width:600px){h1{font-size:1.3rem;}.stat-label{font-size:0.62rem;}.stat-value{font-size:1rem;}.stat-item{padding:0.3rem 0.1rem;}.question{font-size:1.05rem;}.btn{padding:0.5rem 0.55rem;font-size:0.82rem;}.controls{flex-wrap:wrap;}.controls .btn{flex:1 1 calc(50% - 0.1rem);min-width:0;}.r-icon{font-size:.95rem;}.r-text{font-size:.75rem;}.r-hint{font-size:.6rem;}th,td{padding:0.35rem 0.4rem;font-size:0.82rem;}.modal-search-row{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>CC 點位置</h1>
+    <div class="stats">
+        <div class="stat-item"><div class="stat-label">總題數</div><div id="totalCount" class="stat-value">0</div></div>
+        <div class="stat-item"><div class="stat-label">新卡片</div><div id="newCount" class="stat-value sv-new">0</div></div>
+        <div class="stat-item"><div class="stat-label">今日到期</div><div id="dueCount" class="stat-value sv-due">0</div></div>
+        <div class="stat-item"><div class="stat-label">已掌握</div><div id="mastCount" class="stat-value sv-mast">0</div></div>
+    </div>
+    <div class="prog-wrap"><div id="progBar" class="prog-bar"></div></div>
+    <div class="filter-row">
+        <input type="text" id="filterInput" class="filter-input" placeholder="Regex 篩選題目（例如 ^什麼 | keyword）…">
+        <button id="filterBtn" class="btn">篩選</button>
+        <button id="clearFilterBtn" class="btn btn-sec">清除篩選</button>
+    </div>
+    <div class="mode-row">
+        <button id="modeRndBtn" class="mode-btn">🎲 隨機練習</button>
+        <button id="modeSrsBtn" class="mode-btn active">📅 間隔複習（SM-2）</button>
+    </div>
+    <div class="controls">
+        <button id="resetBtn" class="btn">重設進度</button>
+        <button id="showAllBtn" class="btn btn-sec">查看全部題目</button>
+        <button id="showDueBtn" class="btn btn-sec">查看到期題目</button>
+        <button id="showMastBtn" class="btn btn-sec">查看已掌握</button>
+    </div>
+    <div class="question-box">
+        <div id="srsInfo" class="srs-info"></div>
+        <div id="question" class="question"></div>
+        <div id="showAnsWrap" class="show-ans-wrap" style="display:none">
+            <button id="showAnsBtn" class="btn">顯示答案</button>
+        </div>
+        <div id="answerContent" class="answer-content"></div>
+        <div id="ratingWrap" class="rating-wrap">
+            <div class="rating-label"><strong>評估此題難度</strong> -- 系統將依 SM-2 間隔重複算法安排下次複習時間</div>
+            <div class="rating-row">
+                <button class="r-btn r-again" data-q="1"><span class="r-icon">🔴</span><span class="r-text">再學</span><span class="r-hint" id="hint-1">重學</span></button>
+                <button class="r-btn r-hard"  data-q="3"><span class="r-icon">🟠</span><span class="r-text">困難</span><span class="r-hint" id="hint-3">--</span></button>
+                <button class="r-btn r-good"  data-q="4"><span class="r-icon">🟢</span><span class="r-text">良好</span><span class="r-hint" id="hint-4">--</span></button>
+                <button class="r-btn r-easy"  data-q="5"><span class="r-icon">⭐</span><span class="r-text">容易</span><span class="r-hint" id="hint-5">--</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="resetModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">確定要重設？</div>
+        <p style="text-align:center;margin-bottom:.5rem">這將清除所有 SM-2 學習進度（間隔、複習次數、難度係數），此操作<strong>無法撤銷</strong>。</p>
+        <div class="modal-buttons"><button id="confirmResetBtn" class="btn btn-err">確定重設</button><button id="cancelResetBtn" class="btn">取消</button></div>
+    </div>
+</div>
+
+<div id="allModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">全部題目</div>
+        <div class="modal-search-row">
+            <div class="modal-search-group"><div class="modal-search-label">🔍 題目關鍵字</div><input type="text" id="allQSearch" class="modal-search" placeholder="搜尋題目…"></div>
+            <div class="modal-search-group"><div class="modal-search-label">🔍 答案關鍵字</div><input type="text" id="allASearch" class="modal-search" placeholder="搜尋答案…"></div>
+        </div>
+        <div id="allCount2" class="q-count ca"></div>
+        <div id="allList" class="question-list"></div>
+        <div class="modal-buttons"><button id="closeAllBtn" class="btn">關閉</button></div>
+    </div>
+</div>
+
+<div id="dueModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">今日待學題目</div>
+        <div class="modal-search-row">
+            <div class="modal-search-group"><div class="modal-search-label">🔍 題目關鍵字</div><input type="text" id="dueQSearch" class="modal-search" placeholder="搜尋題目…"></div>
+            <div class="modal-search-group"><div class="modal-search-label">🔍 答案關鍵字</div><input type="text" id="dueASearch" class="modal-search" placeholder="搜尋答案…"></div>
+        </div>
+        <div id="dueCount2" class="q-count cd"></div>
+        <div id="dueList" class="question-list"></div>
+        <div class="modal-buttons"><button id="closeDueBtn" class="btn">關閉</button></div>
+    </div>
+</div>
+
+<div id="mastModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">已掌握題目</div>
+        <div class="modal-search-row">
+            <div class="modal-search-group"><div class="modal-search-label">🔍 題目關鍵字</div><input type="text" id="mastQSearch" class="modal-search" placeholder="搜尋題目…"></div>
+            <div class="modal-search-group"><div class="modal-search-label">🔍 答案關鍵字</div><input type="text" id="mastASearch" class="modal-search" placeholder="搜尋答案…"></div>
+        </div>
+        <div id="mastCount2" class="q-count cm"></div>
+        <div id="mastList" class="question-list"></div>
+        <div class="modal-buttons"><button id="closeMastBtn" class="btn">關閉</button></div>
+    </div>
+</div>
+
+<script>
+var qaData=[
+  {
+    "question": "an-cp1",
+    "answer": "\u003Cp\u003E此點位位於瞳孔正下方，覆蓋在眼輪匝肌之上。它是由單關節的「下直肌」與雙關節的「眼輪匝肌」纖維匯集而成，兩者最終 converged 於「特農氏筋膜」（Fascia of Tenon）。\u003Cbr /\u003E在操作時，我會使用雙指指節進行評估與觸診，並朝單一方向施作，目標是讓此處的結構變得更為柔軟。這個點位對於處理眼睛內部或眼後的疼痛，例如偏頭痛等症狀，非常有幫助。\u003C/p\u003E\u003Cp\u003Ean-cp1 位於眼輪匝肌內，就在眼睛周圍。要定位這個點，我們需要在瞳孔正下方、眼輪匝肌之上找到它。我們可以從這個位置直接進行處理。我會將點定位在正下方這裡。\u003C/p\u003E\u003Cp\u003Ean-cp1 位於眼輪匝肌中，也就是眼睛周圍。\u003Cbr /\u003E我們必須定位這個點，該點位於瞳孔正下方、眼輪匝肌之上。\u003Cbr /\u003E因此，我們可以直接在那個位置接近這個點，我們將在下方的這個地方定位該點。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120508-an-cp1-l1.jpeg\" alt=\"an-cp1-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120519-an-cp1-t1.jpeg\" alt=\"an-cp1-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120526-an-cp1-t2.jpeg\" alt=\"an-cp1-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-cp2",
+    "answer": "\u003Cp\u003E這個點位同樣與瞳孔在同一條垂直線上，但位置在顴骨下方。這裡的肌筋膜單位是由單關節的「提上唇肌」與雙關節的「口輪匝肌」共同組成。\u003Cbr /\u003E操作時，我會朝著顴骨的方向，以大約四十五度的角度施作，避免直接朝向鼻子，因為最緊繃的點通常位於鼻子的外側邊緣。這個點位對於處理牙齒疼痛、鼻竇炎等相關症狀特別重要。\u003C/p\u003E\u003Cp\u003Ean-cp2 的位置在顴突下方，並與瞳孔在同一條線上。我們確實可以感覺到這個點，它就在顴肌或笑肌的正下方，也就是這裡。\u003C/p\u003E\u003Cp\u003Ean-cp2 定位於顴骨突下方，與瞳孔呈一直線。\u003Cbr /\u003E所以我們確實可以感知到這個點，就在你有顴肌或笑肌的正下方。所以就在這裡。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120512-an-cp2-l1.jpeg\" alt=\"an-cp2-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120520-an-cp2-t1.jpeg\" alt=\"an-cp2-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120526-an-cp2-t2.jpeg\" alt=\"an-cp2-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-cp3",
+    "answer": "\u003Cp\u003E此點位位於下頷骨的內側緣，由「二腹肌」的肌腱纖維組成。在這裡，兩條肌肉的纖維匯集，並由「頸筋膜」作為連結。\u003Cbr /\u003E操作時，我會沿著下頷骨內側緣進行縱向的按壓，並在二腹肌的附著點上進行摩擦。這個點位對於處理顳顎關節功能障礙（TMJ dysfunction）、肌肉痙攣或關節彈響等問題有顯著效果。\u003C/p\u003E\u003Cp\u003E第三個穴點位於下頷骨的邊緣下方，緊鄰著下頷舌骨肌與二腹肌。我會將點精確地定位在這個水平面上，如此一來便可以同時感覺到這兩條肌肉。\u003C/p\u003E\u003Cp\u003Ean-cp3 位於下頜骨邊緣下方。\u003Cbr /\u003E緊貼著下頜舌骨肌和二腹肌。\u003Cbr /\u003E所以我們將把這個點精確地定位在這個水平高度，以便你能同時感知到這兩塊肌肉。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120537-an-cp3-l1.jpeg\" alt=\"an-cp3-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120544-an-cp3-t1.jpeg\" alt=\"an-cp3-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120549-an-cp3-t2.jpeg\" alt=\"an-cp3-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-cl",
+    "answer": "\u003Cp\u003E這是個很常見的點位，位於環狀軟骨的外側，胸鎖乳突肌胸骨端的上方。它由「舌骨下肌」的單關節纖維與「胸鎖乳突肌」的雙關節纖維匯集而成。\u003Cbr /\u003E雖然此處緊繃很少直接引起頸部前方的疼痛，但卻是造成後頸疼痛的常見原因。操作時，我會沿著肌肉纖維進行縱向施作，手法必須非常淺層，避免滑脫而壓迫到氣管，因此操作方向會是斜向的。\u003C/p\u003E\u003Cp\u003Ean-cl 位於胸鎖乳突肌（SCM）胸骨端的中央位置。首先，我會找出胸鎖乳突肌的胸骨端，然後在它的正上方，與環狀軟骨同一縱向水平上定位此點。\u003C/p\u003E\u003Cp\u003Ean-cl 將位於胸鎖乳突肌（SCM）胸骨端的正中間。\u003Cbr /\u003E因此，我們確認胸鎖乳突肌的胸骨端，並將該點定位在正上方，在縱向上與環狀軟骨處於同一水平高度。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120538-an-cl-l1.jpeg\" alt=\"an-cl-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120543-an-cl-t1.jpeg\" alt=\"an-cl-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120549-an-cl-t2.jpeg\" alt=\"an-cl-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-th",
+    "answer": "\u003Cp\u003E此點位位於胸廓上方，與腹直肌鞘在同一條線上。這裡的結構比較特別，是由從胸大肌向下延伸的肌纖維，與腹直肌鞘反向交錯而成。簡單來說，此處是來自四面八方膠原纖維的匯集點。\u003Cbr /\u003E組織結構上，單關節纖維來自「胸骨肌」，雙關節纖維則來自「腹直肌」。操作時，我會用指節進行星狀的觸診，每個方向都可能是有效的處理方向。如果患者體型較為壯碩，有時我也會使用手肘進行操作。此點位對於處理胸悶、肌肉痙攣、肋間抽筋等胸前不適，以及頸部與上背痛都很有幫助。\u003C/p\u003E\u003Cp\u003E我們可以在胸廓上方、胸大肌下方，以及腹直肌鞘線的內側找到 an-th。在這個由三者構成的三角形區域中，您會看到來自胸大肌的肌纖維朝著多個不同方向伸展。我們就在那裡，順著造成最多活動受限的方向，便能找到 an-th。\u003C/p\u003E\u003Cp\u003E我們可以在肋骨架上方、胸大肌下方，以及腹直肌鞘線的內側找到 an-th。\u003Cbr /\u003E所以在這個三角形的中間，你會看到來自胸大肌、朝多個方向延伸的肌肉纖維。\u003Cbr /\u003E因此在那個地方，在產生最多限制的方向上，我們將會找到 an-th。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120555-an-th-l1.jpeg\" alt=\"an-th-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120500-an-th-t1.jpeg\" alt=\"an-th-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120504-an-th-t2.jpeg\" alt=\"an-th-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120509-an-th-t3.jpeg\" alt=\"an-th-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120514-an-th-t4.jpeg\" alt=\"an-th-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-lu",
+    "answer": "\u003Cp\u003E這個點位位於腹直肌鞘的中心，大約在肚臍的高度。此處的單關節纖維來自「腹直肌」，雙關節纖維則來自「腹斜肌」。\u003Cbr /\u003E操作時，我會在各個方向上施作，以釋放增厚的腹直肌鞘張力。此點位不僅能處理腹部的痙攣或臟器疼痛，對於緩解下背痛與上背痛也同樣有效。\u003C/p\u003E\u003Cp\u003Ean-lu  位於腹直肌鞘上，與肚臍在同一水平。我會希望以橫向、四十五度角的方式進行操作，藉此在腹直肌鞘上產生摩擦。在這個水平上，點位的方向可以朝下四十五度或朝上四十五度，取決於哪裡感覺到較大的阻力。\u003C/p\u003E\u003Cp\u003Ean-lu 就在肚臍水平高度的腹直肌鞘正上方。\u003Cbr /\u003E所以我們想以 45 度角橫向進行操作，以便在腹直肌鞘上產生摩擦。\u003Cbr /\u003E所以在這個水平高度，這個點的方向可以偏向下 45 度或偏向上 45 度，取決於你在哪裡找到更多的限制。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120554-an-lu-l1.jpeg\" alt=\"an-lu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120559-an-lu-l2.jpeg\" alt=\"an-lu-l2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120504-an-lu-l3.jpeg\" alt=\"an-lu-l3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120510-an-lu-t1.jpeg\" alt=\"an-lu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120515-an-lu-t2.jpeg\" alt=\"an-lu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120520-an-lu-t3.jpeg\" alt=\"an-lu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120525-an-lu-t4.jpeg\" alt=\"an-lu-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120530-an-lu-t5.jpeg\" alt=\"an-lu-t5\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-pv",
+    "answer": "\u003Cp\u003E這是個非常重要但處理起來有難度的點位，因為需要穿透腹壁才能觸及「髂肌」。此處的單關節纖維來自「髂肌」，雙關節纖維則由「腹直肌」與「腹斜肌」共同組成。\u003Cbr /\u003E操作位置在腹股溝韌帶內側、髂前上棘下方。我會找到髂肌的上緣，並順著腹股溝韌帶的方向施作，這樣既能感覺到髂肌的表面，又能避免滑入骨盆腔。每個人的激痛點位置可能稍有不同，有時偏遠端，有時偏近端，因此我建議沿著這個區域大約三公分（一英吋）的範圍進行全面處理。\u003C/p\u003E\u003Cp\u003Ean-pv 位於腹股溝韌帶的內側，在髂嵴的末端，也就是距離髂前上棘約一寸的遠端位置。您必須進行觸診，去感覺髂肌的上緣。這個點位就在這個水平稍低一點的地方。它並不在體腔內，但您必須能立刻感覺到由髂肌淺層邊緣所造成的阻力。\u003C/p\u003E\u003Cp\u003Ean-pv 位於腹股溝韌帶內側、髂嵴末端，也就是髂前上棘的遠端。\u003Cbr /\u003E大約距離那裡一英吋。\u003Cbr /\u003E你必須進行觸診，你必須感覺到髂肌的上邊緣。\u003Cbr /\u003E所以這個點在這個水平高度會稍微低一點，但是不是在空腔裡，而是你必須立刻感覺到由髂肌淺表邊緣所產生的阻力。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120535-an-pv-l1.jpeg\" alt=\"an-pv-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120541-an-pv-t1.jpeg\" alt=\"an-pv-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120551-an-pv-t2.jpeg\" alt=\"an-pv-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120557-an-pv-t3.jpeg\" alt=\"an-pv-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120501-an-pv-t4.jpeg\" alt=\"an-pv-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-cx",
+    "answer": "\u003Cp\u003E此點位位於腹股溝韌帶下方，目標是「髂腰肌」的附著點。這裡的單關節纖維來自「內收長肌」，雙關節纖維則來自「髂腰肌」。\u003Cbr /\u003E操作時，我會先找到腹股溝韌帶，定位在縫匠肌的內側、動脈搏動處的外側。因為在搏動處的內側是股動脈、股靜脈與股神經，我們不希望造成壓迫。當感覺到脈搏後，稍微向外側移動，就能準確找到髂腰肌的附著點。我可以請患者抬起腿來協助確認位置。這個點位對於處理下背痛、上背痛以及膝蓋問題都非常有效。\u003C/p\u003E\u003Cp\u003Ean-cx 位於腰肌的附著點上。要找到這個區域，一個簡單的方法是避開感覺不到的股神經，但您可以感覺到股動脈的脈搏。當您感覺到脈搏後，向外側移動一點，然後請患者對抗您的手施力。您會感覺到腰肌在那個區域對抗您的手指，那裡就是髂肌的附著點，也就是 an-cx。\u003C/p\u003E\u003Cp\u003Ean-cx 是髂腰肌起點（止點）所在的位置。\u003Cbr /\u003E所以，找到這個區域的簡單方法是避開股神經----你感覺不到股神經，但你可以感覺到股動脈的搏動。\u003Cbr /\u003E所以，你感覺到搏動後，避開它，要求患者用力量對抗你的手。\u003Cbr /\u003E你會感覺到髂腰肌在那個區域推擠你的手指，那裡正好是髂肌的止點。\u003Cbr /\u003E所以那就是 an-cx。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120545-an-cx-l1.jpeg\" alt=\"an-cx-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120551-an-cx-t1.jpeg\" alt=\"an-cx-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120555-an-cx-t2.jpeg\" alt=\"an-cx-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531120500-an-cx-t3.jpeg\" alt=\"an-cx-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-ge",
+    "answer": "\u003Cp\u003E此點位位於股直肌外側緣的中點。這裡的單關節部分是股四頭肌的「股中間肌」，雙關節部分則是「股直肌」，兩者匯集於股直肌內側的肌間隔。\u003Cbr /\u003E我會用指節或手肘沿著此點位進行縱向操作。雖然患者的主要症狀通常表現在膝蓋，但這個點位也可能引發髖部或下背部的疼痛。我的目標是透過縱向施作，讓這個區域變得更柔軟。\u003C/p\u003E\u003Cp\u003Ean-ge 位於髂前上棘與髕骨之間的中點。我會先到中點位置，去感覺股直肌的外側邊緣。這個彈撥感就是它的外側緣。我們會停留在該處，主要沿著這個結構進行縱向滑動。這就是 an-ge，我會將它定位在這裡。\u003C/p\u003E\u003Cp\u003Ean-ge 位於髂前上棘與髕骨之間的中點。\u003Cbr /\u003E所以我們走到中點，感覺股直肌的外側邊緣。\u003Cbr /\u003E所以這個彈撥感就是外側邊緣。\u003Cbr /\u003E我們想停在那裡，並主要沿著該結構進行縱向滑動。這就是我們將在這裡確認的 an-ge。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010513-an-ge-l1.jpeg\" alt=\"an-ge-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010518-an-ge-l2.jpeg\" alt=\"an-ge-l2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010524-an-ge-l3.jpeg\" alt=\"an-ge-l3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010534-an-ge-t1.jpeg\" alt=\"an-ge-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010539-an-ge-t2.jpeg\" alt=\"an-ge-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010545-an-ge-t3.jpeg\" alt=\"an-ge-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010550-an-ge-t4.jpeg\" alt=\"an-ge-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010555-an-ge-t5.jpeg\" alt=\"an-ge-t5\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010500-an-ge-t6.jpeg\" alt=\"an-ge-t6\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-ta",
+    "answer": "\u003Cp\u003E這是另一個容易變得非常僵硬的點位，位於「脛前肌」上方。單關節部分是「脛前肌」，雙關節部分則是「伸趾長肌」，兩者在此匯集，並與「小腿前筋膜」有重要連結。\u003Cbr /\u003E位置大約在肌肉肌腱交界處，可能是近端三分之一與中段三分之一之間，或是中段三分之一處，取決於肌肉長度，基本上就是在脛前肌的中心。操作時，我會沿著肌肉縱向施作，並小心避開脛骨，以免造成骨膜的瘀傷。要完全停留在肌肉上方有時是個挑戰，因為這個點位可能非常僵硬。我們透過超音波觀察到，此處的筋膜增厚有時會影響到脛前肌的肌內膜與肌束膜，使組織呈現高迴音性。此點位典型的症狀是腳踝前側的問題，但也可能引發腳跟、阿基里斯腱的疼痛。\u003C/p\u003E\u003Cp\u003Ean-ta 位於脛前肌上，介於脛前肌的中點與近端三分之一段之間。這裡會因肌肉的長度與尺寸而有輕微的解剖學差異。我會停留在脛骨嵴的外側，an-ta 就會在這一區。當範圍較大時，它可能會更偏向外側一些。因此，an-ta 的確切位置會在這個水平。\u003C/p\u003E\u003Cp\u003Ean-ta 位於脛骨前肌上方，介於脛骨前肌的中點，以及近端和中三分之一之間。\u003Cbr /\u003E所以。這有輕微的解剖學變異，取決於肌肉的長度和大小。\u003Cbr /\u003E所以我們就停在脛骨嵴的外側正上方，在這個區域就會是 an-ta。\u003Cbr /\u003E當分離（或病變）範圍較大時，它可以再往外側一點。\u003Cbr /\u003E所以 an-ta 就會精確地位於這個水平高度。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010508-an-ta-l1.jpeg\" alt=\"an-ta-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010513-an-ta-t1.jpeg\" alt=\"an-ta-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010518-an-ta-t2.jpeg\" alt=\"an-ta-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010522-an-ta-t3.jpeg\" alt=\"an-ta-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010527-an-ta-t4.jpeg\" alt=\"an-ta-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-pe",
+    "answer": "\u003Cp\u003E此點位包含兩個部分：單關節的「伸拇短肌」與雙關節的「伸拇長肌」。位置在第一與第二蹠骨之間，盡量往近端尋找。這裡有一個被稱為「第三支持帶」的結構，是足背筋膜的增厚處，觸診時會感覺到一個彈響，而那正是需要處理的地方。\u003Cbr /\u003E我會使用指節尖端進行縱向施作，並注意避開骨膜。這個點位對於處理大腳趾疼痛非常有效，但其疼痛也可能向上傳導。\u003C/p\u003E\u003Cp\u003Ean-pe 將位於第一與第二蹠骨之間，盡可能靠近近端的位置。因為在這裡，我們有足部的第三楔狀骨。我會嘗試盡可能地向近端移動，直到那裡還有空間為止。我們將處理骨間肌。所以，an-pe 就在這裡。\u003C/p\u003E\u003Cp\u003Ean-pe（前足）將位於第一和第二蹠骨之間，並盡可能靠近近端。\u003Cbr /\u003E因為就在這裡，我們有在這種情況下（腳上）被稱為踝關節第三跗骨支持帶的結構。\u003Cbr /\u003E所以我們試圖盡可能向近端移動，直到那裡有空間為止。\u003Cbr /\u003E我們將對骨間進行操作。所以 an-pe 就在這裡。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010556-an-pe-l1.jpeg\" alt=\"an-pe-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010501-an-pe-t1.jpeg\" alt=\"an-pe-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010506-an-pe-t2.jpeg\" alt=\"an-pe-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010518-an-pe-t3.jpeg\" alt=\"an-pe-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-sc",
+    "answer": "\u003Cp\u003E這是個很常見的點位，位於喙突的遠端，目標是尋找「胸小肌」的外側緣。這裡的單關節部分是「胸小肌」，雙關節部分則是「胸大肌」，兩者在此匯集。\u003Cbr /\u003E操作方法是先找到喙突，向遠端移動，辨識出胸小肌，並對其進行處理。這個點位對於處理肩膀問題、上背痛，甚至是手臂的傳導痛都很有幫助。\u003C/p\u003E\u003Cp\u003E肩胛前點位於胸小肌的外側緣。我會先尋找喙突，從喙突處可以想像胸小肌從那裡延伸出來。要感覺到胸小肌，最簡單的方法是觸診其外側緣。我們必須感覺到一個穿過胸大肌的彈撥感，那個結構就是胸小肌連同肋腋筋膜。這就是我們要處理的點，an-sc。\u003C/p\u003E\u003Cp\u003E然後，an-sc（前肩胛）將位於胸小肌的外側邊緣。\u003Cbr /\u003E所以我們尋找喙突。從喙突，我們可以想像胸小肌從那裡延伸出來。\u003Cbr /\u003E感知胸小肌的簡單方法是觸診其外側邊緣。\u003Cbr /\u003E所以我們必須透過胸大肌感覺到一種彈撥感。\u003Cbr /\u003E那個結構就是胸小肌以及喙鎖胸筋膜。\u003Cbr /\u003E這就是我們將要治療的點，an-sc。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010555-an-sc-l1.jpeg\" alt=\"an-sc-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010505-an-sc-l2.jpeg\" alt=\"an-sc-l2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010511-an-sc-t1.jpeg\" alt=\"an-sc-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010520-an-sc-t2.jpeg\" alt=\"an-sc-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010526-an-sc-t3.jpeg\" alt=\"an-sc-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010530-an-sc-t4.jpeg\" alt=\"an-sc-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010535-an-sc-t5.jpeg\" alt=\"an-sc-t5\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010542-an-sc-t6.jpeg\" alt=\"an-sc-t6\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010548-an-sc-t7.jpeg\" alt=\"an-sc-t7\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-hu",
+    "answer": "\u003Cp\u003E此點位位於肱二頭肌的長短頭之間，在三角肌的前側。我希望觸及單羽狀的「喙肱肌」以及雙羽狀的「肱二頭肌」。在這個位置，同時也能感覺到胸大肌的纖維。\u003Cbr /\u003E操作時，我會沿著肌肉縱向施作，穿過三角肌，並稍微靠近肱二頭肌短頭。患者的症狀通常與肩關節有關，但這個點位對於處理非特定動作引發的疼痛也很有幫助。\u003C/p\u003E\u003Cp\u003Ean-hu 位於肱二頭肌短頭與長頭之間，就在三角肌前區的正中央。\u003C/p\u003E\u003Cp\u003Ean-hu 位於肱二頭肌短頭與肱二頭肌長頭之間，正好在中間，處於三角肌的前側區域。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010558-an-hu-l1.jpeg\" alt=\"an-hu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010506-an-hu-t1.jpeg\" alt=\"an-hu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010511-an-hu-t2.jpeg\" alt=\"an-hu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010516-an-hu-t3.jpeg\" alt=\"an-hu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010521-an-hu-t4.jpeg\" alt=\"an-hu-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-cu",
+    "answer": "\u003Cp\u003E這個常見的點位位於三角肌的末端，恰好在肱二頭肌（特別是長頭）的上方。這裡的單關節部分是「肱肌」，雙關節部分是「肱二頭肌」，兩者在此匯集。\u003Cbr /\u003E此點位可能相當僵硬。操作時我會沿著肌肉縱向施作，避免壓迫到深層的骨膜，所以手法會停留在肌肉上方，沿著橈骨的平坦部分進行。這個點位除了會引發手肘的症狀，也經常導致肩膀的疼痛，處理此處能大幅改善許多肩部問題。\u003C/p\u003E\u003Cp\u003Ean-cu 位於三角肌的末端。我會向上移動到肱二頭肌上方，並且會更著重於外側部分，也就是與肱二頭肌長頭相連的部分。在這個水平上，沿著縱向我會找到 an-cu 這個點。\u003C/p\u003E\u003Cp\u003Ean-cu 位於三角肌的末端，我們向上走到肱二頭肌上方，並在更偏外側的部分進行操作，即與肱二頭肌長頭相連的部分。\u003Cbr /\u003E所以在這個水平高度，縱向上我們將會找到 Antecubital 這個點。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010500-an-cu-l1.jpeg\" alt=\"an-cu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010507-an-cu-t1.jpeg\" alt=\"an-cu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010512-an-cu-t2.jpeg\" alt=\"an-cu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010518-an-cu-t3.jpeg\" alt=\"an-cu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010523-an-cu-t4.jpeg\" alt=\"an-cu-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010527-an-cu-t5.jpeg\" alt=\"an-cu-t5\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-ca",
+    "answer": "\u003Cp\u003E這個點位非常普遍，許多過度使用者都會有陽性反應。它由兩個部分組成：單關節的「橈側屈腕肌」與雙關節的「屈指肌」。兩者匯集在前臂近端與中段三分之一之間，位置稍微偏向橈側。我需要觸及「屈指淺肌」，會感覺到一條斜向的條索狀組織。\u003Cbr /\u003E這個點位介於前臂的近端與中段三分之一之間，可以用指節操作，但用尺骨會更容易。患者主要會抱怨手腕疼痛，但你會驚訝地發現，處理這個點位對於改善手肘甚至肩膀的問題有多麼顯著的效果，特別是在由下往上代償的個案中。\u003C/p\u003E\u003Cp\u003Ean-ca 將位於屈指淺肌近端與中段三分之一處之間。我希望在這個水平感覺到一個彈撥感，因為屈指淺肌有其特定的走向。這就是 an-ca。\u003C/p\u003E\u003Cp\u003Ean-ca 將位於指淺屈肌的近端和中三分之一之間。\u003Cbr /\u003E所以，我們想在這個水平高度感覺到像彈撥一樣的感覺，因為指淺屈肌有這個特定的方向。\u003Cbr /\u003E所以，這就是 an-ca。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010503-an-ca-l1.jpeg\" alt=\"an-ca-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010512-an-ca-t1.jpeg\" alt=\"an-ca-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010521-an-ca-t2.jpeg\" alt=\"an-ca-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010527-an-ca-t3.jpeg\" alt=\"an-ca-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010532-an-ca-t4.jpeg\" alt=\"an-ca-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010537-an-ca-t5.jpeg\" alt=\"an-ca-t5\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010542-an-ca-t6.jpeg\" alt=\"an-ca-t6\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010547-an-ca-t7.jpeg\" alt=\"an-ca-t7\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010551-an-ca-t8.jpeg\" alt=\"an-ca-t8\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-di",
+    "answer": "\u003Cp\u003E此點位位於大魚際肌。我們需要處理肌筋膜單位的單關節部分，即「屈拇短肌」，以及雙關節部分，即「屈拇長肌」。兩者匯集在大魚際肌的近端三分之一處，非常靠近第一掌骨。\u003Cbr /\u003E操作時，我會貼近骨頭進行縱向施作。患者通常會感覺到疼痛傳導至大拇指，有時也可能引發手腕的疼痛。\u003C/p\u003E\u003Cp\u003Ean-di 位於拇指隆起的內側，非常靠近第一掌骨，我們有兩條縱向的結構。這就是 an-di。\u003C/p\u003E\u003Cp\u003Ean-di 位於大魚際的外側，非常靠近第一掌骨，我們有兩條垂直縱向的。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010539-an-di-l1.jpeg\" alt=\"an-di-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010544-an-di-t1.jpeg\" alt=\"an-di-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010550-an-di-t2.jpeg\" alt=\"an-di-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531010555-an-di-t3.jpeg\" alt=\"an-di-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-cp1",
+    "answer": "\u003Cp\u003E定位在眉毛末端的內側、靠近鼻側。操作時務必避免傷到此處穿出的神經（orbicular nerve）。此點的單關節纖維是上直肌（superior rectus），雙關節纖維是眼輪匝肌（orbicularis oculi）。兩者匯聚形成 Retro Capo 1，對眼後頭痛與延伸至前臂的疼痛特別有效。\u003C/p\u003E\u003Cp\u003E我將 re-cp1 定位在皺眉肌位置，也就是眼輪匝肌之下、眉毛下方。我會注意不要碰到眶上神經的出口，並保持更內側的路徑。這個層次需要以觸診確認，我會在確定點位後留下標記，位置就在這裡。\u003C/p\u003E\u003Cp\u003Ere-cp1 將會位於皺眉肌中，也就是在眼輪匝肌下方、眉毛下方。\u003Cbr /\u003E所以，我們要確保不要碰觸到眶上神經穿出的地方，而是要保持偏向內側。\u003Cbr /\u003E所以這就是你必須觸診並碰觸 re-cp1 的水平高度。\u003Cbr /\u003E因此我們將留下一個點，精確地就在這裡。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020500-re-cp1-p1.jpeg\" alt=\"re-cp1-p1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020506-re-cp1-t1.jpeg\" alt=\"re-cp1-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020510-re-cp1-t2.jpeg\" alt=\"re-cp1-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-cp2",
+    "answer": "\u003Cp\u003E此點位於額肌（frontalis），單關節肌為額肌，雙關節向量為帽狀腱膜（galea aponeurotica，亦有提及為「galacapitis」的廣泛頭部結構）。額肌作為帽狀腱膜的張力來源之一，容易引發緊張型頭痛與偏頭痛。定位方式：以瞳孔為垂直基準線向上，在額骨結節（frontal tuberosity）找到此點。治療時需向各方向操作，確實處理額肌的所有纖維。\u003Cbr /\u003E我傾向使用指關節操作，這是治療此點的最佳方式。\u003C/p\u003E\u003Cp\u003Ere-cp2 位於額肌上，我會沿著瞳孔的垂直線向上，對應到額結節（前額結節）的高度。在這裡，我會做交叉測試（Cross）並檢查各個方向的張力，找出最為明顯的方向，然後在此放置 re-cp2。\u003C/p\u003E\u003Cp\u003Ere-cp2 將會位於額肌中。\u003Cbr /\u003E所以你向上走到與瞳孔呈一直線、在額結節的水平高度。\u003Cbr /\u003E就在這裡，你必須做一個交叉並檢查所有方向，看看哪一個是最糟糕的（限制最大的）。\u003Cbr /\u003E所以就在這裡，我們將標記 re-cp2。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020536-re-cp2-p1.jpeg\" alt=\"re-cp2-p1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020541-re-cp2-l1.jpeg\" alt=\"re-cp2-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020545-re-cp2-t2.jpeg\" alt=\"re-cp2-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-cp3",
+    "answer": "\u003Cp\u003E定位在枕骨底部兩側、各直肌頭匯聚於枕骨下緣之處。單羽狀肌為小後直肌（rectus capitis posterior minor），雙羽狀肌為外直肌（rectus capitis lateralis）。此處可影響小後直肌的張力，經常出現枕部放射痛，對頭痛與偏頭痛具療效。治療以橫向（transversal）為主，著重於影響結締組織。\u003C/p\u003E\u003Cp\u003Ere-cp3  在枕骨下方，位於小後頭直肌的附著處。我會盡量靠近枕骨，但避免壓傷骨膜。就在這個位置，可以確認 re-cp3 。\u003C/p\u003E\u003Cp\u003ERetrocaput 3（後頭3）將正好位於枕骨下方、頭後小直肌的止點處。\u003Cbr /\u003E所以，你要盡可能靠近枕骨，但不要碰傷骨膜。\u003Cbr /\u003E所以就在這裡，你有 re-cp3 。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020514-re-cp3-l1.jpeg\" alt=\"re-cp3-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020518-re-cp3-t1.jpeg\" alt=\"re-cp3-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020524-re-cp3-t2.jpeg\" alt=\"re-cp3-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-cl",
+    "answer": "\u003Cp\u003E定位大致在 C5–C6，存在些微解剖差異。目標肌群為：多裂肌（multifidus，單關節）與最長肌（longissimus，雙關節）。理想路徑是自斜方肌下方進入以達到中間區域，避免穿越斜方肌；若斜方肌過厚或僵硬，可穿越處理。可用指關節作縱向或橫向斜向操作，以找出最僵硬的方向。此點對頸痛與頭痛都有幫助。\u003C/p\u003E\u003Cp\u003Ere-cl 位於 C5–C6 之間。我會嘗試從斜方肌下方到達豎脊肌，方式是從後方略微提起斜方肌，進入深部到達該點。\u003C/p\u003E\u003Cp\u003Ere-cl 將位於 C5 至 C6 之間。\u003Cbr /\u003E所以你試著走到斜方肌下方以觸及豎脊肌。\u003Cbr /\u003E所以這個點可以從正後方觸及，就像你試著抬起斜方肌，然後你就能觸及到那裡的點。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020511-re-cl-l1.jpeg\" alt=\"re-cl-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020516-re-cl-t1.jpeg\" alt=\"re-cl-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020521-re-cl-t2.jpeg\" alt=\"re-cl-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-th",
+    "answer": "\u003Cp\u003E此點屬功能性定位，受胸椎後凸峰值影響，通常在 T4，但可能稍高或稍低。單關節纖維為胸段多裂肌，雙關節向量為胸最長肌（longissimus thoracis）。定位在豎脊肌群的中線上。可用指關節觸診，但治療建議使用肘部，並以多方向施力。許多上背與頸部疼痛都與此點相關。\u003C/p\u003E\u003Cp\u003E我在胸椎的後凸峰（胸椎後凸最明顯、使用過度的地方）尋找目標點，保持在正中線，聚焦在豎脊肌的中段。如果在中段能觸到緊繃的束狀組織，那就是定位點。re-th 就位於胸椎後凸頂端的豎脊肌中線位置。\u003C/p\u003E\u003Cp\u003Ere-th，我們正在尋找脊椎後凸的頂峰，也就是過度使用最嚴重的地方。\u003Cbr /\u003E你想停在正中間，並觀察豎脊肌的部分。\u003Cbr /\u003E所以如果你在豎脊肌中間感覺到一條緊繃的肌束，這就是那個點。\u003Cbr /\u003E所以 re-th 將會正好位於脊椎後凸頂峰的豎脊肌正中間。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020502-re-th-l1.jpeg\" alt=\"re-th-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020507-re-th-t1.jpeg\" alt=\"re-th-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020515-re-th-t2.jpeg\" alt=\"re-th-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020519-re-th-t3.jpeg\" alt=\"re-th-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020524-re-th-t4.jpeg\" alt=\"re-th-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020529-re-th-t5.jpeg\" alt=\"re-th-t5\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020533-re-th-t6.jpeg\" alt=\"re-th-t6\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-lu",
+    "answer": "\u003Cp\u003E定位在腰前凸與胸後凸交會處，仍在豎脊肌中線。單關節纖維為多裂肌，雙關節纖維為最長肌。可能位於 T12，也可能在 L1–L2，或 T11–T10，視後凸與前凸的交界而定。此點對下背與上背痛均可發揮良好效果。\u003C/p\u003E\u003Cp\u003E我在腰椎前凸與胸椎後凸的交界處尋找 re-lu，通常在 T12–L1 的高度。我會將點位放在豎脊肌的正中位置。\u003C/p\u003E\u003Cp\u003Ere-lu，我們正在尋找脊椎前凸與後凸交界的地方。\u003Cbr /\u003E所以這個水平高度可能是 T12、L1。\u003Cbr /\u003E我們在豎脊肌的正中間有一個 re-lu。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020521-re-lu-l1.jpeg\" alt=\"re-lu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020524-re-lu-l2.jpeg\" alt=\"re-lu-l2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020555-re-lu-t1.jpeg\" alt=\"re-lu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020557-re-lu-t2.jpeg\" alt=\"re-lu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020500-re-lu-t3.jpeg\" alt=\"re-lu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020504-re-lu-t4.jpeg\" alt=\"re-lu-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020507-re-lu-t5.jpeg\" alt=\"re-lu-t5\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020509-re-lu-t6.jpeg\" alt=\"re-lu-t6\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-pv",
+    "answer": "\u003Cp\u003E定位於髂腰韌帶（iliolumbar ligament），此韌帶不易觸及；需在髂嵴上方、背闊肌（latissimus dorsi）外側，沿小三角空隙深入以接近目標。此處單關節纖維為多裂肌，雙關節向量為最長肌。可治療下背痛與延伸至下肢的疼痛。此點相當深，建議以肘部操作，注意避免在髂嵴處撞擊骨膜（periosteum）。\u003C/p\u003E\u003Cp\u003Ere-pv 需要對抗髂腰韌帶。我會在後上髂棘的上方、髂嵴之上，且位於豎脊肌外側的區域進入。操作時，我會盡可能向內、向深，以顱--尾方向施力。re-pv 就在這裡。\u003C/p\u003E\u003Cp\u003Ere-pv，我們必須緊貼著髂腰韌帶。\u003Cbr /\u003E所以它位於髂後上棘上方、髂嵴上方，在豎脊肌的外側。\u003Cbr /\u003E我們試著以頭側向尾側的方向，盡可能向深處及內側探入。\u003Cbr /\u003E所以就在這裡，我們有 re-pv。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020533-re-pv-l1.jpeg\" alt=\"re-pv-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020523-re-pv-t1.jpeg\" alt=\"re-pv-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020526-re-pv-t2.jpeg\" alt=\"re-pv-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020529-re-pv-t3.jpeg\" alt=\"re-pv-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020533-re-pv-t4.jpeg\" alt=\"re-pv-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020536-re-pv-t5.jpeg\" alt=\"re-pv-t5\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020539-re-pv-t6.jpeg\" alt=\"re-pv-t6\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-cx",
+    "answer": "\u003Cp\u003E定位在薦結節韌帶（sacrotuberous ligament），該韌帶是臀大肌後部纖維的起源之一，並作用於骨盆後傾（retroversion）。此處單關節肌為臀大肌（gluteus maximus），雙關節為股二頭肌（biceps femoris），二者在此匯聚。可用縱向、橫向、斜向多方向處理，建議以肘部並配合特定體位以便充分進入與治療。常見症狀包含髖部與下肢相關疼痛。\u003C/p\u003E\u003Cp\u003Ere-cx 位於薦結節韌帶。我會先找出坐骨結節與薦骨，然後在兩者之間的中點觸診，感到如同「彈跳」的手感，那就是薦結節韌帶；此韌帶是臀大肌後側部分的起始處。確認後向後推壓，即為 Retro 點；re-cx 就在此。\u003C/p\u003E\u003Cp\u003Ere-cx 將會位於骶結節韌帶中。\u003Cbr /\u003E所以我們找到坐骨結節，我們找到骶骨，我們走到中間，我們會感覺到一種彈撥感。\u003Cbr /\u003E這就是骶結節韌帶，它是臀大肌後側部分的起點。推壓以尋找 Retro。所以 re-cx 就在這裡。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020523-re-cx-l1.jpeg\" alt=\"re-cx-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020528-re-cx-t1.jpeg\" alt=\"re-cx-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020533-re-cx-t2.jpeg\" alt=\"re-cx-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020538-re-cx-t3.jpeg\" alt=\"re-cx-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020542-re-cx-t4.jpeg\" alt=\"re-cx-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020547-re-cx-t5.jpeg\" alt=\"re-cx-t5\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020553-re-cx-t6.jpeg\" alt=\"re-cx-t6\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-ge",
+    "answer": "\u003Cp\u003E定位於股二頭肌的內側緣。單關節纖維為股二頭肌短頭（short head of biceps femoris），雙關節為半腱肌（semitendinosus）。尋點方法：於臀大肌下緣與膕窩之間的中點，進入股二頭肌長頭的內側緣，沿縱向操作並自內側向外推進，以維持在長頭的中間邊緣。此點對小腿抽筋、膝痛效果佳，也可改善下背痛與髖關節問題。\u003C/p\u003E\u003Cp\u003Ere-ge 在股二頭肌的內側邊界中點。我會先辨識內側緣，並以縱向方式觸診，即可確認 re-ge 的位置。\u003C/p\u003E\u003Cp\u003Ere-ge 位於股二頭肌的內側邊緣，處於中點。\u003Cbr /\u003E所以我們感知其內側邊緣，並進行縱向觸診。\u003Cbr /\u003E所以就在這裡，我們可以確認 re-ge。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020550-re-ge-l1.jpeg\" alt=\"re-ge-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020554-re-ge-t1.jpeg\" alt=\"re-ge-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020500-re-ge-t2.jpeg\" alt=\"re-ge-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020504-re-ge-t3.jpeg\" alt=\"re-ge-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020509-re-ge-t4.jpeg\" alt=\"re-ge-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020514-re-ge-t5.jpeg\" alt=\"re-ge-t5\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-ta",
+    "answer": "\u003Cp\u003E定位在腓骨外側肌（peroneus lateralis）的肌腱交界處。單羽狀纖維為比目魚肌（soleus），雙羽狀纖維為腓腸肌外側頭（gastrocnemius lateral belly）。觸診時沿肌腱交界作較多的縱向觸診，以避免滑落到腓腸肌內側頭（gastrocnemius medialis）。常見疼痛包含阿基里斯腱與足跟痛，亦可能出現頸痛、膝痛與肘窩疼痛。\u003C/p\u003E\u003Cp\u003Ere-ta 位於腓腸肌外側頭的肌腱交界處。我會避免碰觸到內側頭，沿外側邊界進入，並在該處以縱向手法操作。\u003C/p\u003E\u003Cp\u003Ere-ta 是腓腸肌外側頭的肌腱結合處。\u003Cbr /\u003E所以要避免碰觸到內側頭，繞過邊緣並在那裡進行縱向操作。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020556-re-ta-l1.jpeg\" alt=\"re-ta-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020502-re-ta-t1.jpeg\" alt=\"re-ta-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531020507-re-ta-t2.jpeg\" alt=\"re-ta-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-pe",
+    "answer": "\u003Cp\u003E定位在足外側，略靠近第五蹠骨近端，介於跟骨與第五蹠骨之間。單關節纖維為小趾外展肌（abductor digiti minimi），雙關節向量為腓骨短肌（peroneus brevis）。小趾外展肌的緊繃可清楚觸及；治療時偏向外側，尋找會「彈跳」的緊繃結構。可用指關節觸診，以尺骨（ulna）進行治療，方向略帶斜向與垂直。典型症狀包含第五蹠骨扭傷痛、延伸至趾部的疼痛，以及類似足底筋膜炎的表現。\u003C/p\u003E\u003Cp\u003E我會尋找第五蹠骨並偏近近端定位。也可以在跟骨與第五蹠骨之間操作，目標是感受趾小肌（外展小趾肌）的僵硬度。此處即可找到 Retro 點；若使用尺骨（前臂尺側）或指關節施力，則可更貼近目標結構，依需要調整靠近程度。\u003C/p\u003E\u003Cp\u003Ere-pe。所以我們正在尋找第五蹠骨。我們保持在更偏近端的位置。我們甚至可以停在跟骨和第五蹠骨之間，因為我們想感覺到小趾展肌的僵硬度。所以就在那裡，我們可以找到 Retro，但我們甚至可以保持得更近，這取決於你是使用尺骨（手肘）還是指關節。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030515-re-pe-l1.jpeg\" alt=\"re-pe-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030523-re-pe-t1.jpeg\" alt=\"re-pe-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030528-re-pe-t2.jpeg\" alt=\"re-pe-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030535-re-pe-t3.jpeg\" alt=\"re-pe-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030541-re-pe-t4.jpeg\" alt=\"re-pe-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-sc",
+    "answer": "\u003Cp\u003E定位在 C7 與肩胛棘之間的中段。單羽狀纖維為菱形肌（rhomboid），雙羽狀向量為斜方肌中束（middle fibers of trapezius）。兩者關聯密切，取位於 C7 與肩胛棘之間的中點可同時處理此雙向量。可坐姿或俯臥位治療，建議以肘部，因組織常相當僵硬。疼痛可能向上延伸至頸部、向下至手臂，及上背多種症狀。\u003C/p\u003E\u003Cp\u003Ere-sc 位於小菱形肌的上緣。我會先找到 C7，再找到肩胛骨的棘，兩者之間取中點並進行觸診；當摸到像是邊界、帶有「彈跳」感的結構，即為 re-sc。\u003C/p\u003E\u003Cp\u003Ere-sc 是小圓肌（或小菱形肌，此處指 rhomboid minor 菱形肌）的上邊緣。\u003Cbr /\u003E所以我們找到 C7，我們找到肩胛骨上的肩胛岡，我們走到中點並進行觸診。\u003Cbr /\u003E我們會感覺到一個邊緣、一種彈撥感。\u003Cbr /\u003E那就是 re-sc。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030520-re-sc-l1.jpeg\" alt=\"re-sc-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030524-re-sc-t1.jpeg\" alt=\"re-sc-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030529-re-sc-t2.jpeg\" alt=\"re-sc-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030533-re-sc-t3.jpeg\" alt=\"re-sc-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030537-re-sc-t4.jpeg\" alt=\"re-sc-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-hu",
+    "answer": "\u003Cp\u003E定位在三角肌後束、靠近棘下肌、肩胛棘下方。單關節纖維為大圓肌（teres major），雙關節向量為三角肌與肱三頭肌長頭（deltoid and long head of triceps）。定位技巧：由肩胛骨內側緣沿肩胛棘走向外側緣，即可觸及三角肌後緣，此處是此筋膜單元的重要組成。典型疼痛在肩部，也可能向下延伸至手臂，並可上行回到肩部。\u003C/p\u003E\u003Cp\u003Ere-hu 位於三角肌的後側邊界。我會先摸到肩胛骨與其棘，向外側移動直到感覺到邊界與彈跳感，這裡就是三角肌後緣；此處為負責後移動作（retroposition）的運動單元所在。\u003C/p\u003E\u003Cp\u003Ere-hu 是三角肌的後邊緣。\u003Cbr /\u003E所以你找到肩胛骨、肩胛骨的肩胛岡，你向外側移動，直到你感覺到一個邊緣的彈撥感。\u003Cbr /\u003E這就是三角肌的後邊緣，這裡有負責後伸動作的運動單位。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030527-re-hu-l1.jpeg\" alt=\"re-hu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030532-re-hu-t1.jpeg\" alt=\"re-hu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030536-re-hu-t2.jpeg\" alt=\"re-hu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030541-re-hu-t3.jpeg\" alt=\"re-hu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030546-re-hu-t4.jpeg\" alt=\"re-hu-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-cu",
+    "answer": "\u003Cp\u003E定位於三角肌平面水平、肱三頭肌外側頭所在。單關節組成為肱三頭肌外側頭，雙關節為肱三頭肌長頭。治療時需縱向操作，並高度注意橈神經（radial nerve）在此經過：務必維持在三角肌水平，不要往下，因在此區域橈神經由後往前橫向通過。維持縱向操作可避免「彈出」肌肉與神經受傷；若位置過低，可能傷到神經。此點可引發肘部疼痛，也會影響肩部疼痛。\u003C/p\u003E\u003Cp\u003E在 re-cu，我會尋找三角肌的末端，然後沿著肱三頭肌外側頭的後方往後移動並以縱向方式操作。要特別注意遠端有一條橈神經斜向穿過，因此處理時應保持在三角肌水平、沿縱向進行。\u003C/p\u003E\u003Cp\u003Ere-cu。\u003Cbr /\u003E我們正在尋找三角肌的末端。\u003Cbr /\u003E我們向後移動到肱三頭肌的外側頭上方，並進行縱向操作。\u003Cbr /\u003E請注意，在遠端你有一條斜向延伸的橈神經，所以要保持在三角肌水平高度進行縱向操作。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030523-re-cu-l1.jpeg\" alt=\"re-cu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030527-re-cu-t1.jpeg\" alt=\"re-cu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030532-re-cu-t2.jpeg\" alt=\"re-cu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030536-re-cu-t3.jpeg\" alt=\"re-cu-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-ca",
+    "answer": "\u003Cp\u003E此點較難、且可能很深。主要目標為屈腕尺側肌（flexor carpi ulnaris）的單關節部分；其雙關節組成為源自肱骨的肌纖維。治療時沿尺骨作縱向操作；由於此肌可能較小，需將患者手抬至頭上，形成輕度仰掌（supination），讓伸腕尺側肌（extensor carpi ulnaris）更容易辨識並以指關節接觸。沿尺骨小心操作，避免撞擊尺骨骨膜。常見定位在中三分之一、近端肌腱交界處。此點可引起腕痛，也可能造成肘痛。\u003C/p\u003E\u003Cp\u003Ere-ca 位於尺側伸腕肌，位置在尺骨外側。點位可能在中段三分之一，或介於中段與遠端三分之一之間的肌腱交界處。這裡就是 re-ca。\u003C/p\u003E\u003Cp\u003Ere-ca 將會位於尺側伸腕肌中。\u003Cbr /\u003E所以，它位於尺骨的外側。\u003Cbr /\u003E它可以位於中三分之一處，或者位於中三分之一與遠端三分之一之間的肌腱結合處。\u003Cbr /\u003E所以，這就是 re-ca。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030525-re-ca-l1.jpeg\" alt=\"re-ca-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030529-re-ca-t1.jpeg\" alt=\"re-ca-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030534-re-ca-t2.jpeg\" alt=\"re-ca-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030539-re-ca-t3.jpeg\" alt=\"re-ca-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030544-re-ca-t4.jpeg\" alt=\"re-ca-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-di",
+    "answer": "\u003Cp\u003E此點的筋膜觸發由小趾（手第五指）相關肌群構成：單關節為小指外展肌（adductor digiti minimi；原文以此命名），雙關節為小指屈肌（flexor digitorum minimi）。兩者在小魚際隆起（hypothenar eminence）近端、中側匯聚。治療時從此角度切入，沿掌側、沿第五掌骨縱向操作。患者常感覺第五指有被牽拉的緊張感，典型疼痛即在該處。\u003C/p\u003E\u003Cp\u003Ere-di 位於小魚際隆起的外側、近側三分之一。我會在第五掌骨前方以縱向方式操作；在這個水平，即可找到 Retro 點。\u003C/p\u003E\u003Cp\u003Ere-di 將會位於小魚際的外側，近端三分之一處。\u003Cbr /\u003E我們在第五掌骨前方進行縱向操作。\u003Cbr /\u003E在這個水平高度我們有 Retro，你。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030525-re-di-l1.jpeg\" alt=\"re-di-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030530-re-di-t1.jpeg\" alt=\"re-di-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030534-re-di-t2.jpeg\" alt=\"re-di-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531030539-re-di-t3.jpeg\" alt=\"re-di-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cp1",
+    "answer": "\u003Cp\u003Eme-cp1 位於雙眼的內眥。此處的單關節纖維以內直肌為主，雙關節向量則為眼輪匝肌。身體姿勢上幾乎是面對鼻樑，點位很小，約在眼鏡鼻托接觸鼻樑的微小束狀處。治療時可用雙指尖或指關節精準處理這個小點；病人可能在鼻部出現強烈放射。此點可用於眼痛、鼻痛、乾眼，以及額竇（frontal sinusoid）相關的放射症狀。若有外傷或手術史，這個點更常見。\u003Cbr /\u003E這是軀幹中唯一具有「機械運動拮抗」功能的中線點，為外側 capua 1 的拮抗點。自此之後，中線在軀幹不再負責運動，改以前側與後側描述。\u003C/p\u003E\u003Cp\u003E這個點位位於眼輪匝肌（orbicularis）中，緊貼著鼻子的外側邊緣，基本上就是眼鏡鼻墊會接觸到的地方。當我們觸摸此處時，可以感覺到一個微小的隆起，這就是 me-cp1 的位置。\u003C/p\u003E\u003Cp\u003Eme-cp1 仍然位於眼輪匝肌中，緊貼著鼻子的外側邊緣。\u003Cbr /\u003E基本上就是眼鏡接觸鼻子的位置。\u003Cbr /\u003E就在這裡，你會感覺到一個微小的突起。\u003Cbr /\u003E那就是我們的 me-cp1。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060528-me-cp1-l1.jpeg\" alt=\"me-cp1-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060533-me-cp1-t1.jpeg\" alt=\"me-cp1-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060538-me-cp1-t2.jpeg\" alt=\"me-cp1-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060542-me-cp1-t3.jpeg\" alt=\"me-cp1-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060546-me-cp1-t4.jpeg\" alt=\"me-cp1-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cp2a",
+    "answer": "\u003Cp\u003Eme-cp2a 位於頭與軀幹的前方正中，沒有右左之分，點就在鼻與上唇之間。單關節纖維以提上唇肌（levator labii superioris）為主，雙關節向量為顴肌（zygomaticus）。此點通常不處理機械性問題，較常見於長期配戴牙套、接受多次手術或齒顎矯正後，病人出現牙齒緊張、疼痛敏感，並可能誘發磨牙；此處高張力會形成惡性循環。檢查時可在左右以指關節觸診，若可觸及僵硬束狀為陽性；觸不到則為陰性。\u003C/p\u003E\u003Cp\u003E此點位在身體正中線上，位於鼻子下方、嘴唇上方，就在人中的正中央。\u003C/p\u003E\u003Cp\u003Eme-cp2a 正好位於嘴唇上方、鼻子下方的正中線上，就在正中間。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060556-me-cp2a-l1.jpeg\" alt=\"me-cp2a-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060503-me-cp2a-t1.jpeg\" alt=\"me-cp2a-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060512-me-cp2a-t2.jpeg\" alt=\"me-cp2a-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cp2r",
+    "answer": "\u003Cp\u003Eme-cp2r 位於額頭正中線。此點可引發與額肌（frontalis）相關的張力，並向帽狀腱膜（galea aponeurotica）擴散。觸診時不應觸到束狀物；若可觸及即為陽性。以多指尖同時掃查整片區域，若找到束狀即行處理。病人常感到暈眩、失穩與平衡感不足。\u003C/p\u003E\u003Cp\u003E這個點位同樣在身體正中線上，位於前額，就在顱骨縫線的下方。觸摸時會感覺到一個球狀的突起，這就是 me-cp2r。\u003C/p\u003E\u003Cp\u003E而 me-cp2r 則會位於前額的正中線上，就在這裡的縫合線下方。\u003Cbr /\u003E好的，你會感覺到像是一個纖維束。\u003Cbr /\u003E好的，那個結構就是 me-cp2r。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060545-me-cp2r-l1.jpeg\" alt=\"me-cp2r-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060556-me-cp2r-t1.jpeg\" alt=\"me-cp2r-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060503-me-cp2r-t2.jpeg\" alt=\"me-cp2r-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060509-me-cp2r-t3.jpeg\" alt=\"me-cp2r-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cp3a",
+    "answer": "\u003Cp\u003Eme-cp3a 位於下頷正中腱縫（raphae）。單關節成分為顎舌骨肌（mylohyoid），雙關節向量為二腹肌（digastric）。此處為正中一點，可用指關節左右輕彈檢查是否有筋隔感；無則陰性，有則陽性。典型放射是直達扁桃體與咽喉的尖銳感，可對復發性喉嚨痛、咽喉緊勒或痙攣感等症狀有效。\u003C/p\u003E\u003Cp\u003E此點位位於下巴下方，在內側舌骨肌（medial hyoids）之間的縫隙（raphe）中。我們會在此處感受是否有任何聲響或僵硬感，以判斷縫隙的狀況。\u003C/p\u003E\u003Cp\u003Eme-cp3a  將位於下頜舌骨肌之間的縫（raphae）。\u003Cbr /\u003E所以，我們保持在下巴下方，我們將去感覺這個縫是否有任何喀啦聲、任何因僵硬而產生的彈撥感。\u003Cbr /\u003E這就是 me-cp3a 。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060538-me-cp3a-l1.jpeg\" alt=\"me-cp3a-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060546-me-cp3a-t1.jpeg\" alt=\"me-cp3a-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060552-me-cp3a-t2.jpeg\" alt=\"me-cp3a-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060557-me-cp3a-t3.jpeg\" alt=\"me-cp3a-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cp3r",
+    "answer": "\u003Cp\u003Eme-cp3r 位於枕骨下方，項韌帶（nuchal ligament）附著處間、直肌群之間。以指關節左右觸診，辨識是否有緊繃索狀；建議病人先屈頸以利檢查與處理。典型回饋是病人主述近三個月開車比以往更費力與不安，需要格外注意左右查看，日常走動也反覆確認自身穩定；不一定感到眩暈，但多是失去穩定與安全感。這個反應常見且效果顯著，會在第三級深入討論。\u003Cbr /\u003E在第三級中，整條正中線是主要內臟筋膜與插入筋膜由內臟連到肌骨系統的核心。也就是說，中線是「內臟－身體（visceral-somatic）」代償的起點，我們會詳述其臨床意義\u003C/p\u003E\u003Cp\u003E這個點位在枕骨區域，是頸韌帶（nuchal ligament）的附著點。在這裡，我們觸診時若感覺到一個凹陷處，或是有緊繃、彈撥的感覺，就代表頸韌帶有張力或僵硬的問題需要處理。\u003C/p\u003E\u003Cp\u003Eme-cp3r 將位於枕骨區域的項韌帶止點處。\u003Cbr /\u003E所以你會感覺到一個凹陷，相反地，如果你感覺到彈撥感，那就是項韌帶的張力、僵硬度，這是必須進行治療的。\u003Cbr /\u003E所以這是 Medio caput 3 retrostans。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060503-me-cp3r-l1.jpeg\" alt=\"me-cp3r-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060507-me-cp3r-t1.jpeg\" alt=\"me-cp3r-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060512-me-cp3r-t2.jpeg\" alt=\"me-cp3r-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cla",
+    "answer": "\u003Cp\u003Eme-cla 在胸骨柄（manubrium）頂端上方的結締組織交叉點。目的不是進入膝窩（popliteal troph），而是向下推壓上方組織，感受胸骨柄上的結締組織網絡。胸鎖乳突肌在此匯聚，但重點是多向交叉的結締組織。以雙指尖評估並施治，症狀包括喉嚨痛與喉部黏稠感。\u003C/p\u003E\u003Cp\u003E這個點位在胸骨柄（manubrium）的頂部，但實際上是在其上表面。操作時，我們需要向尾側（caudal）施力，才能感覺到覆蓋該區域的筋膜，這個點位非常表淺，不需要深壓。\u003C/p\u003E\u003Cp\u003Eme-cla 將位於胸骨柄的頂部，但它實際上是上表面。\u003Cbr /\u003E所以，你必須向尾側推壓，以感知覆蓋該區域的筋膜。\u003Cbr /\u003E而且你完全不需要按得太深。\u003Cbr /\u003E所以這是 me-cla。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070520-me-cl-a-l1.jpeg\" alt=\"me-cl-a-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070528-me-cl-a-t1.jpeg\" alt=\"me-cl-a-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070533-me-cl-a-t2.jpeg\" alt=\"me-cl-a-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-clr",
+    "answer": "\u003Cp\u003Eme-clr 為整段項韌帶 C1 至 C7，以 C6–C7 最常見。以多指尖掃查是否有彈跳感或僵硬區；以指關節處理較硬部位，可能只有一處，也可能整段皆受影響。典型為暈眩與軸線不穩的感覺。\u003C/p\u003E\u003Cp\u003E此點位依然與頸韌帶有關，但位於其末端。我們需要感知整條頸韌帶的狀況，最常見的位置是在第六頸椎（C6）與第七頸椎（C7）之間，在這個高度可能會感覺到彈撥感。\u003C/p\u003E\u003Cp\u003Eme-clr 仍然會是項韌帶，但位於末端。\u003Cbr /\u003E所以你想感知整條項韌帶。\u003Cbr /\u003E最常見的是在 C6-C7 之間，就在這個水平高度。你將會在那裡感覺到彈撥感。所以這是 me-clr。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070514-me-cl-r-l1.jpeg\" alt=\"me-cl-r-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070522-me-cl-r-t1.jpeg\" alt=\"me-cl-r-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070529-me-cl-r-t2.jpeg\" alt=\"me-cl-r-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070534-me-cl-r-t3.jpeg\" alt=\"me-cl-r-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-tha",
+    "answer": "\u003Cp\u003E「中胸前側」沿胸骨以雙指尖左右觸診，可能上至下整段受影響。此處可能觸到「胸骨肌（sternalis）」這個解剖變異，呈束狀可在單側或對側出現；在亞洲族群約 15% 具有胸骨肌，白人則較少。更常見的是膠原纖維束緊繃，導致沉重、壓迫、呼吸困難與焦慮等感覺。若為肌肉，捏壓收縮時會鼓起；若是膠原纖維，則不會隨收縮移動但仍僵硬，可能疼痛並向乳房上方擴散（女性可見）。可能單側、對側、局部或整段受影響，請找出最僵硬處處理。\u003C/p\u003E\u003Cp\u003E此點位位於胸骨上方。很多時候，我們可以在這裡感覺到胸骨肌（sternalis muscle）像一束肌肉束一樣。我們需要停留在其表面，感受是否有任何彈撥感，這就是此點位呈陽性的跡象。這個點位可能遍布整個胸骨，但我會將標示點畫在胸骨的正中央。\u003C/p\u003E\u003Cp\u003Eme-tha 將位於胸骨上方。\u003Cbr /\u003E很多時候你會感覺到像胸骨肌，就像那裡的一條肌束。\u003Cbr /\u003E所以，你想停在上方，並想感覺那裡是否有任何彈撥感。\u003Cbr /\u003E這就是該點呈陽性反應的信號。\u003Cbr /\u003E所以它可能分佈在各處，我會把點標記在胸骨的正中間。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070558-me-th-a-l1.jpeg\" alt=\"me-th-a-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070505-me-th-a-t1.jpeg\" alt=\"me-th-a-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070510-me-th-a-t2.jpeg\" alt=\"me-th-a-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070514-me-th-a-t3.jpeg\" alt=\"me-th-a-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070519-me-th-a-t4.jpeg\" alt=\"me-th-a-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-thr",
+    "answer": "\u003Cp\u003E「中胸後側」為整段棘上韌帶與棘間韌帶。將多指尖置於各棘突之間，左右觸診，尋找僵硬的棘上韌帶。若僵硬，病人可出現如針刺般的瞬間銳痛。此痛非一般上背痛，而是快速、銳利、難以預期的針樣痛；可能為單點或多點，需全域檢查。\u003C/p\u003E\u003Cp\u003E我們會將手指逐一放在每個棘突間（interspinous process）的空間，嘗試觸診並檢查棘上韌帶（supraspinal ligament）是否有彈撥感。如果有的話，就代表此點位為陽性，需要進行處理。因此，這個點位可能出現在任何一個棘突之間。\u003C/p\u003E\u003Cp\u003Eme-thr ，我們將會觀察，我們將把一隻手指放在每個棘突間，並試著去觸診，看看棘上韌帶是否有任何彈撥感。\u003Cbr /\u003E如果是陽性，你就要進行治療。所以這個點可以位於棘突之間的任何地方。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070517-me-th-r-l1.jpeg\" alt=\"me-th-r-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070521-me-th-r-t1.jpeg\" alt=\"me-th-r-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070526-me-th-r-t2.jpeg\" alt=\"me-th-r-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070531-me-th-r-t3.jpeg\" alt=\"me-th-r-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070536-me-th-r-t4.jpeg\" alt=\"me-th-r-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-lua",
+    "answer": "\u003Cp\u003Eme-lua 沿白線自劍突至臍。避免觸碰敏感的劍突，以多指尖沿白線觸診（文本中提及「項韌帶」為口誤，我以原意沿白線觸診），找出較僵硬處即為目標。可引發向內臟深處的尖痛。治療以橫向指關節操作，病人能即刻感受症狀並覺察局部變化。\u003C/p\u003E\u003Cp\u003E這個點位位於腹白線（linea alba）。我們需要觸診整條腹白線，去感受是否有彈撥感。最僵硬的區域就是需要處理的點位。\u003C/p\u003E\u003Cp\u003Eme-lua 將會是腹白線。\u003Cbr /\u003E所以我們想觸診整條腹白線，你想感覺那裡是否有任何彈撥感。\u003Cbr /\u003E所以它們最為僵硬的地方，就是你要治療的點。\u003Cbr /\u003E所以這是 me-lua。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070524-me-lu-a-l1.jpeg\" alt=\"me-lu-a-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070536-me-lu-a-t1.jpeg\" alt=\"me-lu-a-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070543-me-lu-a-t2.jpeg\" alt=\"me-lu-a-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070548-me-lu-a-t3.jpeg\" alt=\"me-lu-a-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070552-me-lu-a-t4.jpeg\" alt=\"me-lu-a-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070557-me-lu-a-t5.jpeg\" alt=\"me-lu-a-t5\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070503-me-lu-a-t6.jpeg\" alt=\"me-lu-a-t6\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-lur",
+    "answer": "\u003Cp\u003Eme-lur 為腰椎段的棘上或棘間韌帶。以多指尖置於各棘突間評估。此處間隙較小，觸診難度較高，但仍可感受；L5–S1 最常見，因其間隙較大。典型症狀為針刺樣的銳痛，迅速出現又消退。\u003C/p\u003E\u003Cp\u003E這個點位同樣位於第十二胸椎（T12）到第一薦椎（S1）之間的棘突間隙。我們會在這個區域觸診，觀察是否有彈撥或聲響。這種彈撥感代表胸腰韌帶（thoracolumbar ligament）發生了變化，表示此點位為陽性。\u003C/p\u003E\u003Cp\u003Eme-lur 將再次位於 T12 和 S1 之間。也就是所有的棘間間隙。\u003Cbr /\u003E所以，如果我們想看看是否有任何彈撥聲和喀啦聲，我們將在該區域進行觸診。\u003Cbr /\u003E那種彈撥感將會是棘間韌帶（此處語誤 sartorial ligament，實指 interspinous/supraspinous ligament）的改變，所以這將會是陽性點。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070506-me-lu-r-l1.jpeg\" alt=\"me-lu-r-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070512-me-lu-r-t1.jpeg\" alt=\"me-lu-r-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070517-me-lu-r-t2.jpeg\" alt=\"me-lu-r-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070521-me-lu-r-t3.jpeg\" alt=\"me-lu-r-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-pva",
+    "answer": "\u003Cp\u003Eme-pva 沿白線自臍至恥骨。單關節纖維為錐肌（pyramidalis，位於恥骨上方、張力白線的小肌），雙關節向量為腹直肌（rectus abdominis）。以多指尖沿白線左右觸診，找出僵硬區以指關節左右處理；可能為一點或兩點，遠端（靠近恥骨）更常見，因為有肌纖維參與。可引發典型的「身體－內臟」疼痛，病人於內臟深處感痛。第三級會深入討論此處與「脊索（rakis）」以及「重複動脈（duplical artery）」的關聯，並說明其向骨盆與內臟區域的廣泛放射。\u003C/p\u003E\u003Cp\u003E此點位依然在腹白線上，介於肚臍與恥骨之間。要記得，在遠端會有錐狀肌（pyramidalis），所以我們必須橫向觸診。如果感覺到僵硬，就代表此點位呈陽性。點位大約在中間的位置。\u003C/p\u003E\u003Cp\u003Eme-pva 仍然會位於肚臍和恥骨之間的腹白線。\u003Cbr /\u003E記住，在遠端我們會有錐狀肌。\u003Cbr /\u003E所以我們必須橫向觸診它。\u003Cbr /\u003E如果你感覺到僵硬，這就是該點呈陽性的信號。\u003Cbr /\u003E所以 me-pva，就在正中間延伸。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070522-me-pv-a-l1.jpeg\" alt=\"me-pv-a-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070527-me-pv-a-t1.jpeg\" alt=\"me-pv-a-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070532-me-pv-a-t2.jpeg\" alt=\"me-pv-a-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070536-me-pv-a-t3.jpeg\" alt=\"me-pv-a-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070541-me-pv-a-t4.jpeg\" alt=\"me-pv-a-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070546-me-pv-a-t5.jpeg\" alt=\"me-pv-a-t5\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-pvr",
+    "answer": "\u003Cp\u003Eme-pvr 位於薦骨上或薦骨面。正常不應觸到薦棘韌帶（sacrospinal ligament）的連續感；若以指頭左右觸診有明顯「繩索彈跳」感，即為薦棘韌帶。找到後以指關節處理，病人會感到針刺樣銳痛，典型主述是「薦骨上方像壓著一顆石頭」，不一定是下背痛，而是沉重感。治療後沉重感會逐步下降，可能很快，也可能需一段時間。\u003C/p\u003E\u003Cp\u003E這個點位在薦骨（sacrum）上方，是棘上韌帶的延伸。我們可以在這裡感覺到彈撥感，這種感覺就代表此點位為陽性。\u003C/p\u003E\u003Cp\u003Eme-pvr 將位於骶骨上方。\u003Cbr /\u003E它是棘上韌帶的延續。\u003Cbr /\u003E所以我們在這裡會感覺到彈撥感。\u003Cbr /\u003E那種彈撥感就是陽性點。\u003Cbr /\u003E所以我們將在這裡確認這個點，me-pvr。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070532-me-pv-r-l1.jpeg\" alt=\"me-pv-r-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070536-me-pv-r-t1.jpeg\" alt=\"me-pv-r-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070541-me-pv-r-t2.jpeg\" alt=\"me-pv-r-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070546-me-pv-r-t3.jpeg\" alt=\"me-pv-r-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cx",
+    "answer": "\u003Cp\u003Eme-cx 位於股薄肌（gracilis）上與內收肌筋膜，單關節纖維為內收長肌（adductor longus），雙關節向量為股薄肌。定位在近端至中段的交界，請病人以三指定位、做主動內收以觸到股薄肌，再以指關節沿長軸觸診；治療用手肘更省力。典型症狀為恥骨區疼痛（pubalgia）、內收肌痛、臀後側痛，並可牽涉至膝痛。\u003C/p\u003E\u003Cp\u003E這個點位位於股薄肌（gracilis）的近端與中段三分之一交界處。我們可以請對方用腿抵抗我們的手，會感覺到肌肉隆起，那裡就是確切的點位，位置就在股三角（triangle of Scarpa）的外側。\u003C/p\u003E\u003Cp\u003Eme-cx 將位於股薄肌中，處於近端和中三分之一之間。\u003Cbr /\u003E所以，你可以請患者用手對抗你的阻力，你會感覺到肌肉變大。\u003Cbr /\u003E所以那正是那個點，就在斯卡帕氏三角（股三角）的外側。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070500-me-cx-l1.jpeg\" alt=\"me-cx-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070505-me-cx-t1.jpeg\" alt=\"me-cx-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070511-me-cx-t2.jpeg\" alt=\"me-cx-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070515-me-cx-t3.jpeg\" alt=\"me-cx-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-ge",
+    "answer": "\u003Cp\u003Eme-ge 位於股薄肌的中段至遠段之間。半腱肌（semitendinosus）作為半月板相關成分，股薄肌遠端作為「二頭肌」成分（原文用語沿用）。沿長軸工作，疼痛可局部、近端或遠端擴散。典型為膝關節問題，並在特定動作（如深蹲等）出現銳痛。\u003C/p\u003E\u003Cp\u003E此點位位於股薄肌的中段與遠端三分之一交界處。它同樣在肌肉上，所以我們會感覺到肌肉的結構。\u003C/p\u003E\u003Cp\u003Eme-ge 將位於股薄肌的中三分之一和遠端三分之一之間。\u003Cbr /\u003E同樣地，它是在肌肉上方，所以你會感知到肌肉，並對該結構進行操作。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070557-me-ge-l1.jpeg\" alt=\"me-ge-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070503-me-ge-t1.jpeg\" alt=\"me-ge-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070508-me-ge-t2.jpeg\" alt=\"me-ge-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070513-me-ge-t3.jpeg\" alt=\"me-ge-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070519-me-ge-t4.jpeg\" alt=\"me-ge-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-ta",
+    "answer": "\u003Cp\u003Eme-ta 位於腓腸肌內側肌腱的肌腱交界（musculotendinous junction）。單關節為比目魚肌（soleus），雙關節向量為拇長屈肌（flexor hallucis longus）。治療需專注該區，不要觸及其他結構；之後的操作姿勢將於下一場介紹。典型症狀為足跟痛、足底筋膜炎樣痛、局部抽筋，或腓腸肌拉傷、撕裂史。請緊鄰肌腱交界上方處理。\u003C/p\u003E\u003Cp\u003E這個點位在內側腓腸肌（gastrocnemius medialis）的肌腱與肌肉交界處。我們找到肌肉後，就在這個高度的交界處進行操作。\u003C/p\u003E\u003Cp\u003Eme-ta 將位於腓腸肌內側頭的肌腱結合處。\u003Cbr /\u003E所以，我們感知肌肉，並將精確地在這個水平高度的肌腱結合處進行操作。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070503-me-ta-l1.jpeg\" alt=\"me-ta-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070511-me-ta-t1.jpeg\" alt=\"me-ta-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070516-me-ta-t2.jpeg\" alt=\"me-ta-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070521-me-ta-t3.jpeg\" alt=\"me-ta-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070526-me-ta-t4.jpeg\" alt=\"me-ta-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-pe",
+    "answer": "\u003Cp\u003Eme-pe 此處的單羽狀纖維為骨間肌（interosseous），雙羽狀纖維為趾長屈肌（flexor digitorum longus）。在肌起點以指關節、手肘觸診與治療，方向需平行肌腱與神經，較安全且有效。病人採側臥；若組織非常僵硬，指關節可能無法感知，需先以手肘熱開組織以辨識質地再治療。典型症狀為足部過敏（原文「pain in the allergies」沿用語義為足部不適），也常可用於足底筋膜炎。\u003C/p\u003E\u003Cp\u003E此點位位於外展拇肌（abductor hallucis）的起點。我們先找到跟骨（calcaneus），然後稍微移動，一旦感覺到皮下有一些組織結構，那就是結締組織與外展拇肌肌群的結合處。\u003C/p\u003E\u003Cp\u003Eme-pe將位於外展拇肌的起點。\u003Cbr /\u003E所以我們找到跟骨，我們稍微移動，一旦你感覺到一些結構、一些皮下組織，那就是與外展拇肌肌群連在一起的結締組織。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070520-me-pe-l1.jpeg\" alt=\"me-pe-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070527-me-pe-t1.jpeg\" alt=\"me-pe-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070533-me-pe-t2.jpeg\" alt=\"me-pe-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070537-me-pe-t3.jpeg\" alt=\"me-pe-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070542-me-pe-t4.jpeg\" alt=\"me-pe-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-sc",
+    "answer": "\u003Cp\u003Eme-sc 位於前鋸肌（serratus anterior），雙關節向量來自胸大肌與背闊肌（纖維交叉）。沿腋前線，於 2–3 根肋骨的前鋸肌附著處觸診，手法需沿肋骨方向並停留在肌纖維上，避免瘀傷骨膜。此點可伴隨肩活動受限（冷凍肩、僵硬肩），亦可導致上背重大問題。臨床上病人跌倒撞擊手臂，背後疼痛的原始來源可能在此。多以側臥檢查；若病人怕癢（ticklish），幾乎可預期此點呈陽性。全身的「怕癢」是受器閾值下降的表徵：在高度僵硬區，輕觸即痛、搔癢感即為指標。\u003C/p\u003E\u003Cp\u003E此點位位於前鋸肌（serratus anterior）附著在肋骨上的地方。\u003Cmark\u003E它可能出現在不同的附著點上，因此我們必須觸診肋骨上的這三個附著點。\u003C/mark\u003E雖然我將標示點畫在中間，但這三個點位中的任何一個都有可能。\u003C/p\u003E\u003Cp\u003Eme-sc 將位於前鋸肌在肋骨上的止點處。\u003Cbr /\u003E它可能在不同的區域，可能在其中一個、另一個，或再另一個止點。\u003Cbr /\u003E所以你必須在肋骨上觸診這三個地方。\u003Cbr /\u003E所以，這個點可以是其中的任何一個，我把它標在中間，但它可以是其中的任何一個。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070551-me-sc-l1.jpeg\" alt=\"me-sc-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070557-me-sc-t1.jpeg\" alt=\"me-sc-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070503-me-sc-t2.jpeg\" alt=\"me-sc-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070507-me-sc-t3.jpeg\" alt=\"me-sc-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070511-me-sc-t4.jpeg\" alt=\"me-sc-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070517-me-sc-t5.jpeg\" alt=\"me-sc-t5\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070522-me-sc-t6.jpeg\" alt=\"me-sc-t6\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-hu",
+    "answer": "\u003Cp\u003Eme-hu 位於肌間隔（septa）近端至中段交界的末端。此處下方只有神經與血管，因此操作要安靜、柔和，以圓滑滑行方式感知筋隔質地。單關節纖維為喙肱肌（coracobrachialis），雙關節向量為胸大肌。臨床上常見，在處理中肘、中肩胛後，此點可能自行改善；否則它會加入肩部問題。\u003C/p\u003E\u003Cp\u003E這個點位位於腋窩（axillary cavity）的末端，在肱骨區域的臂內側肌間隔（intermuscular septa）的近端與中段三分之一交界處，就在神經血管束（neurovascular sheath）的正上方。\u003C/p\u003E\u003Cp\u003Eme-hu 將位於腋窩的末端，處於臂部肌間隔近端中三分之一之間，正好位於神經血管鞘上方。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070502-me-hu-l1.jpeg\" alt=\"me-hu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070507-me-hu-t1.jpeg\" alt=\"me-hu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070513-me-hu-t2.jpeg\" alt=\"me-hu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070518-me-hu-t3.jpeg\" alt=\"me-hu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070525-me-hu-t4.jpeg\" alt=\"me-hu-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cu",
+    "answer": "\u003Cp\u003Eme-cu 位於近／中／遠段的交界處之間，單關節為喙肱肌，雙關節向量為尺側腕屈肌（flexor carpi ulnaris）的肱骨纖維。下方是肱肌（brachialis），即使介於兩條神經之間，向下仍可接觸肌肉。由於在兩條神經之間工作，建議沿長軸以指關節治療；不要擔心神經，按壓時神經會張開，神經外膜（epineurium）能避免摩擦。不過，若病人已有麻木，治療可能加重該麻木。沿長軸的指關節為較容易的方式。\u003C/p\u003E\u003Cp\u003E這個點位在臂內側肌間隔的中段與遠端三分之一交界處，緊貼著肱肌（brachialis）。\u003C/p\u003E\u003Cp\u003Eme-cu 將位於肌間隔的中三分之一和遠端三分之一之間，緊貼著肱肌。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070507-me-cu1.jpeg\" alt=\"me-cu1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070512-me-cu-t1.jpeg\" alt=\"me-cu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070518-me-cu-t2.jpeg\" alt=\"me-cu-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-ca",
+    "answer": "\u003Cp\u003Eme-ca 以尺側腕屈肌（flexor carpi ulnaris）為最佳目標（單關節），雙關節向量是小指屈肌（flexor digitorum minimi）。定位在肌腱交界處，沿長軸工作。此點較難，因為肌腹位於尺骨內側偏中面，不太在前面；建議病人體型較大時，俯臥、手臂置側，以手肘沿長軸觸診。可處理腕部問題，也常影響肘部。\u003C/p\u003E\u003Cp\u003E此點位位於尺側屈腕肌（flexor carpi ulnaris）上，在肌腱與肌肉交界處的近端。通常在中段三分之一處，尺骨的內側。\u003C/p\u003E\u003Cp\u003Eme-ca 將位於尺側偏腕屈肌（尺側腕屈肌）中，處於肌腱結合處的近端。\u003Cbr /\u003E所以通常在中三分之一處，位於尺骨的內側。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070557-me-ca-l1.jpeg\" alt=\"me-ca-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E躺姿\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531060518-me-ca-t-a.jpeg\" alt=\"me-ca-t-a\" /\u003E\u003C/p\u003E\u003Cp\u003E趴姿\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070502-me-ca-t1.jpeg\" alt=\"me-ca-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070508-me-ca-t2.jpeg\" alt=\"me-ca-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070512-me-ca-t3.jpeg\" alt=\"me-ca-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070517-me-ca-t4.jpeg\" alt=\"me-ca-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-di",
+    "answer": "\u003Cp\u003Eme-di 此處單關節為掌長肌（palmaris longus），特別是小指屈肌（flexor digitorum minimi）。此點非常小，可請病人主動或抗阻外展，小肌腹會鼓起以利定位；位於小魚際隆起近端三分之一的內緣。以「星形」多方向操作。典型為向手指廣泛放射的疼痛。\u003C/p\u003E\u003Cp\u003E此點位位於小魚際肌群（hypothenar eminence）的內側邊緣，在小指展肌（abductor digiti minimi）上。我們可以請對方做出對抗動作，會感覺到肌肉變大，那裡就是確切的點位。\u003C/p\u003E\u003Cp\u003Eme-di 將位於小魚際的內側邊緣，處於小指展肌（此處指 abductor digiti minimi）中。\u003Cbr /\u003E所以我們請患者對抗阻力，你會感覺到肌肉變大。那正是那個點。所以我們在這裡有 Medial digiti。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070534-me-di-l1.jpeg\" alt=\"me-di-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070542-me-di-t1.jpeg\" alt=\"me-di-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531070547-me-di-t2.jpeg\" alt=\"me-di-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-cp1",
+    "answer": "\u003Cp\u003E此點位於外眼角，包含了作為單關節纖維的眼外直肌（Rectus Lateralis），以及作為雙關節向量的眼輪匝肌（Orbicularis Oculi）。\u003Cbr /\u003E您可以將手指放在略低於眼眶邊緣的位置，就能感覺到眼輪匝肌橫向的纖維束。治療時，可以用雙指交疊、指節，或更建議用指骨進行按壓。請測試看看哪個方向，例如稍微傾斜的角度，能達到最好的效果。這個點對於處理功能性斜視、頭痛及偏頭痛非常有效，也能緩解因不協調感所引發的疼痛。\u003C/p\u003E\u003Cp\u003E我在眼睛下方、眼匝肌（orbicularis oculi）所在的側邊進行定位，位置在眼眶下方的水平線之下、外側。當指尖施以45度方向的輕觸或滑動時，會感到來自眼匝肌的「彈跳感／打嗝樣的滑動感」，這就是我所稱的 la-cp1。\u003C/p\u003E\u003Cp\u003Ela-cp1 將會位於眼輪匝肌中。\u003Cbr /\u003E就在眼線下方的外側，你會感覺到因為眼輪匝肌而產生的彈撥感。\u003Cbr /\u003E所以這裡我們有 la-cp1。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050505-la-cp1-l1.jpeg\" alt=\"la-cp1-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050514-la-cp1-t1.jpeg\" alt=\"la-cp1-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050519-la-cp1-t2.jpeg\" alt=\"la-cp1-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050524-la-cp1-t3.jpeg\" alt=\"la-cp1-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-cp2",
+    "answer": "\u003Cp\u003E此點位於顳肌（Temporalis）的中央，也就是「側面腱膜」（Lateral Aponeurosis）的位置。單關節纖維是顳肌，雙關節向量則是帽狀腱膜（Galea Aponeurotica）。帽狀腱膜覆蓋了整個頭部，並連結了五個張力肌群：額肌（Frontalis）、耳前肌（Auricularis Anterior）、耳上肌（Auricularis Superior）、耳後肌（Auricularis Posterior）與枕肌（Occipitalis）。\u003Cbr /\u003E要找到這個點，可以將三根手指放在顳部，請對方咬緊牙關，感受顳肌收縮時最厚實的區域。治療時，應以橫向或斜向的方式進行，以產生足夠的摩擦力。\u003C/p\u003E\u003Cp\u003E我以三指放在顳肌（temporalis）中央，請患者咬緊牙齒以利觸感增強。此時可感覺到該部位的肌肉在此層次變得較厚，我以此來辨識外翼肌（lateral pterygoid） (la-cp2) 的所在。\u003C/p\u003E\u003Cp\u003Ela-cp2 位於顳肌的中心。\u003Cbr /\u003E所以你可以放三隻手指，請患者咬緊牙關，你會感覺到肌肉在這個水平高度變厚。\u003Cbr /\u003E所以就在這裡，我們確認出 Lateral pterygoid (la-cp2) 。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050511-la-cp2-l1.jpeg\" alt=\"la-cp2-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050515-la-cp2-t1.jpeg\" alt=\"la-cp2-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050520-la-cp2-t2.jpeg\" alt=\"la-cp2-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050525-la-cp2-t3.jpeg\" alt=\"la-cp2-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-cp3",
+    "answer": "\u003Cp\u003E此點位於咬肌筋膜（Masseter Fascia）上，單關節纖維是咬肌（Masseter），雙關節向量則是笑肌（Risorius）。\u003Cbr /\u003E尋找此點的簡單方法是將三指放在咬肌上，請對方咬緊牙齒，感受其前後邊界，然後在正中間進行處理。在此處治療時，採用前後方向的橫向摩擦非常重要，需避免向上的摩擦，以免刺激到下方的腮腺（Parotid Gland）而導致分離或發炎。對於有夜間磨牙（Bruxism）習慣的人來說，這個點通常非常僵硬，處理後能有效改善症狀。此點與前述的點一樣，疼痛感可能會傳導至牙齒，對於那些牙齒對冷敏感或疼痛，但牙醫又找不出原因的個案，這是一個值得嘗試的處理點。\u003C/p\u003E\u003Cp\u003E在目標肌肉的範圍內，我以兩側邊界為參考，選擇正中間進行觸診。於此位置會感到肌肉有明顯的「彈跳」或滑動感，這個中點即是我所標示的 la-cp3。\u003C/p\u003E\u003Cp\u003Ela-cp3 將會位於肌肉上方。\u003Cbr /\u003E所以，我們有這條肌肉的兩個邊界，而我們想直接走到正中間。\u003Cbr /\u003E你會感覺到這條肌肉的彈撥感。所以這裡我們有 la-cp3。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050502-la-cp3-l1.jpeg\" alt=\"la-cp3-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050509-la-cp3-t1.jpeg\" alt=\"la-cp3-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050514-la-cp3-t2.jpeg\" alt=\"la-cp3-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050521-la-cp3-t3.jpeg\" alt=\"la-cp3-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-cl",
+    "answer": "\u003Cp\u003E此點位於鎖骨與胸骨末端交會處的區域。單關節肌是中斜角肌（Middle Scalene），雙關節肌則是胸鎖乳突肌（Sternocleidomastoid）。\u003Cbr /\u003E處理時，應靠近鎖骨的近端三分之一處，並偏向其前方，這個位置對於頭部的側向彎曲有最大的影響。建議使用指骨沿著縱向進行按壓。這個點能有效改善頭痛、偏頭痛以及頸部疼痛。\u003C/p\u003E\u003Cp\u003E我以胸鎖乳突肌（SCM）的胸骨端與鎖骨端交會處為定位依據，整體位置大約在 SCM 的近端到中段的三等分之間。主要的摩擦（friction）操作會偏向鎖骨端，此處即為我稱作的 la-cl。\u003C/p\u003E\u003Cp\u003Ela-cl 是胸鎖乳突肌（SCM）的胸骨端和鎖骨端匯合的地方。\u003Cbr /\u003E所以基本上它位於這條胸鎖乳突肌的近端和中三分之一之間。\u003Cbr /\u003E所以就在這裡，摩擦主要會針對鎖骨端來進行。\u003Cbr /\u003E所以我們這裡有 la-cl。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050515-la-cl-l1.jpeg\" alt=\"la-cl-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050521-la-cl-t1.jpeg\" alt=\"la-cl-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050526-la-cl-t2.jpeg\" alt=\"la-cl-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-th",
+    "answer": "\u003Cp\u003E這個點可能有些難找。它位於由斜方肌（Trapezius）和闊背肌（Latissimus Dorsi）構成、肩胛骨下角下方的三角區域內。單關節肌是棘間肌（Interspinalis），雙關節肌是胸髂肋肌（Thoracic Iliocostalis）。\u003Cbr /\u003E尋找方法是：先找到肩胛骨下角，向內側移動直到碰到豎脊肌（Erector Spinae）的側緣，再稍微向外移動。順著肋骨的方向觸診，您會感覺到一個突起，那就是髂肋肌。您可以使用指節或手肘尺骨的平坦部分，沿著縱向進行處理。此點對於需要長時間舉臂的音樂家（如小提琴手）非常重要，也可能影響呼吸。疼痛通常是局部的痙攣感，但很容易傳導至肩膀、喉嚨甚至頸部，引發緊繃感。\u003C/p\u003E\u003Cp\u003E我先找到肩胛骨下緣，再尋至外側邊界或棘脊（rachispina）所在走向，之後把手指置於肋間隙。以約45度方向進行觸診時，會出現「彈跳感」，那通常來自骶肋肌群中的髂肋肌（iliocostalis）。在這個設定下，我將此點標示為 la-th。\u003C/p\u003E\u003Cp\u003Ela-th，我們正在尋找肩胛骨的下角。\u003Cbr /\u003E我們將尋找外側緣或脊柱。\u003Cbr /\u003E我們把手指放進肋間隙。\u003Cbr /\u003E當我們以 45 度角進行觸診時，會感覺到彈撥感。\u003Cbr /\u003E這種彈撥感就是髂肋肌。\u003Cbr /\u003E所以就在這裡，我們將會找到 la-th。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050548-la-th-l1.jpeg\" alt=\"la-th-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050500-la-th-l2.jpeg\" alt=\"la-th-l2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050507-la-th-t1.jpeg\" alt=\"la-th-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050513-la-th-t2.jpeg\" alt=\"la-th-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050517-la-th-t3.jpeg\" alt=\"la-th-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050522-la-th-t4.jpeg\" alt=\"la-th-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050527-la-th-t5.jpeg\" alt=\"la-th-t5\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-lu",
+    "answer": "\u003Cp\u003E此點位於腰方肌（Quadratus Lumborum）的側緣。單關節肌是腰方肌，雙關節肌則是髂肋肌（Iliocostalis）。\u003Cbr /\u003E無論對方是仰臥或俯臥，您都可以進行評估與處理。最有效的方式是使用尺骨按壓，雖然也可以用指節，但可能較為困難。在第十二肋骨與髂骨脊之間有足夠的空間可以深入，但此處的治療面積相當寬，建議嘗試用手肘以不同角度來精準處理。許多下背痛都與此點有關，特別是久坐後站起時引發的疼痛。\u003C/p\u003E\u003Cp\u003E在腰部，我以髂嵴與第12肋之間為界，向深層探入直到摸到方形腰肌（quadratus lumborum）的外側面。此即我所定義的 la-lu。\u003C/p\u003E\u003Cp\u003Ela-lu 將會位於腰方肌，也就是在髂嵴和第 12 肋骨之間。\u003Cbr /\u003E我們將往深處按壓，直到感覺到腰方肌的外側表面。\u003Cbr /\u003E所以這就是 la-lu。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050557-la-lu-l1.jpeg\" alt=\"la-lu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050502-la-lu-t1.jpeg\" alt=\"la-lu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050507-la-lu-t2.jpeg\" alt=\"la-lu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050511-la-lu-t3.jpeg\" alt=\"la-lu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050517-la-lu-t4.jpeg\" alt=\"la-lu-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-pv",
+    "answer": "\u003Cp\u003E此點位於大轉子（Greater Trochanter）與後上髂脊（Posterior Superior Iliac Spine）之間，基本上就是臀中肌（Gluteus Medius）的後緣。單關節部分是臀中肌，雙關節部分則來自臀大肌（Gluteus Maximus），因為必須穿過臀大肌才能觸及臀中肌的後緣。\u003Cbr /\u003E最簡單的處理方式是讓對方側躺，雙膝微彎交疊。使用您的髂骨進行治療。有時因為脂肪層太厚或組織過於僵硬，可能不易感覺到緻密化的點。此時可以請對方稍微彎曲膝蓋，以舒適為原則，然後對著纖維邊緣的方向進行橫向處理。這個點對於坐骨神經痛、下背痛、髖部疼痛及臀部疼痛非常重要。典型的症狀是久坐後站起時的下背痛。\u003C/p\u003E\u003Cp\u003E我以後上髂棘（PSIS）與股骨大轉子（greater trochanter）連線的中點作為參考，於此中點可觸及臀中肌（gluteus medius）的後緣。該位置即是我標示的 la-pv。\u003C/p\u003E\u003Cp\u003Ela-pv 將位於髂後上棘與大轉子的中間，就在正中間。\u003Cbr /\u003E你會感覺到臀中肌的後緣。\u003Cbr /\u003E這就是 la-pv。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050521-la-pv-l1.jpeg\" alt=\"la-pv-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050527-la-pv-t1.jpeg\" alt=\"la-pv-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050533-la-pv-t2.jpeg\" alt=\"la-pv-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050538-la-pv-t3.jpeg\" alt=\"la-pv-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050543-la-pv-t4.jpeg\" alt=\"la-pv-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-cx",
+    "answer": "\u003Cp\u003E此點位於闊筋膜張肌（Tensor Fasciae Latae）上。單關節肌是臀小肌（Gluteus Minimus），雙關節肌是闊筋膜張肌。\u003Cbr /\u003E此點位於前上髂脊正下方的一個隆起區域，觸感相當堅實。您可以用手肘以橫向或斜向進行處理，指節則可用於觸診。無論對方是仰臥或側躺，都可以處理此點。此處的疼痛可能非常劇烈，並會向下擴散至整條腿，典型的症狀會涵蓋整個側面區域。\u003C/p\u003E\u003Cp\u003E我先找到前上髂棘（ASIS），其下方有明顯的肌腹，即髂脛束張肌（tensor fasciae latae）。我會選擇其肌腹中央作為定位，這就是我稱的 la-cx。\u003C/p\u003E\u003Cp\u003Ela-cx 將會位於股膜張肌（闊筋膜張肌）上方。所以我們找到髂前上棘，就在正下方我們有這塊肌腹，也就是闊筋膜張肌。我們想要正好在它的正中間。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050519-la-cx-l1.jpeg\" alt=\"la-cx-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050526-la-cx-t1.jpeg\" alt=\"la-cx-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050531-la-cx-t2.jpeg\" alt=\"la-cx-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050537-la-cx-t3.jpeg\" alt=\"la-cx-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050543-la-cx-t4.jpeg\" alt=\"la-cx-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050548-la-cx-t5.jpeg\" alt=\"la-cx-t5\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-ge",
+    "answer": "\u003Cp\u003E此點位於大腿外側的闊筋膜（Fascia Lata）上，介於股骨大轉子與外髁的中點。單關節纖維是股外側肌（Vastus Lateralis），雙關節向量是闊筋膜張肌。\u003Cbr /\u003E治療的目標是恢復組織間的滑動，因此重點不在於觸及骨頭，而是要去感受闊筋膜粗糙的表面。我們熟知的髂脛束（IT Band）其實就是闊筋膜較厚實的部分，在解剖時幾乎無法將其單獨分離出來。請嘗試沿著縱向或斜向進行處理，感受組織的品質與粗糙程度。症狀通常出現在膝蓋，但有時也會影響到髖部。\u003C/p\u003E\u003Cp\u003E在股骨大轉子與膝部髁（condylus）之間取中點，位置落在闊筋膜（fascia lata）之上，並對準髂脛束（IT band）的加厚加強帶。於此層次，我可找到 la-ge。\u003C/p\u003E\u003Cp\u003Ela-ge 將位於大轉子和股骨髁的中間。\u003Cbr /\u003E所以我們直接走到正中間，在闊筋膜上方，處於髂脛束（IT band）增厚的部位。\u003Cbr /\u003E在這個水平高度，我們將會找到 la-ge，就在這裡。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050504-la-ge-l1.jpeg\" alt=\"la-ge-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050509-la-ge-t1.jpeg\" alt=\"la-ge-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050514-la-ge-t2.jpeg\" alt=\"la-ge-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050518-la-ge-t3.jpeg\" alt=\"la-ge-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050523-la-ge-t4.jpeg\" alt=\"la-ge-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050529-la-ge-t5.jpeg\" alt=\"la-ge-t5\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-ta",
+    "answer": "\u003Cp\u003E此點的單關節纖維是第三腓骨肌（Peroneus Tertius），雙關節肌是伸趾長肌（Extensor Digitorum Longus）。它大約位於小腿的中段三分之一處，有時會更高，介於近端與中段三分之一之間，目標是處理肌腱與肌肉交界處的上方。\u003Cbr /\u003E治療時必須盡力避免直接摩擦腓骨的骨膜。可以讓對方側躺，沿著縱向用手肘處理，有時可以區分兩條肌肉，有時則會同時處理到。這個點對於腳踝問題非常常見，但也可能引發膝蓋的問題。\u003C/p\u003E\u003Cp\u003E在小腿的中段三分之一範圍內，此點可能位於趾長伸肌（extensor digitorum longus，位於腓骨前方），或位於短腓骨肌（fibularis brevis，腓骨上方）。兩者皆可能呈現陽性觸診反應。為避免刺激或瘀傷骨膜（periosteum），我在此處必須沿肌纖維長軸方向進行處理。此即 la-ta。\u003C/p\u003E\u003Cp\u003Ela-ta 將位於小腿的中三分之一。\u003Cbr /\u003E它可能在趾長伸肌中，也就是正好在腓骨前方；或者它可能在腓骨短肌中，正好在腓骨上方。\u003Cbr /\u003E所以不論是哪一種，這個點都可能是陽性的。\u003Cbr /\u003E它必須進行縱向操作，以避免傷及骨膜。\u003Cbr /\u003E所以這是 la-ta。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050509-la-ta-l1.jpeg\" alt=\"la-ta-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050515-la-ta-t1.jpeg\" alt=\"la-ta-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050520-la-ta-t2.jpeg\" alt=\"la-ta-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050524-la-ta-t3.jpeg\" alt=\"la-ta-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050529-la-ta-t4.jpeg\" alt=\"la-ta-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-pe",
+    "answer": "\u003Cp\u003E此點位於第二與第三、以及第三與第四蹠骨之間。單關節纖維是背側骨間肌（Dorsal Interosseous Muscle），雙關節向量是伸趾長肌。\u003Cbr /\u003E您需要盡可能深入這兩個蹠骨間的空隙。雖然這裡的空間不像「足前點」（Antepes）那麼大，無法深入到同樣的程度，但還是要嘗試用指節的尖端，沿著縱向進行處理。請注意使用指節的方向，確保能輕易地停留在骨頭之間，避免造成骨膜的瘀傷。這個點對於前足弓的刺痛、類似莫頓氏神經瘤（Morton&#39;s Neuroma）的症狀、腳趾麻木以及足底區域的痙攣都很常見\u003C/p\u003E\u003Cp\u003E在足背，我於第二、第三蹠骨之間或第三、第四蹠骨之間，盡量靠近近端處尋找此點。在空間受限的情況下，其實在較近端層次就可以找到 la-pe。我傾向選擇第二、第三蹠骨之間，但第三、第四之間同樣可作為此點的選項。\u003C/p\u003E\u003Cp\u003Ela-pe 將位於第二和第三蹠骨之間，或者在第三和第四蹠骨之間，盡可能靠近近端。\u003Cbr /\u003E在這種情況下空間沒有那麼大，所以光是在這個水平高度我們就能找到 la-pe。\u003Cbr /\u003E我會把它標在第二和第三蹠骨之間，但這個點也可以在第三和第四蹠骨之間。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050507-la-pe-l1.jpeg\" alt=\"la-pe-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050522-la-pe-t1.jpeg\" alt=\"la-pe-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050533-la-pe-t2.jpeg\" alt=\"la-pe-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-sc",
+    "answer": "\u003Cp\u003E此點包含由肩胛舌骨肌（Omohyoid）組成的單關節部分，以及由斜方肌組成的雙關節部分。當兩者交會時，即為此點。在處理時，您也會感覺到下方的後斜角肌（Scalenus Posterior）。\u003Cbr /\u003E您的目標結構是斜方肌，但在其下方會感覺到另一條如繩索般的後斜角肌，而肩胛舌骨肌則從更深處穿過。不過，您可以將斜方肌和後斜角肌作為定位的標誌。建議以縱向或微斜向進行處理。請避免向前傾倒，因為下方有臂神經叢（Brachial Plexus）。由於此區可能相當僵硬，推薦使用手肘。用指節可以輕易觸診，有此問題的人通常會有頭痛、偏頭痛、肩膀問題及頸部疼痛，是相當常見的點。\u003C/p\u003E\u003Cp\u003E我在頸部基底處，同時接近斜角肌後束（scalenus posterior）與斜方肌上緣進行接觸，兩者交會的區域即為 lla-sc；因此我會從頸根部入手，著重於斜角肌後束的層次進行定位。\u003C/p\u003E\u003Cp\u003Ela-sc 將位於後斜角肌以及斜方肌的上緣。\u003Cbr /\u003E所以我們想在脖子根部同時接近這兩者。\u003Cbr /\u003E所以 la-sc 將會在這裡，處於後斜角肌的水平高度。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050530-la-sc-l1.jpeg\" alt=\"la-sc-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050535-la-sc-t1.jpeg\" alt=\"la-sc-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050540-la-sc-t2.jpeg\" alt=\"la-sc-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050545-la-sc-t3.jpeg\" alt=\"la-sc-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050550-la-sc-t4.jpeg\" alt=\"la-sc-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-hu",
+    "answer": "\u003Cp\u003E此點位於肩峰下方，肱二頭肌長頭肌腱或三角肌側部的後方。單關節部分是三角肌側部（Deltoid Lateral Part），雙關節部分是肱二頭肌（Biceps Brachii）。\u003Cbr /\u003E治療時，應在肱二頭肌長頭的後方進行輕微的縱向處理。您需要將指節或手肘深入三角肌的肌束之間，有時需要相當深，才能觸及固定肌腱於溝槽內的膠原纖維。一個典型的症狀是：當手臂上舉至九十度時，會感覺到一陣針刺感，然後消失。這個微小的刺痛感，正是處理此點的重要原因。需要說明的是，這並非所有肩膀問題的根源，它主要針對這個特定的症狀，也就是當覆蓋溝槽的膠原纖維過於僵硬，摩擦到結節或肱二頭肌長頭肌腱時所產生的刺痛。由於需要穿過三角肌，通常必須使用手肘進行處理。\u003C/p\u003E\u003Cp\u003E我先辨識肩峰弧（acromion arch）的位置，再概略定位肱二頭肌長頭（long head of biceps）的走向。操作時，我會維持在肩峰弧下方、並位於肱二頭肌長頭的後方，沿著三角肌（deltoid）纖維的長軸進行縱向處理。此處即是 la-hu。\u003C/p\u003E\u003Cp\u003Ela-hu，我們找到肩峰弓。\u003Cbr /\u003E我們大概找出肱二頭肌長頭所在的位置。\u003Cbr /\u003E我們想保持在肩峰弓下方，且在肱二頭肌長頭的後方。\u003Cbr /\u003E我們想在三角肌纖維之間進行縱向操作。\u003Cbr /\u003E這裡我們有 la-hu。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050535-la-hu-l1.jpeg\" alt=\"la-hu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050540-la-hu-t1.jpeg\" alt=\"la-hu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050544-la-hu-t2.jpeg\" alt=\"la-hu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050549-la-hu-t3.jpeg\" alt=\"la-hu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050553-la-hu-t4.jpeg\" alt=\"la-hu-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-cu",
+    "answer": "\u003Cp\u003E此點位於肱橈肌（Brachioradialis）在肌間膈（Intermuscular Septum）的起點。這個位置常有解剖學上的變異，有時肱橈肌的起點非常高，甚至與三角肌融合；有時則會有一些膠原纖維。此處的單關節肌是肱橈肌，雙關節肌是橈側伸腕長肌（Extensor Carpi Radialis Longus）。\u003Cbr /\u003E請沿著此區域進行縱向處理。您可能會感覺到一條肌束在滑動，這代表有問題存在。持續處理後，它會變得比較柔軟。典型的症狀是手肘疼痛，但有時也會影響到肩膀。\u003C/p\u003E\u003Cp\u003E在肘部，我尋找肱橈肌（brachioradialis）的起始端，該處位於臂部肌間隔（intermuscular septum）的末端。當我摸到像「索狀」的結構，即肱橈肌的起源處時，便確認此點為 la-cu。\u003C/p\u003E\u003Cp\u003Ela-cu 位於肌間隔的末端，在肱橈肌的起點處。\u003Cbr /\u003E所以，我們想感覺到這條索狀物，這正是肱橈肌的起點。\u003Cbr /\u003E那個區域就是我們所說的 la-cu。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050535-la-cu-l1.jpeg\" alt=\"la-cu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050544-la-cu-t1.jpeg\" alt=\"la-cu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050549-la-cu-t2.jpeg\" alt=\"la-cu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050554-la-cu-t3.jpeg\" alt=\"la-cu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050558-la-cu-t4.jpeg\" alt=\"la-cu-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-ca",
+    "answer": "\u003Cp\u003E這個區域非常敏感，疼痛感可能十分尖銳。我們治療的目標是單關節的橈側伸腕短肌（Extensor Carpi Radialis Brevis）與雙關節的橈側伸腕長肌。此點大約在前臂近端三分之一的中點，基本上是在肱橈肌與橈側伸腕肌之間，也就是肱橈肌的後緣。\u003Cbr /\u003E請沿著此區域縱向處理，並確保不要滑到前臂的後側區域。可以讓對方側躺或仰臥，手腕稍微旋前。這個點有時很難處理，因為肌肉會大幅移動，所以需要透過手腕的尺側偏移來穩定它。典型的症狀是手腕疼痛，但也會引發手肘疼痛。\u003C/p\u003E\u003Cp\u003E在前臂近端三分之一、正中線附近，我以肱橈肌後緣作為定位標記。在該後緣區域，即可找到 la-ca。\u003C/p\u003E\u003Cp\u003Ela-ca，我們將會位於前臂的近端三分之一，正好在正中間。\u003Cbr /\u003E所以，在肱橈肌的後緣，我們將會有 la-ca。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050558-la-ca-l1.jpeg\" alt=\"la-ca-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050539-la-ca-t1.jpeg\" alt=\"la-ca-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050545-la-ca-t2.jpeg\" alt=\"la-ca-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050550-la-ca-t3.jpeg\" alt=\"la-ca-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050554-la-ca-t4.jpeg\" alt=\"la-ca-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050500-la-ca-t5.jpeg\" alt=\"la-ca-t5\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050505-la-ca-t6.jpeg\" alt=\"la-ca-t6\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050509-la-ca-t7.jpeg\" alt=\"la-ca-t7\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-di",
+    "answer": "\u003Cp\u003E此點的單關節纖維是第一骨間肌（First Interosseous），雙關節向量是橈側伸腕肌（Extensor Carpi Radialis）。它位於第二掌骨的近端三分之一、靠手掌側的側面。\u003Cbr /\u003E處理方向是縱向的，位置與傳統穴位略有不同，稍微偏向內側。您需要順著與手掌平行的方向，垂直深入。對方會感覺到一股針刺感穿過整隻手。這個點對於手部抽筋、第二指疼痛，甚至是板機指等症狀都非常常見。\u003C/p\u003E\u003Cp\u003E在手部，我於第二蹠骨近端、靠內側的位置尋找此點，位置在掌間骨（interosseous）近端之前，並需沿肌纖維長軸進行操作。我在此處標示為 la-di 。\u003C/p\u003E\u003Cp\u003Ela-di 將位於第二掌骨的內側，在骨間肌的近端，進行縱向操作。\u003Cbr /\u003E所以這是 la-di 。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050502-la-di-l1.jpeg\" alt=\"la-di-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050510-la-di-t1.jpeg\" alt=\"la-di-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531050515-la-di-t2.jpeg\" alt=\"la-di-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cp1",
+    "answer": "\u003Cp\u003E這個點位基本上位於眼眶的上緣，也就是滑車（trochlea）的位置。操作時，我們要在眉毛正下方施作，目的是要確認眶上肌（supraorbital muscle）是否有異常。請用指尖向上推，但要小心避免對眼睛造成瘀傷。\u003Cbr /\u003E手法上，請保持在眼眶的外側操作，因為內側有另一條神經經過。我們要在眼眶上緣，向著上方的方向施力。這個點位對於處理頭痛和功能性斜視等典型症狀非常重要\u003C/p\u003E\u003Cp\u003E此點位於眉毛下方。我以手指沿骨性邊界向上推壓，強調需「推向骨頭邊緣」的觸診方式，以找到精確位置。\u003C/p\u003E\u003Cp\u003EIntra-capsular one（囊內1，此處指對應點）。\u003Cbr /\u003EIntra-capsular one 位於眉毛下方。\u003Cbr /\u003E在這種情況下，你會想要貼著骨頭邊緣推動來進行觸診。\u003Cbr /\u003E所以你要往上推。\u003Cbr /\u003EIntra-capsular one。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090511-ir-cp1-l1.jpeg\" alt=\"ir-cp1-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090518-ir-cp1-t1.jpeg\" alt=\"ir-cp1-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090537-ir-cp1-t2.jpeg\" alt=\"ir-cp1-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090543-ir-cp1-t3.jpeg\" alt=\"ir-cp1-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cp2",
+    "answer": "\u003Cp\u003E顱內點二指的是耳前肌（auricularis anterior）。這是一條位於耳朵前方的小肌肉，理論上負責將耳朵向前拉，但實際上它更像是一個帽狀腱膜（galea aponeurotica）的張力調節者。\u003Cbr /\u003E這個點非常小，要緊貼著耳朵尋找。當你感覺到一個微小的彈撥感時，就代表找到了。請不要和顳肌（temporalis）肌腱的前緣搞混了。施作時，建議使用指關節的頂端，因為這個點非常小，可能只有三毫米寬，而且感覺會非常銳利。此處的異常可能會引起耳朵內部、耳部或顳顎關節（TMJ）的放射性疼痛。\u003C/p\u003E\u003Cp\u003E此點對應耳前的前耳肌（auricularis anterior）。我在耳前觸摸到一個小的肌束，即為需要治療的點，位置明確在耳前小束上。\u003C/p\u003E\u003Cp\u003EIntra capuchu（囊內2，即 Intra-caput 2）是耳前肌。\u003Cbr /\u003E所以就在耳朵正前方，你會感覺到一小束肌肉。\u003Cbr /\u003E那就是你必須治療的點，就在這裡。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090557-ir-cp2-l1.jpeg\" alt=\"ir-cp2-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090503-ir-cp2-t1.jpeg\" alt=\"ir-cp2-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090508-ir-cp2-t2.jpeg\" alt=\"ir-cp2-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090513-ir-cp2-t3.jpeg\" alt=\"ir-cp2-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090518-ir-cp2-t4.jpeg\" alt=\"ir-cp2-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cp3",
+    "answer": "\u003Cp\u003E顱內點三的位置比較不好找，它位於下頷骨（mandible）的後方，靠近下頷骨的內側緣。最佳的施作方式是從後方往前推，施力方向要朝著鼻子，而不是朝向內側。\u003Cbr /\u003E你需要仔細感受翼下頷韌帶（pterygomandibularis）與內翼肌（medial pterygoid）延伸下來的筋膜，這才是真正的目標。試著在下頷骨的垂直部分，盡量靠近耳朵的地方，用指關節沿著骨緣上下（頭顱至尾椎方向）滑動，同時力量要朝向鼻子。這個點位對於處理顳顎關節功能障礙和耳朵疼痛非常常見。\u003C/p\u003E\u003Cp\u003E此點位於咬肌內側與下顎垂直支的內側緣，描述為「在 digodeo medialis 的末端」（原文指涉可能為咬肌／顎部相關內側結構）。我會到達能觸及的最高處，並以「向鼻側」的方向推壓；此外，定位上在腮腺（parotid gland）後方。\u003C/p\u003E\u003Cp\u003EIntra-caput 3（囊內頭3）位於內翼肌（翼內肌）的末端。\u003Cbr /\u003E也就是在下頜骨垂直部分的內側緣。\u003Cbr /\u003E所以，你想要觸及你能達到的最高區域，並且你要朝著這個方向往鼻子的方向推。位於腮腺的後方。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090526-ir-cp3-l1.jpeg\" alt=\"ir-cp3-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090534-ir-cp3-t1.jpeg\" alt=\"ir-cp3-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090541-ir-cp3-t2.jpeg\" alt=\"ir-cp3-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090552-ir-cp3-t3.jpeg\" alt=\"ir-cp3-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cl",
+    "answer": "\u003Cp\u003E頸內點位於胸鎖乳突肌（SCM）末端與鎖骨的連接處。你可以在兩條肌肉之間的凹陷處施作，但鎖骨末端是最關鍵的位置。這個點位也會影響到肩胛舌骨肌（omohyoidus）。\u003Cbr /\u003E施作時建議用橫向的手法，你會感覺到此處的筋膜覆蓋了許多不同的結構。它所引起的放射痛範圍很廣，可能遍及頸部的側面，甚至是後側。\u003C/p\u003E\u003Cp\u003E此點在胸鎖乳突肌（SCM）鎖骨端的肌肉附著處，位於鎖骨上方。我能在此感覺到一個肌束，這就是需要處理的結構。\u003C/p\u003E\u003Cp\u003EIntercollar（頸間，此處指對應點）將會位於胸鎖乳突肌（SCM）鎖骨端的止點處，就在鎖骨正上方。\u003Cbr /\u003E所以你會感覺到像是一個肌束。這就是你必須操作的結構。Intercollar。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090532-ir-cl-l1.jpeg\" alt=\"ir-cl-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090542-ir-cl-t1.jpeg\" alt=\"ir-cl-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090547-ir-cl-t2.jpeg\" alt=\"ir-cl-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090552-ir-cl-t3.jpeg\" alt=\"ir-cl-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-th",
+    "answer": "\u003Cp\u003E胸內點位於胸大肌（pectoral major）下緣的正下方，與鎖骨在同一條線上，低於乳頭。請在肋間隙中尋找，你會感覺到胸大肌的筋膜纖維與腹外斜肌（oblique muscle）融合在一起。\u003Cbr /\u003E在這個位置，使用指關節進行橫向施作，並保持在第一個可觸及的肋間隙。此處的疼痛可能非常劇烈，並且會向上或向下放射。\u003C/p\u003E\u003Cp\u003E此點可沿鎖骨或乳頭的水平線定位，位於胸大肌下方。我在胸大肌附著處，連接至斜腹肌的筋膜位置進行工作；治療點在此，並且「於肋骨間」操作。\u003C/p\u003E\u003Cp\u003EIntra thorax（胸內），Intra thorax，你可以與鎖骨或乳頭保持在同一條線上，並停留在胸大肌的正下方。\u003Cbr /\u003E你想要在胸大肌附著於走向腹外斜肌的筋膜處進行操作。\u003Cbr /\u003E所以，這個點就在這裡，而你想要在肋骨之間進行操作。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090529-ir-th-l1.jpeg\" alt=\"ir-th-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090539-ir-th-t1.jpeg\" alt=\"ir-th-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090546-ir-th-t2.jpeg\" alt=\"ir-th-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-lu",
+    "answer": "\u003Cp\u003E腰內點可能相當難找。它位於第十一根肋骨頭的正前方，基本上是腹內斜肌（obliquus internus）與腹外斜肌（obliquus externus）的交界處。雖然腹橫肌（transversal）在更深層，但我們的目標是腹內斜肌的邊緣。\u003Cbr /\u003E施作時，以第十一根肋骨作為地標，但不要壓迫到它。在肋骨前方，順著肋骨的方向施力，同時避免壓到肋骨或髂骨。這個點位很容易出現假陰性（false negative）的判斷，所以如果不確定，請用所有指尖仔細觸診，並進行雙側比較。你也可以讓患者側躺，直接用手肘來處理。腰內點對於許多下背痛、上背痛，甚至是頸部疼痛都非常重要，更不用說它對所有內臟問題的影響了。\u003C/p\u003E\u003Cp\u003E此點在第 11 肋尖端前方。我先辨識第 11 肋，再於外斜腹與內斜腹之間的層面進行觸診；此處可感覺到一個肌束，即為要處理的位置。\u003C/p\u003E\u003Cp\u003EIntraLumbi（腰內）位於第 11 肋骨尖端的前方。\u003Cbr /\u003E所以，我們確認出第 11 肋骨，而我們想要在腹外斜肌和腹內斜肌之間的表面進行操作。\u003Cbr /\u003E你將能夠在那裡感覺到像是一個肌束。\u003Cbr /\u003E所以，IntraLumbi 就會在這裡。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090529-ir-lu-l1.jpeg\" alt=\"ir-lu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090540-ir-lu-t1.jpeg\" alt=\"ir-lu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090546-ir-lu-t2.jpeg\" alt=\"ir-lu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090550-ir-lu-t3.jpeg\" alt=\"ir-lu-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-pv",
+    "answer": "\u003Cp\u003E骨盆內點位於臀小肌（gluteus minimus）。它在髂骨嵴（iliac crest）下方，闊筋膜張肌（tensor fasciae latae）的後方。你會找到一個小凹陷，可以從這裡接觸到深層的臀中肌（gluteus medius），這才是真正的目標。\u003Cbr /\u003E一個簡單的處理方式是讓患者將膝蓋向前彎曲，這樣可以更容易地接觸到該點。雖然可以用指關節頂端施作，但我更推薦使用手肘的尖端，因為此處的筋膜可能非常深且僵硬。許多髖部深層疼痛、大腿內收肌區域的疼痛，都可能與這個點位有關。\u003C/p\u003E\u003Cp\u003E此點位於大轉子前方、腋中線位置，並在髂脊下方、闊筋膜張肌（tensor fasciae latae）後方。我在此找到一個「孔」（空隙），此空隙可使我到達臀小肌（gluteus minimus），這是此治療的目標\u003C/p\u003E\u003Cp\u003EIntrapelvic（骨盆內）將位於腋中線大轉子的前方，而我們將處於髂嵴下方、闊筋膜張肌的後方。\u003Cbr /\u003E所以就在這裡，我們會發現一個凹陷。\u003Cbr /\u003E這個凹陷將能讓你觸及臀小肌，這就是本次治療的目標。\u003Cbr /\u003E所以是 intrapelvic。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090554-ir-pv-l1.jpeg\" alt=\"ir-pv-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090500-ir-pv-t1.jpeg\" alt=\"ir-pv-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090506-ir-pv-t2.jpeg\" alt=\"ir-pv-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090511-ir-pv-t3.jpeg\" alt=\"ir-pv-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090515-ir-pv-t4.jpeg\" alt=\"ir-pv-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090521-ir-pv-t5.jpeg\" alt=\"ir-pv-t5\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cx",
+    "answer": "\u003Cp\u003E髖內點可能非常難找，但它非常重要。我們要處理的是縫匠肌（sartorius）的內側緣，大約在近端與中段三分之一處，或是整個中段三分之一的位置。內收長肌（adductor longus）和內收短肌（adductor brevis）也可能是目標的一部分。\u003Cbr /\u003E你必須感覺到縫匠肌，甚至可能觸及到股內側肌（vastus intermedius）。施作時要沿著脛骨方向，避免掉入由內收肌群構成的「內收肌三角區」（adductor triangle），因為那裡有重要的血管和神經。請務必保持在肌肉的邊緣操作。最好的方法是讓患者被動地內旋髖關節，使縫匠肌處於張力下，這樣更容易辨識和觸診。使用手肘沿著縫匠肌的邊緣縱向施作。這個點位對於改善膝蓋痛、髖部疼痛及下背痛有很好的效果。\u003C/p\u003E\u003Cp\u003E此點在縫匠肌（sartorius）內側緣，介於近端三分之一與中段三分之一之間，但也可能更遠至「中段附近」。我先觸到縫匠肌的邊緣，並在該區與闊筋膜（partial lata，原文指涉闊筋膜張肌/闊筋膜相關結構）一起處理。此點稱為「Intracoxa\u003C/p\u003E\u003Cp\u003EIntracox（髖內，即 Intracoxa）將位於縫匠肌的內側緣，處於近端和中三分之一之間，但它也可以稍微再遠一點，大約在中間位置。\u003Cbr /\u003E所以，你想要感覺到縫匠肌的邊緣，然後你將與闊筋膜（此處語誤說成 partial lata，實指 fascia lata）一起對該區域進行操作。\u003Cbr /\u003EIntracoxa。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090524-ir-cx-l1.jpeg\" alt=\"ir-cx-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090529-ir-cx-t1.jpeg\" alt=\"ir-cx-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090534-ir-cx-t2.jpeg\" alt=\"ir-cx-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090539-ir-cx-t3.jpeg\" alt=\"ir-cx-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090543-ir-cx-t4.jpeg\" alt=\"ir-cx-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090549-ir-cx-t6.jpeg\" alt=\"ir-cx-t6\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090555-ir-cx-t7.jpeg\" alt=\"ir-cx-t7\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-ge",
+    "answer": "\u003Cp\u003E股內點相當容易找到。它位於股內側肌（vastus medialis）的正中央。你可以在肌肉中間向各個方向施作。這個區域的整個表面都與闊筋膜（fascia lata）完全融合，因此會有大量的張力向下傳遞至膝蓋。順帶一提，此處的典型疼痛也正好就出現在膝蓋。\u003C/p\u003E\u003Cp\u003E此點位於股內側肌（vastus medialis）的正中央。我辨識該肌肉，然後直達中心處，即可找到此點。\u003C/p\u003E\u003Cp\u003EIntrajenual（膝內，即 Intra-genual）。\u003Cbr /\u003EIntrajenual 就在股內側肌的正中心。\u003Cbr /\u003E所以你確認出這塊肌肉，直接走到正中心，你就會找到 intrajenual，就在這裡。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090549-ir-ge-l1.jpeg\" alt=\"ir-ge-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090554-ir-ge-t1.jpeg\" alt=\"ir-ge-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090559-ir-ge-3.jpeg\" alt=\"ir-ge-3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090504-ir-ge-t3.jpeg\" alt=\"ir-ge-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090511-ir-ge-t4.jpeg\" alt=\"ir-ge-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-ta",
+    "answer": "\u003Cp\u003E踝內點可能有點棘手，因為它涉及脛後肌（tibialis posterior）和屈趾長肌（flexor digitorum muscle）。你必須盡力處理脛後肌，同時避免碰到內側的腓腸肌（gastrocnemius）。\u003Cbr /\u003E患者需要側躺，你必須從後向前，以一個特殊的角度進入，才能在不觸碰周圍組織的情況下，處理到脛後肌的中段三分之一處。這個點位可能非常僵硬。它對於處理腳踝問題以及足底筋膜炎（plantar fasciitis）非常有幫助。建議的姿勢是讓患者側躺並彎曲膝蓋，你再從後方用手肘進入。\u003C/p\u003E\u003Cp\u003E此點在後脛肌（tibialis posterior）中段。我先定位脛骨，從其後方進入，避免觸碰到內側腓腸肌（gastrocnemius medialis）。治療以沿脛骨「儘可能貼近」的縱向方式進行，點位就在此。\u003C/p\u003E\u003Cp\u003EIntratall（踝內，即 Intra-talar）將位於脛骨後肌的中三分之一。\u003Cbr /\u003E所以我們確認出脛骨，走到正後方，我們試著避免碰到腓腸肌內側頭。\u003Cbr /\u003E我們將盡可能靠近脛骨，對這個點進行縱向治療。\u003Cbr /\u003E所以 intratall 將會在這裡。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090507-ir-ta-l1.jpeg\" alt=\"ir-ta-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090517-ir-ta-t1.jpeg\" alt=\"ir-ta-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090523-ir-ta-t2.jpeg\" alt=\"ir-ta-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090532-ir-ta-t3.jpeg\" alt=\"ir-ta-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-pe",
+    "answer": "\u003Cp\u003E足內點位於外展拇肌（abductor hallucis）、屈拇短肌（flexor hallucis brevis）與屈拇長肌（flexor hallucis longus）的區域。我們要處理的是覆蓋在外展拇肌上的所有筋膜。\u003Cbr /\u003E請在外展拇肌的中段與遠端三分之一處施作，並採用縱向手法，同時小心不要壓迫到第一蹠骨的骨膜。這個點位對於處理大拇趾疼痛非常重要，但疼痛也可能擴散到足部的其他區域，甚至引起抽筋。\u003C/p\u003E\u003Cp\u003E此點位於拇趾外展肌（abductor hallucis），在肌腹的中段與遠端三分之一之間。我保持在肌腹上方操作，避免接觸第一掌骨；並以縱向方式處理，以免造成骨膜瘀傷\u003C/p\u003E\u003Cp\u003EIntra-pair（足內，即 Intra-pas）將會位於外展拇肌。\u003Cbr /\u003E所以它會位於中三分之一和遠端三分之一之間，正好在肌腹上方，不要碰到第一蹠骨。\u003Cbr /\u003E所以試著保持在正上方並進行縱向操作，這樣你就不會弄傷骨膜。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090524-ir-pe1.jpeg\" alt=\"ir-pe1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090529-ir-pe-t1.jpeg\" alt=\"ir-pe-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090534-ir-pe-t2.jpeg\" alt=\"ir-pe-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090538-ir-pe-t3.jpeg\" alt=\"ir-pe-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090543-ir-pe-t4.jpeg\" alt=\"ir-pe-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-sc",
+    "answer": "\u003Cp\u003E肩胛內點非常常見，它所造成的放射痛範圍很廣，因為我們施作的對象是鎖骨下肌（subclavius muscle）。這條肌肉是鎖腋筋膜（clavi-axillary fascia）的張力調節者，因此異常會放射到整個胸部和手臂。有時候，放射痛的感覺甚至比施作點本身的疼痛更為強烈。\u003Cbr /\u003E施作位置在鎖骨下方，介於鎖骨的中段與外側三分之一段之間，對著鎖骨下肌施力。手法是橫向的，並由下往上推。如果患者的胸大肌特別發達，你甚至可以用手肘來處理。這個點位對於處理肩膀、頸部和手臂的問題非常重要。\u003C/p\u003E\u003Cp\u003E此點位於鎖骨下肌（subclavius）之上。鎖骨下肌在鎖骨之下，我以特定角度接近，並在「中間與中間三分之一之間」的區段，沿鎖骨方向定位並處理。\u003C/p\u003E\u003Cp\u003EIntrascapular（肩胛內，此處指對應點，語誤說成 intrasclapular）是頂著鎖骨下肌。\u003Cbr /\u003E鎖骨下肌就在鎖骨正下方，而我們想以這個角度接近。\u003Cbr /\u003E所以你停留在中段與中三分之一之間，顯然是要朝著鎖骨的方向。\u003Cbr /\u003E所以是 intrascapular。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090533-ir-sc-l1.jpeg\" alt=\"ir-sc-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090539-ir-sc-t1.jpeg\" alt=\"ir-sc-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090544-ir-sc-t2.jpeg\" alt=\"ir-sc-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090548-ir-sc-t3.jpeg\" alt=\"ir-sc-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-hu",
+    "answer": "\u003Cp\u003E肱骨內點的主要目標是喙肱肌（coracobrachialis），但肩胛下肌（subscapularis）和胸大肌也是這個肌筋膜單位的一部分。施作時，需要讓手臂稍微外旋，以便觸診到位於腋窩深處的喙肱肌。\u003Cbr /\u003E喙肱肌位於肱二頭肌短頭（short head of the biceps）的後方。圖片可能無法完美呈現其位置，但它就在肱二頭肌短頭的正下方。讓患者外旋手臂可以幫助你更容易地找到這條肌肉。更簡單的方式是彎曲手肘，如此一來，前方的肌肉是肱二頭肌短頭，而下方的則是喙肱肌。這個點位與棒球員常見的肩部疼痛、肩膀內部及後側的疼痛有關。\u003C/p\u003E\u003Cp\u003E此點對應喙肱肌（coracobrachialis），其位置在肱二頭肌短頭後方。我用三指放入腋窩以減少肱二頭肌短頭的張力，並請患者往我的手施力，使喙肱肌在不移動裝置的情況下「變大再變小」。能觸到此肌肉的收縮變化，點位就在該處。\u003C/p\u003E\u003Cp\u003EIntra humeral（肱內）是頂著喙肱肌。\u003Cbr /\u003E喙肱肌就在肱二頭肌短頭的正後方。\u003Cbr /\u003E你要如何確認那個結構？你可以把三隻手指放在腋窩，你想要減少肱二頭肌短頭的張力。\u003Cbr /\u003E你想要請患者以某種方式頂著你的手用力，這樣一來，當肱二頭肌短頭不移動時，喙肱肌就會變大。\u003Cbr /\u003E所以這個變大和變小的結構就是喙肱肌，治療點就會在那裡。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090542-ir-hu-l1.jpeg\" alt=\"ir-hu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090547-ir-hu-t1.jpeg\" alt=\"ir-hu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090554-ir-hu-t2.jpeg\" alt=\"ir-hu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090500-ir-hu-t3.jpeg\" alt=\"ir-hu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090505-ir-hu-t4.jpeg\" alt=\"ir-hu-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090511-ir-hu-t5.jpeg\" alt=\"ir-hu-t5\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cu",
+    "answer": "\u003Cp\u003E肘內點非常、非常常見。你會看到許多過度使用手部的患者都有這個問題。它的位置在典型疼痛點的遠端，也就是說，其他點位都在其上方，而它在下方。\u003Cbr /\u003E我們要處理的是旋前圓肌（pronator teres）的深層。你可以在肌肉的近端三分之一或中段，以縱向或斜向的方式施作，這些方向都是有效的。疼痛不僅會出現在手肘，也常放射到肩膀。\u003C/p\u003E\u003Cp\u003E此點位於肱動脈（brachial artery）路徑上。肱動脈由內外上髁附近走向前臂，呈稍微斜向。我辨識較表淺且較堅挺的動脈結構，並在近肘的近端「上三分之一的中段」定位，此即為 intracebital 的位置。\u003C/p\u003E\u003Cp\u003EIntracubital（肘內）將會位於肱動脈（此處應指肱肌，語誤說成 brachial artery）。\u003Cbr /\u003E肱肌（brachialis）來自髁部。\u003Cbr /\u003E它的走向稍微呈斜向。\u003Cbr /\u003E所以，我們必須確認出這個更表淺且更僵硬的結構，並想要停留在近端三分之一的中間，非常靠近手肘的近端。\u003Cbr /\u003E這將會是 intracubital。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090539-ir-cu-l1.jpeg\" alt=\"ir-cu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090544-ir-cu-t1.jpeg\" alt=\"ir-cu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090549-ir-cu-t2.jpeg\" alt=\"ir-cu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090554-ir-cu-t3.jpeg\" alt=\"ir-cu-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-ca",
+    "answer": "\u003Cp\u003E腕內點主要處理旋前方肌（pronator quadratus）以及所有屈肌的筋膜。施作位置在屈肌的肌腱與肌肉交界處。由於這個位置正上方就是正中神經（median nerve），所以施力時要分散壓力，不要過度集中在某一點上。\u003Cbr /\u003E建議使用縱向的手法施作，通常位於屈指淺肌（flexor digitorum superficialis）與旋前方肌之間的深層筋膜會因此變得柔軟。這個點位常伴隨大量的放射痛和麻木感，典型的疼痛會出現在手腕。\u003C/p\u003E\u003Cp\u003E此點在「小指屈肌」（flexor digiti）於掌指關節（metacarpal phalangeal junction）的區域，位於旋前方肌（pronator quadratus）之上。我往近端觸摸，當我在掌指關節交界處正中感覺到定位點，即為需以「肘部」施作的 Intra Carpal。\u003C/p\u003E\u003Cp\u003EIntra carpal（腕內）位於旋前方肌上方、指屈肌的肌腱與骨骼交界處（此處語誤說成 metacarpal phalangeal junction 掌指關節，實指與旋前方肌相關的肌腱/肌肉交界處）。\u003Cbr /\u003E所以當你往近端摸，感覺到那個交界處時，就在那裡的正中間。\u003Cbr /\u003E你手肘放的位置就是這個點，intra carpal。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090545-ir-ca1.jpeg\" alt=\"ir-ca1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090549-ir-ca-t1.jpeg\" alt=\"ir-ca-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090553-ir-ca-t2.jpeg\" alt=\"ir-ca-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090558-ir-ca-t3.jpeg\" alt=\"ir-ca-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090503-ir-ca-t4.jpeg\" alt=\"ir-ca-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090507-ir-ca-t5.jpeg\" alt=\"ir-ca-t5\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-di",
+    "answer": "\u003Cp\u003E在這個點位，我們主要處理的是緻密結締組織，特別是掌骨間韌帶（metacarpal ligaments），而不是掌腱膜（palmar aponeurosis）。請在第二與第三、以及第三與第四掌骨之間觸診。如果你在掌骨頭的高度感覺到有彈撥感，這代表掌骨間韌帶非常僵硬，可能導致滑輪系統（pulley system）的僵硬，進而引發板機指或手指疼痛。\u003Cbr /\u003E在這個微小的區域，你可以用指關節施作。在嚴重的情況下，雖然可以用手肘稍微處理掌腱膜，但很難區分何為病理狀態，何為生理正常，因為掌腱膜本身就非常堅韌\u003C/p\u003E\u003Cp\u003E此點位於手掌區域的掌骨間韌帶（metacarpal ligament）。我在第二與第三掌骨之間，或第三與第四掌骨之間辨識該韌帶，兩處皆可作為 Introdigit 的治療點，重點是精準落在掌骨間韌帶上。\u003C/p\u003E\u003Cp\u003EIntradigit（指內，此處語誤說成 introdigit）將會位於掌側區域，但主要是在掌骨間韌帶。\u003Cbr /\u003E所以，我們將在第二和第三、以及第三和第四掌骨之間確認出一個彈撥感，那正是掌骨間韌帶。\u003Cbr /\u003E所以 intradigit 可以位於第二和第三掌骨之間，或者也可以在第三和第四掌骨之間。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090554-ir-di-l1.jpeg\" alt=\"ir-di-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090500-ir-di-l2.jpeg\" alt=\"ir-di-l2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090506-ir-di-t1.jpeg\" alt=\"ir-di-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090510-ir-di-t2.jpeg\" alt=\"ir-di-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-cp1",
+    "answer": "\u003Cp\u003E這個點位在眼球正下方，主要處理的是下斜肌以及眼眶的下緣。操作時，我們會用指尖向下按壓，注意不要刺激到眼睛，目標是處理與下斜肌相連的筋膜。這個點對於頭痛、偏頭痛，以及功能性斜視等功能障礙都很重要。\u003C/p\u003E\u003Cp\u003EExtra capo one 位於側邊「ice」的下緣。我在操作時的目標是透過「feet」推進，因此完全不碰觸「ice」。在這個側方下緣的位置，就是 extra capo one。\u003C/p\u003E\u003Cp\u003EExtra capo one（外旋頭1，即 Extra-caput 1）將會位於眼睛外側的下緣。\u003Cbr /\u003E我們想要穿過脂肪（此處語誤將 fat 說成 feet）進行推壓，所以我們完全不想碰觸到眼睛（此處語誤將 eye 說成 ice）。\u003Cbr /\u003E所以這裡我們有 Extra capo one。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090551-er-cp1-l1.jpeg\" alt=\"er-cp1-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090555-er-cp1-t1.jpeg\" alt=\"er-cp1-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090500-er-cp1-t2.jpeg\" alt=\"er-cp1-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090506-er-cp1-t3.jpeg\" alt=\"er-cp1-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090510-er-cp1-t4.jpeg\" alt=\"er-cp1-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-cp2",
+    "answer": "\u003Cp\u003E此點位在耳朵正上方的上耳肌。這條肌肉理論上應該能提起耳朵，但實際上，它是帽狀腱膜（Galea Aponeurotica，即頭頂的筋膜）的主要張力來源。它之所以重要，是因為作為帽狀腱膜的張力來源，它對平衡功能有所影響，處理不當也可能引發許多頭痛和偏頭痛問題。\u003C/p\u003E\u003Cp\u003E尋找 erector capitis 時，我會先定位 auricularis superior（耳廓上方）。在耳朵頂部，可以找到作為 galacapitis 張力來源的結構；在耳朵的水平高度，erector capitis 位於 temporalis 上方。\u003C/p\u003E\u003Cp\u003EEpicranius（顱頂肌，即 Extra-caput 2），我們將會尋找耳上肌。所以在耳朵的頂端，那是帽狀腱膜的張肌。所以就在耳朵水平高度的這個位置，我們在顳肌上方有 Epicranius。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090501-er-cp2-l1.jpeg\" alt=\"er-cp2-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090506-er-cp2-t1.jpeg\" alt=\"er-cp2-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090511-er-cp2-t2.jpeg\" alt=\"er-cp2-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-cp3",
+    "answer": "\u003Cp\u003E這個點位在耳後肌（Orbicularis Posterior），也是胸鎖乳突肌的終點，頭夾肌也匯集於此。操作時，我們要在乳突的後緣進行縱向處理。耳後肌的細小纖維從這裡發出，胸鎖乳突肌的纖維從另一側過來，而頭夾肌則從另一個方向而來。通常一個簡單的處理方式是讓頸部屈曲，這樣可以稍微減輕胸鎖乳突肌的張力，因為它在那個位置容易變得過於緊繃，並可能引發嚴重的頭痛和偏頭痛\u003C/p\u003E\u003Cp\u003EExtra caput 3 位於 auricularis posterior 的位置，靠上、在乳突（mastoid）上方。我會在乳突後方操作，這裡通常比較容易感覺到粗糙的表面，這種粗糙感與 auricularis posterior 的改變有關。此處即為 extra caput 3。\u003C/p\u003E\u003Cp\u003EExtra caput 3（外旋頭3）位於耳後肌，在乳突上方。\u003Cbr /\u003E我們可以直接在乳突正後方進行操作。\u003Cbr /\u003E所以，由於耳後肌的改變，更容易感覺到像粗糙的表面。Extra caput 3。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090551-er-cp3-l1.jpeg\" alt=\"er-cp3-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090559-er-cp3-t1.jpeg\" alt=\"er-cp3-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090505-er-cp3-t2.jpeg\" alt=\"er-cp3-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-cl",
+    "answer": "\u003Cp\u003E此點位在提肩胛肌，在第三、四節頸椎（C3-C4）的高度。它也可能影響到後方肌群。操作時，我們用指關節縱向處理，會感覺到這個方向有一條像繩索般的結構。典型的症狀是頸部旋轉時的疼痛，但疼痛也可能向上延伸至頭部\u003C/p\u003E\u003Cp\u003EScalenus anterior 位於 levator scapulae 的起點，層級大約在 C3、C4，甚至延伸到 C2。我會到鎖骨末端後側，沿著肌纖維方向做縱向觸診；在這個位置，就能找到 scalenus anterior。\u003C/p\u003E\u003Cp\u003EScalenus anterior（前斜角肌，此處指對應點，實為 Extra-collum 的提肩胛肌部位）位於提肩胛肌中，在提肩胛肌的起點處，相當於 C3、C4，甚至 C2 的水平高度。\u003Cbr /\u003E所以，我們想直接走到鎖骨端的正後方，並且我們想要順著肌肉纖維的方向進行縱向觸診。\u003Cbr /\u003E所以就在這裡我們有 Scalenus anterior。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090542-er-cl-l1.jpeg\" alt=\"er-cl-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090547-er-cl-t1.jpeg\" alt=\"er-cl-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090552-er-cl-t2.jpeg\" alt=\"er-cl-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-th",
+    "answer": "\u003Cp\u003E這是一個很常見的點位，目標是上後鋸肌，並會延伸至闊背肌。為了接觸到上後鋸肌，我們需要穿過斜方肌和菱形肌。操作方式是在脊椎末端，沿著肌肉內側緣處理，這樣可以有效地減輕張力。上後鋸肌是一條非常細小的肌肉，它沒有真正的附著點，而是融入從上到下延伸的鋸肌筋膜中，一直連到下後鋸肌，也就是我們下一個「額外腰部點」的位置。這個點位典型的問題是上背、頸部和肩膀的疼痛。\u003C/p\u003E\u003Cp\u003EExtra thorax 為 serratus posterior superior，位置在肩胛骨內側緣的內側。我會先找到肩胛棘（spine of the scapula）與肩胛骨內側緣，再嘗試往肩胛骨下方伸入；在此區域，即為 extra thorax。\u003C/p\u003E\u003Cp\u003EExtra thorax（外旋胸）是後上鋸肌。\u003Cbr /\u003E它位於肩胛骨內側緣的內側。\u003Cbr /\u003E所以我們找到肩胛岡、內側緣，並試著走到肩胛骨的下方。\u003Cbr /\u003E這裡我們有 Extra thorax。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090532-er-th-l1.jpeg\" alt=\"er-th-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090539-er-th-t1.jpeg\" alt=\"er-th-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090544-er-th-t2.jpeg\" alt=\"er-th-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090549-er-th-t3.jpeg\" alt=\"er-th-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531090554-er-th-t4.jpeg\" alt=\"er-th-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-lu",
+    "answer": "\u003Cp\u003E這個點位在第十二根肋骨下方，對應下後鋸肌。最好的尋找方式是沿著第十二根肋骨，當你感覺到一個邊緣凸起時就是了。這看起來可能像闊背肌，但實際上鋸肌就在這裡，比闊背肌小。操作時，在肋骨正下方，朝著髂骨的平坦部分方向處理。這樣做可以使下後鋸肌放鬆，減輕整個背部的張力，讓上背和下背都感到比較舒緩。\u003C/p\u003E\u003Cp\u003E此處的 erector spinae 會對應到 serratus posterior inferior。我會尋找第 12 肋的下緣，當我感覺到一種「snapping」，那就是 serratus posterior inferior 的外側緣；在該點，即為 erector spinae。\u003C/p\u003E\u003Cp\u003EErector spinae（豎脊肌，此處指對應點，實為 Extra-lumbi 的後下鋸肌部位）將會位於後下鋸肌。\u003Cbr /\u003E所以我們正在尋找第 12 肋骨的下緣。\u003Cbr /\u003E當我們感覺到彈撥感時，那就是後下鋸肌的外側緣。\u003Cbr /\u003E所以就在那裡我們有 Erector spinae。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110506-er-lu-l1.jpeg\" alt=\"er-lu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110511-er-lu-t1.jpeg\" alt=\"er-lu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110516-er-lu-t2.jpeg\" alt=\"er-lu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110521-er-lu-t3.jpeg\" alt=\"er-lu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110526-er-lu-t4.jpeg\" alt=\"er-lu-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-pv",
+    "answer": "\u003Cp\u003E這是個很常見的點，很多跑者都會有這個問題，也是造成開車或走路時下背痛的典型原因。我們要處理的是臀中肌，但主要是臀大肌的上半部。最簡單的尋找方式是找到臀大肌的上緣。當處理這裡時，患者可能會感覺到一股強烈的放射痛傳到腿部，類似典型的坐骨神經痛，但也可能在下背部區域感到疼痛。這是一個非常重要的治療點，也可以用手肘進行按壓。\u003C/p\u003E\u003Cp\u003EExtra pelvic 位於大轉子連線的後方、髂嵴下方。在該處可以摸到臀大肌（gluteus maximus）的上緣邊界；此位置即為 extra pelvic。\u003C/p\u003E\u003Cp\u003EExtra pelvic（外旋骨盆）將位於大轉子線的後方、髂嵴的下方。\u003Cbr /\u003E就在這裡，你會感覺到臀大肌的邊緣，也就是上緣。\u003Cbr /\u003EExtra pelvic。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110519-er-pv-l1.jpeg\" alt=\"er-pv-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110530-er-pv-t1.jpeg\" alt=\"er-pv-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110537-er-pv-t2.jpeg\" alt=\"er-pv-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110543-er-pv-t3.jpeg\" alt=\"er-pv-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110548-er-pv-t4.jpeg\" alt=\"er-pv-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-cx",
+    "answer": "\u003Cp\u003E這是另一個重點，位於非常知名的梨狀肌。它的作用類似於闊筋膜和孖肌（Gemelli muscles）的筋膜延續。操作時，讓患者的一膝疊在另一膝前方，找到位於薦骨末端和大轉子之間的中點。我們需要平行於坐骨神經的方向，也就是縱向處理。這種處理方式能讓你保持與神經平行。患者可能在髖部局部感到疼痛，但也可能延伸到腿部或下背部。\u003C/p\u003E\u003Cp\u003EExtra coxa 正好位在梨狀肌（piriform）上方。我會先找到轉子與骶骨末端，然後在兩者之間的中間點探查；感覺到的「snapping」正是梨狀肌，此處即為 extra coxa。\u003C/p\u003E\u003Cp\u003EExtra coxa（外旋髖）就在梨狀肌正上方。\u003Cbr /\u003E所以我們找到轉子、骶骨的末端，我們走到正中間。\u003Cbr /\u003E你會感覺到彈撥感。那種彈撥感正是梨狀肌。\u003Cbr /\u003E所以我們就在那裡，Extra coxa。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110544-er-cx-l1.jpeg\" alt=\"er-cx-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110549-er-cx-t1.jpeg\" alt=\"er-cx-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110555-er-cx-t2.jpeg\" alt=\"er-cx-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110500-er-cx-t3.jpeg\" alt=\"er-cx-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110504-er-cx-t4.jpeg\" alt=\"er-cx-t4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110510-er-cx-t5.jpeg\" alt=\"er-cx-t5\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110517-er-cx-t6.jpeg\" alt=\"er-cx-t6\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-ge",
+    "answer": "\u003Cp\u003E這個點位在股二頭肌的短頭，基本上位於長頭和股外側肌之間的肌間膈。我們要處理的就是那裡。請記住，股二頭肌短頭的整個表面都與闊筋膜的內層融合。臀大肌融入闊筋膜（此處已被切斷），然後股二頭肌短頭從闊筋膜發源。因此，這兩者之間有直接的關聯。這個點會引發典型的坐骨神經痛，所以對於坐骨神經痛和膝蓋問題來說，這是一個很常見的處理點。可以用手肘在這個溝槽中進行縱向處理。\u003C/p\u003E\u003Cp\u003EExt. gen. 位於肱二頭肌短頭（short head of the biceps），其起源來自闊筋膜（fascia lata）的內側面。我會保持在肱二頭肌長頭的外側、闊筋膜加強帶的內側，位置介於中段與遠端三分之一之間；在這個區域，即為 ext. gen.\u003C/p\u003E\u003Cp\u003EExt. gen.（外旋膝，即 Extra-genu）將會位於股二頭肌短頭，它起自闊筋膜的內表面。\u003Cbr /\u003E所以我們停留在股二頭肌長頭的外側，以及闊筋膜增厚部位的內側，處於中三分之一和遠端三分之一之間，就在這裡，ext. gen.。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110506-er-ge-l1.jpeg\" alt=\"er-ge-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110510-er-ge-t1.jpeg\" alt=\"er-ge-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110515-er-ge-t2.jpeg\" alt=\"er-ge-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110520-er-ge-t3.jpeg\" alt=\"er-ge-t3\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-ta",
+    "answer": "\u003Cp\u003E這是一個相當常見但很難找到的點位，因為它基本上緊貼著腓骨長肌，並被腓骨長肌的肌腹所包覆。操作時，必須從後向前推，因為我們不想觸碰到內側腓腸肌。患者需要仰臥，而我們要從後方往前推。這個點可能相當僵硬，甚至在第五蹠骨骨折或嚴重踝關節扭傷後，會變得極度僵硬。這個點可能會導致慢性的踝關節問題，非常重要，也可能非常僵硬，需要用手肘來處理。\u003C/p\u003E\u003Cp\u003EExtensor digitorum longus 的定位在腓骨長肌（fibularis longus）的後緣，可位於近端至中段三分之一之間，或介於兩者中點。我會先觸到後緣，並沿肌纖維方向做縱向操作；在此處，即為 extensor digitorum longus。\u003C/p\u003E\u003Cp\u003EExtensor digitorum longus（趾長伸肌，此處指對應點，實為 Extra-talum 的腓骨長肌部位）。\u003Cbr /\u003EExtensor digitorum longus 位於腓骨長肌的後緣。\u003Cbr /\u003E它可以處於近端和中三分之一之間，或者在中間位置。\u003Cbr /\u003E所以我們想要感覺到後緣，然後我們進行縱向操作。所以就在這裡我們有 Extensor digitorum longus。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110557-er-ta-l1.jpeg\" alt=\"er-ta-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110511-er-ta-t1.jpeg\" alt=\"er-ta-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110516-er-ta-t2.jpeg\" alt=\"er-ta-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-pe",
+    "answer": "\u003Cp\u003E這是一個非常微小的結構，是伸趾短肌的肌腹，一塊位於此處的小肌肉，用來上拉所有腳趾。當你請患者上抬腳趾時，會感覺到一塊肌腹從這裡隆起，我們就在它的正中間進行處理。這個點可能會非常緊繃，記住它也與上方的支持帶（Retinaculum）沾黏在一起。因此，當處理這個點時，會對支持帶產生很大的張力，而支持帶會牽引整個筋膜。如果整個筋膜都很僵硬，患者可能會感覺到拉扯感一直延伸到腹部區域，這並不奇怪。由於我們同時也處理到一些支持帶，疼痛感會非常銳利。錘狀趾（Hammer toes）是這種僵硬的典型症狀，但最典型的情況是第四、五趾的疼痛。\u003C/p\u003E\u003Cp\u003EExtra pes 對應到足部的 extensor brevis（在 pedius）。我會請患者抬起腳趾，這時可以看到該肌肉隆起；定位點就在隆起的正中央，即為 extra pes。\u003C/p\u003E\u003Cp\u003EExtra peus（外旋足，即 Extra-pes）將會是足部的短伸肌（簡稱 pedius）。\u003Cbr /\u003E所以如果患者，我們請患者抬起腳趾，你會看到這塊肌肉鼓起來。\u003Cbr /\u003E治療點就在正中間。Extra peus。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110555-er-pe-l1.jpeg\" alt=\"er-pe-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110559-er-pe-t1.jpeg\" alt=\"er-pe-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110505-er-pe-t2.jpeg\" alt=\"er-pe-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110510-er-pe-t3.jpeg\" alt=\"er-pe-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110514-er-pe-t4.jpeg\" alt=\"er-pe-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-sc",
+    "answer": "\u003Cp\u003E這個點位在肩胛骨頂部，提肩胛肌的起點處。我們前面已經看過更上方的「額外頸部點」。這個「額外肩胛點」同樣是處理提肩胛肌，但位置更偏遠端。這裡可能極度僵硬，有時要放鬆它真的是一大挑戰。我絕不會從這裡開始處理，特別是因為症狀大多出現在其上方。因此，沒有理由從這裡開始。我們會從肩胛間（Inter-Scapula）、胸內（Intra-Thorax）開始，然後最終再處理「額外肩胛點」，這樣才能解決問題。直接從這裡開始對治療師和患者來說都將是一場噩夢。但這個點對於處理肩膀問題非常有效。\u003C/p\u003E\u003Cp\u003E檢視「extra scapula」時，我仍以提肩胛肌（levator scapulae）為參考。我會先找到肩胛骨，往上觸診，摸到因提肩胛肌造成的突起（nubbin）；定位點就在這個區域上方，即為 extra scapulae。\u003C/p\u003E\u003Cp\u003E我們來看一下，Extra scapula（外旋肩胛）。\u003Cbr /\u003E所以我們仍然在提肌（提肩胛肌）中。\u003Cbr /\u003E所以我們找到肩胛骨，往上走，我們會感覺到由於提肩胛肌而產生的這個小結節。\u003Cbr /\u003E治療點就在該區域的正上方。所以是 Extra scapulae。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110507-er-sc-l1.jpeg\" alt=\"er-sc-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110511-er-sc-t1.jpeg\" alt=\"er-sc-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110516-er-sc-t2.jpeg\" alt=\"er-sc-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110521-er-sc-t3.jpeg\" alt=\"er-sc-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110525-er-sc-t4.jpeg\" alt=\"er-sc-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-hu",
+    "answer": "\u003Cp\u003E此點位於棘下肌的末端。我們會穿過三角肌，試圖找到小圓肌的末端，但最好的目標是在肩峰弓的起點，肩胛棘下方。你會透過三角肌感覺到棘下肌的纖維，它像一個半英寸（大約一公分半）的僵硬結構，位於棘下肌肌腱結束、進入肩袖之前的地方。這個點的疼痛可能非常劇烈，並在肩膀內部產生大量放射痛，非常尖銳。因此，肩膀問題是其典型症狀。你可以用指關節按壓，但用手肘處理這個點會更好。\u003C/p\u003E\u003Cp\u003EExtra humerus 位於肩胛骨棘下肌（infraspinatus）的肌腱。我會先找到肩胛棘，沿著肩胛棘向外緣走到開始拱起的地方，再往下；在此處會感覺到一個「snapping」，那就是棘下肌肌腱，此處即為 extra humerus。\u003C/p\u003E\u003Cp\u003EExtra humerus（外旋肱）位於岡下肌的肌腱中。\u003Cbr /\u003E所以我們找到肩胛岡，當它開始呈弧形時，我們走到下方，會感覺到一個彈撥感，那就是岡下肌的肌腱。\u003Cbr /\u003E那就是 Extra humerus。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110509-er-hu-l1.jpeg\" alt=\"er-hu-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110516-er-hu-t1.jpeg\" alt=\"er-hu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110522-er-hu-t2.jpeg\" alt=\"er-hu-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110528-er-hu-t3.jpeg\" alt=\"er-hu-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110533-er-hu-t4.jpeg\" alt=\"er-hu-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-cu",
+    "answer": "\u003Cp\u003E從這裡可以看到，肱橈肌對於旋後動作有重要的共同作用。因此，這個點的目標是肱橈肌在旋後動作中的特定部分。我們停在肱三頭肌肌腱的一側，進行縱向處理，試圖將作為肱橈肌起點的筋膜擠壓到肱骨邊緣。你可以感覺到這裡的結締組織有多僵硬，這就是你的目標。進行縱向處理，感受肱肌筋膜的質地。典型的疼痛是手肘痛，類似於滑囊炎的疼痛，在活動時會大幅增加。\u003C/p\u003E\u003Cp\u003EExtra cubitus 位於肱三頭肌末端。我會沿著肱橈肌（brachioradialis）走向，並注意其後側部位有助於前臂的旋後（supination）。在靠近肱三頭肌側的該段肌肉位置，通常能感覺到肱筋膜的緊繃或僵硬；此處即為 extra cubitus。\u003C/p\u003E\u003Cp\u003EExtra cubitus（外旋肘），我們走到三頭肌的末端。\u003Cbr /\u003E我們必須屈曲肱橈肌，而且你知道，肱橈肌的後側部分負責旋後。\u003Cbr /\u003E所以正好是三頭肌側邊的這部分肌肉，在這個水平高度，你會感覺到肱筋膜的僵硬。所以那就是 Extra cubitus。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110504-er-cu1.jpeg\" alt=\"er-cu1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110508-er-cu-t1.jpeg\" alt=\"er-cu-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110514-er-cu-t2.jpeg\" alt=\"er-cu-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-ca",
+    "answer": "\u003Cp\u003E這個點位在伸指肌，基本上位於近端和中端三分之一交界處。我們要避開肱橈肌和尺側伸腕肌，專注於中間的所有肌肉。在這裡，你需要縱向處理，以保持與這些結構的走向一致。如你所知，這個區域的神經分佈非常豐富，所以疼痛感可能非常強烈，並伴隨大量向手臂下方放射的感覺。這個點對於手肘、手腕和手指的問題都非常重要，而且可能相當僵硬，需要一些時間才能解決。\u003C/p\u003E\u003Cp\u003EExtra carpo 位於食指的遠端指骨上方，定位在近端與中段三分之一之間。我會避開尺側伸腕肌（extensor carpi ulnaris）與肱橈肌（brachioradialis）；在該條件下的指定區域，即為 extra carpo。\u003C/p\u003E\u003Cp\u003EExtra Carpo（外旋腕）位於食指遠端指骨的上方（此處語誤，實指前臂中段）。\u003Cbr /\u003E所以我們處於近端和中三分之一之間。\u003Cbr /\u003E好的，我們必須避開尺側腕伸肌。我們必須避開肱橈肌。\u003Cbr /\u003E所以就在這裡我們有 Extra carpo。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110511-er-ca-l1.jpeg\" alt=\"er-ca-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110516-er-ca-t1.jpeg\" alt=\"er-ca-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110521-er-ca-t2.jpeg\" alt=\"er-ca-t2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110526-er-ca-t3.jpeg\" alt=\"er-ca-t3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110530-er-ca-t4.jpeg\" alt=\"er-ca-t4\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-di",
+    "answer": "\u003Cp\u003E這個點是環繞屈指肌肌腱的深層筋膜（Visceral Lamina）。基本上，你需要在第二、三掌骨之間，以及第三、四掌骨之間的凹陷處進行處理。要注意，你不想挫傷肌腱間的連結韌帶（Intertendinous Junction），而是要停留在凹陷處。在這裡縱向處理，只處理筋膜。如果你在這裡操作，可能會感覺到一個主要的彈響，但那只是肌腱，不是我們要找的。所以，盡可能深入這個凹陷處，用指關節的尖端處理這個區域。放射痛會傳到患者主訴最疼痛的手指部位。隨著時間推移，它會變得比較柔軟。這裡可能有一個或兩個點位。\u003C/p\u003E\u003Cp\u003EExtra digit 位於掌間肌（interosseous）之間的兩個位置：一個在第二與第三掌骨之間，另一個在第三與第四掌骨之間。操作時需注意避開伸肌腱間聯合（intertendinous junction）的「nappy」，並確保定位在肌肉上方。因為有兩個定位點，一個在這一側，另一個則在對側相對位置。\u003C/p\u003E\u003Cp\u003EExtra digit（外旋指），我們處於第二和第三掌骨、以及第三和第四掌骨之間的骨間肌。\u003Cbr /\u003E我們必須注意避免腱間結合（腱聯合）的彈撥，並保持在肌肉的正上方。\u003Cbr /\u003E所以有兩個點，一個會在這個水平高度，另一個會正好在另一側。\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110508-er-di-l1.jpeg\" alt=\"er-di-l1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110514-er-di-l2.jpeg\" alt=\"er-di-l2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110519-er-di-t1.jpeg\" alt=\"er-di-t1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110525-er-di-t2.jpeg\" alt=\"er-di-t2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me la 注意事項",
+    "answer": "\u003Cp\u003E與例子，同時在需要處加入段落與標題，並以台灣常用字句表達。\u003Cbr /\u003E中線在軀幹的特殊性\u003Cbr /\u003E在軀幹上，中線的概念相當特別。就位置而言，「點」位於軀幹的正中央，沒有「右」與「左」之分，而是分為前方（前側）與後方（後側）。因此在軀幹，中線並非純粹的「運動線」，而是一條「感知與對齊」的線。唯一的例外是「中線 couple 1」，它仍作為運動向量且是「外側 couple 1」的拮抗點；從此之後在軀幹就不再以運動為主，也不再有左右之分，而是以前側與後側來區分。\u003Cbr /\u003E這點非常重要，因為許多人容易混淆。請記得：在軀幹，中線非常關鍵，尤其在第三級課程中，我們大量處理視覺－身體（visuosomatic）相關議題與部分視覺問題。之後我會逐一說明各中線點的定位、檢查、典型放射與臨床應用。\u003C/p\u003E\u003Cp\u003E臨床提示與操作綜述\u003C/p\u003E\u003Cul\u003E\u003Cli\u003E軀幹的中線以「感知對齊」為主，除 couple 1 外不作為運動向量，採前側與後側定位，無左右之分。\u003C/li\u003E\u003Cli\u003E第三級課程重點在正中線的內臟筋膜連結與視覺－身體問題，因此正中線是「內臟－身體代償」的起點。\u003C/li\u003E\u003Cli\u003E觸診策略多採「多指尖全域掃查＋指關節長軸／橫向處理」，遇到高度僵硬時以手肘先「熱開」組織再精細辨識。\u003C/li\u003E\u003Cli\u003E典型病人回饋包含暈眩、失穩、呼吸壓迫、內臟深處疼痛、針刺樣瞬痛、肩僵硬、腕肘牽涉痛、足底筋膜炎樣痛等。\u003C/li\u003E\u003Cli\u003E「怕癢」是受器敏感化的指標，在僵硬區域，輕觸即痛或搔癢均提示陽性反應。\u003C/li\u003E\u003Cli\u003E四肢的中線回歸機械運動向量，與外側線互為拮抗；定位與處理需注意神經血管走行，並以長軸平行方式保護組織。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E側面動作序列與其他序列一樣，由第一耦合點（Couple 1）開始。值得注意的是，在側面序列的分析中，左右兩側互為拮抗肌群，這與我們在生物力學模型中解釋過的情況不同。一般來說，一側的側面肌群會與另一側（對側）的側面肌群互為拮抗，但第一耦合點是個例外，它的拮抗肌群是同側的內側第一耦合點（Medio-couple 1）。從第二耦合點（Couple 2）一直到骨盆（Pelvic）的點，拮抗肌群則變為對側的側面肌群。\u003C/p\u003E"
+  }
+];
+var srsData={};
+var filteredData=qaData.slice();
+var currentQ=null;
+var studyMode="srs";
+var answerVisible=false;
+var storageOk=false;
+var SRS_KEY="srs_"+"CC 點位置".replace(/\W/g,"_").slice(0,40);
+
+function pad2(n){return n<10?"0"+n:""+n;}
+function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
+function addDays(s,n){var d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
+function ivText(days){
+  if(days<=0)return "重學";
+  if(days===1)return "1天";
+  if(days<7)return days+"天";
+  if(days<30)return Math.round(days/7)+"週";
+  return Math.round(days/30)+"月";
+}
+function stripHtml(s){return s.replace(/<[^>]*>/g,"");}
+function filterModalList(list,qSearch,aSearch){
+  return list.filter(function(item){
+    var qOk=!qSearch||item.question.toLowerCase().indexOf(qSearch.toLowerCase())!==-1;
+    var aOk=!aSearch||stripHtml(item.answer).toLowerCase().indexOf(aSearch.toLowerCase())!==-1;
+    return qOk&&aOk;
+  });
+}
+
+function chkStorage(){try{localStorage.setItem("_t","1");localStorage.removeItem("_t");storageOk=true;}catch(e){storageOk=false;}}
+function saveSrs(){if(!storageOk)return;try{localStorage.setItem(SRS_KEY,JSON.stringify(srsData));}catch(e){}}
+function loadSrs(){if(!storageOk)return;try{var d=localStorage.getItem(SRS_KEY);if(d)srsData=JSON.parse(d);}catch(e){srsData={};}}
+
+function getCard(q){
+  if(!srsData[q])srsData[q]={interval:0,reps:0,ef:2.5,nextReview:null,total:0};
+  return srsData[q];
+}
+function getStatus(q){
+  var c=getCard(q);
+  if(!c.nextReview)return "new";
+  if(c.interval>=21)return "mastered";
+  if(c.nextReview<=todayStr())return "due";
+  return "upcoming";
+}
+
+function sm2(card,quality){
+  var ef=card.ef||2.5, reps=card.reps||0, iv=card.interval||0;
+  var nef,niv,nreps;
+  if(quality<3){
+    nef=Math.max(1.3,ef-0.2); niv=1; nreps=0;
+  } else {
+    nef=Math.max(1.3,ef+(0.1-(5-quality)*(0.08+(5-quality)*0.02)));
+    nreps=reps+1;
+    if(reps===0){
+      niv=(quality===5?4:quality===4?2:1);
+    } else if(reps===1){
+      niv=(quality===5?Math.round(6*nef):quality===3?4:6);
+    } else {
+      niv=Math.round(iv*nef);
+      if(quality===3)niv=Math.max(1,Math.round(niv*0.7));
+      if(quality===5)niv=Math.round(niv*1.3);
+    }
+  }
+  return {interval:niv,reps:nreps,ef:nef};
+}
+function previewAll(q){
+  var c=getCard(q);
+  return {1:sm2(c,1).interval,3:sm2(c,3).interval,4:sm2(c,4).interval,5:sm2(c,5).interval};
+}
+function applyRating(q,quality){
+  var card=getCard(q);
+  var r=sm2(card,quality);
+  card.interval=r.interval; card.reps=r.reps; card.ef=r.ef;
+  card.nextReview=addDays(todayStr(),quality<3?0:r.interval);
+  card.total=(card.total||0)+1;
+  saveSrs();
+}
+
+function updateStats(){
+  var tot=filteredData.length,nw=0,due=0,mast=0;
+  filteredData.forEach(function(item){
+    var st=getStatus(item.question);
+    if(st==="new")nw++;
+    else if(st==="due")due++;
+    else if(st==="mastered")mast++;
+  });
+  document.getElementById("totalCount").textContent=tot;
+  document.getElementById("newCount").textContent=nw;
+  document.getElementById("dueCount").textContent=due;
+  document.getElementById("mastCount").textContent=mast;
+  document.getElementById("progBar").style.width=(tot>0?Math.round((mast/tot)*100):0)+"%";
+}
+
+function getPool(){
+  if(studyMode==="srs"){
+    var due=[],nw=[];
+    filteredData.forEach(function(item){
+      var st=getStatus(item.question);
+      if(st==="due")due.push(item);
+      else if(st==="new")nw.push(item);
+    });
+    return due.concat(nw);
+  }
+  return filteredData;
+}
+
+function hideAnswer(){
+  document.getElementById("answerContent").classList.remove("show");
+  document.getElementById("ratingWrap").classList.remove("show");
+  document.getElementById("showAnsBtn").textContent="顯示答案";
+  answerVisible=false;
+}
+function toggleAnswer(){
+  if(!currentQ)return;
+  if(answerVisible){hideAnswer();}
+  else{
+    document.getElementById("answerContent").classList.add("show");
+    document.getElementById("ratingWrap").classList.add("show");
+    document.getElementById("showAnsBtn").textContent="隱藏答案";
+    answerVisible=true;
+    updateHints(currentQ.question);
+  }
+}
+function updateHints(q){
+  var iv=previewAll(q);
+  document.getElementById("hint-1").textContent="重學";
+  document.getElementById("hint-3").textContent=ivText(iv[3]);
+  document.getElementById("hint-4").textContent=ivText(iv[4]);
+  document.getElementById("hint-5").textContent=ivText(iv[5]);
+}
+function onRating(quality){
+  if(!currentQ)return;
+  applyRating(currentQ.question,quality);
+  drawQuestion();
+}
+
+function setSrsInfo(q){
+  var el=document.getElementById("srsInfo");
+  if(!q){el.style.display="none";el.innerHTML="";return;}
+  var card=getCard(q); var st=getStatus(q);
+  var labels={"new":"🆕 新卡片","due":"📅 到期複習","upcoming":"✅ 排程中","mastered":"🏆 已掌握"};
+  var html='<span class="srs-badge st-'+st+'">'+labels[st]+'</span>';
+  if(st!=="new"){
+    html+='<span class="srs-meta">間隔 '+card.interval+'天&nbsp;·&nbsp;複習 '+card.total+'次&nbsp;·&nbsp;EF '+card.ef.toFixed(2)+'</span>';
+    if(card.nextReview)html+='<span class="srs-meta">下次複習：'+card.nextReview+'</span>';
+  } else {
+    html+='<span class="srs-meta">從未複習</span>';
+  }
+  if(studyMode==="srs"){
+    html+='<span class="srs-meta">（待學 '+getPool().length+' 題）</span>';
+  }
+  el.innerHTML=html; el.style.display="flex";
+}
+
+function drawQuestion(){
+  hideAnswer();
+  var pool=getPool();
+  if(pool.length===0){
+    var msg=studyMode==="srs"
+      ?"🎉 今日所有卡片已複習完畢！請明日再來，或切換「隨機練習」繼續練習。"
+      :"🎉 目前篩選範圍無符合題目。";
+    document.getElementById("question").innerHTML=msg;
+    document.getElementById("answerContent").innerHTML="";
+    document.getElementById("showAnsWrap").style.display="none";
+    setSrsInfo(null); currentQ=null; updateStats(); return;
+  }
+  var item;
+  if(studyMode==="srs"){
+    var dueOnly=pool.filter(function(i){return getStatus(i.question)==="due";});
+    var src=(dueOnly.length>0&&Math.random()<0.8)?dueOnly:pool;
+    item=src[Math.floor(Math.random()*src.length)];
+  } else {
+    item=pool[Math.floor(Math.random()*pool.length)];
+  }
+  currentQ=item;
+  document.getElementById("question").innerHTML=item.question;
+  document.getElementById("answerContent").innerHTML=item.answer;
+  document.getElementById("showAnsWrap").style.display="block";
+  setSrsInfo(item.question); updateStats();
+}
+
+function setMode(mode){
+  studyMode=mode;
+  document.getElementById("modeRndBtn").classList.toggle("active",mode==="random");
+  document.getElementById("modeSrsBtn").classList.toggle("active",mode==="srs");
+  updateStats();
+  drawQuestion();
+}
+
+function applyFilter(){
+  var pat=document.getElementById("filterInput").value;
+  if(!pat.trim()){filteredData=qaData.slice();updateStats();drawQuestion();return;}
+  try{var re=new RegExp(pat,"i");filteredData=qaData.filter(function(q){return re.test(q.question);});updateStats();drawQuestion();}catch(e){}
+}
+function clearFilter(){document.getElementById("filterInput").value="";filteredData=qaData.slice();updateStats();drawQuestion();}
+
+function doReset(){
+  srsData={};saveSrs();currentQ=null;
+  updateStats();
+  document.getElementById("resetModal").classList.remove("open");
+  drawQuestion();
+}
+
+function toggleModalQA(idx,type){
+  var ans=document.getElementById(type+"-ans-"+idx);
+  var btn=document.getElementById(type+"-btn-"+idx);
+  if(!ans||!btn)return;
+  var show=!ans.classList.contains("show");
+  ans.classList.toggle("show",show);
+  btn.textContent=show?"隱藏答案":"顯示答案";
+}
+function buildList(list,type){
+  if(!list.length)return'<div class="no-results">（無符合結果）</div>';
+  return list.map(function(item,i){
+    var c=getCard(item.question),st=getStatus(item.question);
+    var meta=st==="new"
+      ?"新卡片（從未複習）"
+      :("間隔 "+c.interval+"天 · EF "+c.ef.toFixed(2)+(c.nextReview?" · 下次 "+c.nextReview:""));
+    var cls="question-item"+(st==="mastered"?" is-mast":"");
+    return '<div class="'+cls+'">'
+      +'<div class="question-header">'
+      +'<div class="question-text">'+item.question+'<div class="srs-mini">'+meta+'</div></div>'
+      +'<button id="'+type+"-btn-"+i+'" class="btn btn-sm qa-tog" data-type="'+type+'" data-idx="'+i+'">顯示答案</button>'
+      +'</div>'
+      +'<div id="'+type+"-ans-"+i+'" class="question-answer">'+item.answer+'</div>'
+      +'</div>';
+  }).join("");
+}
+
+function renderAllModal(){
+  var q=document.getElementById("allQSearch").value;
+  var a=document.getElementById("allASearch").value;
+  var base=filteredData.slice();
+  var list=filterModalList(base,q,a);
+  var suffix=(q||a)?" / "+base.length:"";
+  document.getElementById("allCount2").textContent="全部題目（"+list.length+suffix+" 題）";
+  document.getElementById("allList").innerHTML=buildList(list,"all");
+}
+function showAllModal(){
+  document.getElementById("allQSearch").value="";
+  document.getElementById("allASearch").value="";
+  renderAllModal();
+  document.getElementById("allModal").classList.add("open");
+}
+function renderDueModal(){
+  var q=document.getElementById("dueQSearch").value;
+  var a=document.getElementById("dueASearch").value;
+  var base=filteredData.filter(function(item){var st=getStatus(item.question);return st==="due"||st==="new";});
+  var list=filterModalList(base,q,a);
+  var suffix=(q||a)?" / "+base.length:"";
+  document.getElementById("dueCount2").textContent="今日待學（"+list.length+suffix+" 題）";
+  document.getElementById("dueList").innerHTML=buildList(list,"due");
+}
+function showDueModal(){
+  document.getElementById("dueQSearch").value="";
+  document.getElementById("dueASearch").value="";
+  renderDueModal();
+  document.getElementById("dueModal").classList.add("open");
+}
+function renderMastModal(){
+  var q=document.getElementById("mastQSearch").value;
+  var a=document.getElementById("mastASearch").value;
+  var base=filteredData.filter(function(item){return getStatus(item.question)==="mastered";});
+  var list=filterModalList(base,q,a);
+  var suffix=(q||a)?" / "+base.length:"";
+  document.getElementById("mastCount2").textContent="已掌握（"+list.length+suffix+" 題）";
+  document.getElementById("mastList").innerHTML=buildList(list,"mast");
+}
+function showMastModal(){
+  document.getElementById("mastQSearch").value="";
+  document.getElementById("mastASearch").value="";
+  renderMastModal();
+  document.getElementById("mastModal").classList.add("open");
+}
+function setupModal(modal){
+  modal.addEventListener("click",function(e){
+    if(e.target===modal){modal.classList.remove("open");return;}
+    if(e.target.classList.contains("qa-tog"))
+      toggleModalQA(parseInt(e.target.getAttribute("data-idx"),10),e.target.getAttribute("data-type"));
+  });
+}
+
+chkStorage(); loadSrs(); updateStats();
+document.getElementById("showAnsBtn").addEventListener("click",toggleAnswer);
+var _rbs=document.querySelectorAll(".r-btn");
+for(var _ri=0;_ri<_rbs.length;_ri++){
+  (function(btn){
+    btn.addEventListener("click",function(){
+      onRating(parseInt(btn.getAttribute("data-q"),10));
+    });
+  })(_rbs[_ri]);
+}
+document.getElementById("modeRndBtn").addEventListener("click",function(){setMode("random");});
+document.getElementById("modeSrsBtn").addEventListener("click",function(){setMode("srs");});
+document.getElementById("resetBtn").addEventListener("click",function(){document.getElementById("resetModal").classList.add("open");});
+document.getElementById("confirmResetBtn").addEventListener("click",doReset);
+document.getElementById("cancelResetBtn").addEventListener("click",function(){document.getElementById("resetModal").classList.remove("open");});
+document.getElementById("showAllBtn").addEventListener("click",showAllModal);
+document.getElementById("showDueBtn").addEventListener("click",showDueModal);
+document.getElementById("showMastBtn").addEventListener("click",showMastModal);
+document.getElementById("closeAllBtn").addEventListener("click",function(){document.getElementById("allModal").classList.remove("open");});
+document.getElementById("closeDueBtn").addEventListener("click",function(){document.getElementById("dueModal").classList.remove("open");});
+document.getElementById("closeMastBtn").addEventListener("click",function(){document.getElementById("mastModal").classList.remove("open");});
+document.getElementById("allQSearch").addEventListener("input",renderAllModal);
+document.getElementById("allASearch").addEventListener("input",renderAllModal);
+document.getElementById("dueQSearch").addEventListener("input",renderDueModal);
+document.getElementById("dueASearch").addEventListener("input",renderDueModal);
+document.getElementById("mastQSearch").addEventListener("input",renderMastModal);
+document.getElementById("mastASearch").addEventListener("input",renderMastModal);
+document.getElementById("filterBtn").addEventListener("click",applyFilter);
+document.getElementById("clearFilterBtn").addEventListener("click",clearFilter);
+document.getElementById("filterInput").addEventListener("keydown",function(e){if(e.key==="Enter")applyFilter();});
+setupModal(document.getElementById("resetModal"));
+setupModal(document.getElementById("allModal"));
+setupModal(document.getElementById("dueModal"));
+setupModal(document.getElementById("mastModal"));
+try{
+  drawQuestion();
+}catch(e){
+  console.error("drawQuestion 失敗：", e);
+  var qEl=document.getElementById("question");
+  if(qEl) qEl.textContent="⚠️ 初始化失敗，請開啟瀏覽器 Console 查看錯誤："+e.message;
+}
+</script>
+</body>
+</html>

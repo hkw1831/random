@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CC 點動作驗證</title>
+    <style>
+        :root{--primary:#4361ee;--primary-light:#4895ef;--secondary:#3f37c9;--bg:#f0f4ff;--card:#ffffff;--text:#212529;--err:#d00000;--warn:#e67700;--info:#1971c2;--mast:#5c3db8;}
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.7;color:var(--text);background:var(--bg);padding:0.5rem 0;}
+        .container{max-width:100%;width:100%;padding:0;}
+        h1{font-size:1.8rem;font-weight:700;color:var(--primary);text-align:center;margin:0.5rem 0;}
+        .stats{display:flex;gap:0.2rem;margin:0.5rem 0;flex-wrap:nowrap;}
+        .stat-item{background:var(--card);border-radius:8px;padding:0.4rem 0.15rem;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;flex:1;}
+        .stat-label{font-size:0.7rem;color:#6c757d;}
+        .stat-value{font-size:1.25rem;font-weight:700;color:var(--primary);}
+        .sv-new{color:var(--info);} .sv-due{color:var(--warn);} .sv-mast{color:var(--mast);}
+        .prog-wrap{height:5px;background:#dee2e6;border-radius:3px;margin:0.3rem 0;overflow:hidden;}
+        .prog-bar{height:100%;background:linear-gradient(90deg,var(--primary),#7048e8);border-radius:3px;transition:width .5s ease;width:0%;}
+        .btn{background:var(--primary);color:#fff;border:none;padding:0.6rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.95rem;font-weight:500;transition:background .2s,transform .15s;}
+        .btn:hover{background:var(--secondary);transform:translateY(-1px);}
+        .btn:active{transform:translateY(0);}
+        .btn-err{background:var(--err);}.btn-err:hover{background:#b00000;}
+        .btn-sec{background:#6c757d;}.btn-sec:hover{background:#5a6268;}
+        .btn-sm{padding:0.35rem 0.6rem;font-size:0.82rem;}
+        .mode-row{display:flex;gap:0.35rem;margin:0.5rem 0;}
+        .mode-btn{flex:1;padding:0.55rem 0.5rem;border-radius:6px;border:2px solid transparent;background:#e9ecef;color:#495057;font-size:0.88rem;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;}
+        .mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 2px 8px rgba(67,97,238,.35);}
+        .mode-btn:not(.active):hover{background:#dee2e6;}
+        .controls{display:flex;gap:0.2rem;margin:0.5rem 0;}
+        .controls .btn{flex:1;white-space:nowrap;min-width:0;text-align:center;padding:0.6rem 0.3rem;}
+        .filter-row{display:flex;gap:0.35rem;margin:0.5rem 0;align-items:stretch;}
+        .filter-row .btn{flex-shrink:0;white-space:nowrap;}
+        .filter-input{flex:1;min-width:0;padding:0.55rem 0.75rem;border-radius:6px;border:1px solid rgba(67,97,238,.35);font-size:0.93rem;font-family:Menlo,Monaco,Consolas,monospace;background:#fff;color:var(--text);}
+        .filter-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(67,97,238,.18);}
+        .filter-input::placeholder{font-family:"Noto Sans TC",-apple-system,sans-serif;color:#aaa;}
+        .question-box{background:var(--card);border-radius:10px;padding:0.85rem 0.25rem;margin:0.5rem 0;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+        .question{font-size:1.35rem;font-weight:600;color:var(--primary);margin-bottom:0.6rem;}
+        .question img,.answer-content img,.question-text img,.question-answer img{max-width:100%;height:auto;display:block;margin:0.5rem 0;border-radius:6px;}
+        .srs-info{display:none;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.55rem;}
+        .srs-badge{display:inline-flex;align-items:center;gap:0.2rem;font-size:0.73rem;padding:2px 9px;border-radius:10px;font-weight:700;letter-spacing:.3px;}
+        .st-new{background:rgba(25,113,194,.12);color:var(--info);}
+        .st-due{background:rgba(230,119,0,.13);color:var(--warn);}
+        .st-upcoming{background:rgba(56,176,0,.12);color:#2b8a00;}
+        .st-mastered{background:rgba(92,61,184,.12);color:var(--mast);}
+        .srs-meta{font-size:0.71rem;color:#868e96;}
+        .show-ans-wrap{text-align:center;margin:0.5rem 0;}
+        .answer-content{display:none;background:rgba(67,97,238,.08);border-left:4px solid var(--primary);padding:0.6rem 0.5rem;border-radius:0 8px 8px 0;margin-top:0.6rem;}
+        .answer-content.show{display:block;}
+        .answer-content ul,.answer-content ol{padding-left:1.4rem;}
+        .answer-content li{margin-bottom:0.4rem;}
+        .answer-content p{margin-bottom:0.5rem;}
+        .answer-content p:last-child{margin-bottom:0;}
+        .rating-wrap{display:none;margin-top:0.8rem;}
+        .rating-wrap.show{display:block;}
+        .rating-label{font-size:0.75rem;color:#868e96;text-align:center;margin-bottom:0.5rem;line-height:1.5;}
+        .rating-label strong{color:#495057;}
+        .rating-row{display:flex;gap:0.3rem;}
+        .r-btn{flex:1;min-width:0;padding:0.6rem 0.15rem;border:none;border-radius:9px;cursor:pointer;color:#fff;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:0 2px 8px rgba(0,0,0,.18);transition:transform .15s,box-shadow .15s,filter .15s;}
+        .r-btn:hover{transform:translateY(-3px);box-shadow:0 5px 14px rgba(0,0,0,.22);}
+        .r-btn:active{transform:translateY(0);filter:brightness(.88);}
+        .r-again{background:linear-gradient(150deg,#e03131,#c92a2a);}
+        .r-hard{background:linear-gradient(150deg,#e67700,#d9480f);}
+        .r-good{background:linear-gradient(150deg,#2f9e44,#2b8a3e);}
+        .r-easy{background:linear-gradient(150deg,#1971c2,#1864ab);}
+        .r-icon{font-size:1.15rem;}
+        .r-text{font-size:0.88rem;}
+        .r-hint{font-size:0.67rem;font-weight:600;opacity:.92;background:rgba(255,255,255,.2);padding:1px 6px;border-radius:4px;white-space:nowrap;letter-spacing:.2px;}
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;justify-content:center;align-items:flex-start;padding:1rem 0;overflow-y:auto;}
+        .modal.open{display:flex;}
+        .modal-content{background:var(--card);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:1rem 0.4rem;max-width:100%;width:100%;}
+        .modal-title{font-size:1.3rem;font-weight:700;color:var(--primary);text-align:center;margin-bottom:0.6rem;}
+        .modal-buttons{display:flex;justify-content:center;gap:0.75rem;margin-top:1rem;flex-wrap:wrap;}
+        .modal-search-row{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.65rem;}
+        .modal-search-group{display:flex;flex-direction:column;gap:0.2rem;}
+        .modal-search-label{font-size:0.72rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#868e96;margin-bottom:0.15rem;}
+        .modal-search{width:100%;padding:0.48rem 0.75rem;border-radius:6px;border:1px solid rgba(67,97,238,.25);font-size:0.88rem;background:#f8f9ff;color:var(--text);transition:border-color .2s,box-shadow .2s;}
+        .modal-search:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(67,97,238,.15);background:#fff;}
+        .no-results{text-align:center;color:#adb5bd;font-size:0.9rem;padding:1.2rem 0;}
+        .q-count{font-weight:700;margin-bottom:0.6rem;text-align:center;}
+        .q-count.cd{color:var(--warn);} .q-count.cm{color:var(--mast);} .q-count.ca{color:var(--primary);}
+        .question-list{display:flex;flex-direction:column;gap:0.5rem;}
+        .question-item{background:rgba(67,97,238,.05);border-left:4px solid var(--primary);padding:0.6rem 0.4rem;border-radius:0 8px 8px 0;font-size:0.93rem;}
+        .question-item.is-mast{border-color:var(--mast);background:rgba(92,61,184,.05);}
+        .question-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;}
+        .question-text{flex:1;font-weight:500;}
+        .srs-mini{font-size:0.69rem;color:#868e96;margin-top:3px;}
+        .question-answer{display:none;margin-top:0.6rem;padding:0.6rem 0.4rem;background:rgba(255,255,255,.9);border-radius:5px;border:1px solid rgba(67,97,238,.2);}
+        .question-answer.show{display:block;}
+        .question-answer ul,.question-answer ol{margin:0;padding-left:1.4rem;}
+        .question-answer li{margin-bottom:0.4rem;}
+        .question-answer p{margin-bottom:0.5rem;}
+        .question-answer p:last-child{margin-bottom:0;}
+        h4{font-size:1.0rem;font-weight:700;color:var(--secondary);margin:0.85rem 0 0.3rem;padding-bottom:0.18rem;border-bottom:1px solid rgba(67,97,238,.2);}
+        h5{font-size:0.95rem;font-weight:700;color:var(--primary);margin:0.65rem 0 0.25rem;}
+        h6{font-size:0.88rem;font-weight:600;color:#555;margin:0.5rem 0 0.2rem;}
+        .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0.65rem 0;border-radius:6px;}
+        table{width:100%;border-collapse:collapse;font-size:0.88rem;min-width:260px;}
+        thead tr{background:rgba(67,97,238,.13);}
+        th{padding:0.45rem 0.6rem;text-align:left;font-weight:700;color:var(--primary);border:1px solid rgba(67,97,238,.25);white-space:nowrap;}
+        td{padding:0.42rem 0.6rem;border:1px solid rgba(67,97,238,.15);vertical-align:top;}
+        tr:nth-child(even) td{background:rgba(67,97,238,.04);}
+        pre{background:#f4f6ff;border-radius:6px;padding:0.7rem 0.85rem;overflow-x:auto;margin:0.55rem 0;border:1px solid rgba(67,97,238,.14);font-size:0.85rem;}
+        code{font-family:Menlo,Monaco,Consolas,monospace;font-size:0.87em;background:rgba(67,97,238,.09);padding:1px 5px;border-radius:3px;}
+        pre code{background:transparent;padding:0;font-size:inherit;}
+        blockquote{border-left:3px solid var(--primary-light);margin:0.55rem 0;padding:0.45rem 0.85rem;background:rgba(67,97,238,.05);border-radius:0 6px 6px 0;color:#444;}
+        blockquote p{margin:0;}
+        mark{background:rgba(255,214,0,.45);color:inherit;padding:0 3px;border-radius:3px;font-style:normal;}
+        @media(max-width:600px){h1{font-size:1.3rem;}.stat-label{font-size:0.62rem;}.stat-value{font-size:1rem;}.stat-item{padding:0.3rem 0.1rem;}.question{font-size:1.05rem;}.btn{padding:0.5rem 0.55rem;font-size:0.82rem;}.controls{flex-wrap:wrap;}.controls .btn{flex:1 1 calc(50% - 0.1rem);min-width:0;}.r-icon{font-size:.95rem;}.r-text{font-size:.75rem;}.r-hint{font-size:.6rem;}th,td{padding:0.35rem 0.4rem;font-size:0.82rem;}.modal-search-row{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>CC 點動作驗證</h1>
+    <div class="stats">
+        <div class="stat-item"><div class="stat-label">總題數</div><div id="totalCount" class="stat-value">0</div></div>
+        <div class="stat-item"><div class="stat-label">新卡片</div><div id="newCount" class="stat-value sv-new">0</div></div>
+        <div class="stat-item"><div class="stat-label">今日到期</div><div id="dueCount" class="stat-value sv-due">0</div></div>
+        <div class="stat-item"><div class="stat-label">已掌握</div><div id="mastCount" class="stat-value sv-mast">0</div></div>
+    </div>
+    <div class="prog-wrap"><div id="progBar" class="prog-bar"></div></div>
+    <div class="filter-row">
+        <input type="text" id="filterInput" class="filter-input" placeholder="Regex 篩選題目（例如 ^什麼 | keyword）…">
+        <button id="filterBtn" class="btn">篩選</button>
+        <button id="clearFilterBtn" class="btn btn-sec">清除篩選</button>
+    </div>
+    <div class="mode-row">
+        <button id="modeRndBtn" class="mode-btn">🎲 隨機練習</button>
+        <button id="modeSrsBtn" class="mode-btn active">📅 間隔複習（SM-2）</button>
+    </div>
+    <div class="controls">
+        <button id="resetBtn" class="btn">重設進度</button>
+        <button id="showAllBtn" class="btn btn-sec">查看全部題目</button>
+        <button id="showDueBtn" class="btn btn-sec">查看到期題目</button>
+        <button id="showMastBtn" class="btn btn-sec">查看已掌握</button>
+    </div>
+    <div class="question-box">
+        <div id="srsInfo" class="srs-info"></div>
+        <div id="question" class="question"></div>
+        <div id="showAnsWrap" class="show-ans-wrap" style="display:none">
+            <button id="showAnsBtn" class="btn">顯示答案</button>
+        </div>
+        <div id="answerContent" class="answer-content"></div>
+        <div id="ratingWrap" class="rating-wrap">
+            <div class="rating-label"><strong>評估此題難度</strong> -- 系統將依 SM-2 間隔重複算法安排下次複習時間</div>
+            <div class="rating-row">
+                <button class="r-btn r-again" data-q="1"><span class="r-icon">🔴</span><span class="r-text">再學</span><span class="r-hint" id="hint-1">重學</span></button>
+                <button class="r-btn r-hard"  data-q="3"><span class="r-icon">🟠</span><span class="r-text">困難</span><span class="r-hint" id="hint-3">--</span></button>
+                <button class="r-btn r-good"  data-q="4"><span class="r-icon">🟢</span><span class="r-text">良好</span><span class="r-hint" id="hint-4">--</span></button>
+                <button class="r-btn r-easy"  data-q="5"><span class="r-icon">⭐</span><span class="r-text">容易</span><span class="r-hint" id="hint-5">--</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="resetModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">確定要重設？</div>
+        <p style="text-align:center;margin-bottom:.5rem">這將清除所有 SM-2 學習進度（間隔、複習次數、難度係數），此操作<strong>無法撤銷</strong>。</p>
+        <div class="modal-buttons"><button id="confirmResetBtn" class="btn btn-err">確定重設</button><button id="cancelResetBtn" class="btn">取消</button></div>
+    </div>
+</div>
+
+<div id="allModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">全部題目</div>
+        <div class="modal-search-row">
+            <div class="modal-search-group"><div class="modal-search-label">🔍 題目關鍵字</div><input type="text" id="allQSearch" class="modal-search" placeholder="搜尋題目…"></div>
+            <div class="modal-search-group"><div class="modal-search-label">🔍 答案關鍵字</div><input type="text" id="allASearch" class="modal-search" placeholder="搜尋答案…"></div>
+        </div>
+        <div id="allCount2" class="q-count ca"></div>
+        <div id="allList" class="question-list"></div>
+        <div class="modal-buttons"><button id="closeAllBtn" class="btn">關閉</button></div>
+    </div>
+</div>
+
+<div id="dueModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">今日待學題目</div>
+        <div class="modal-search-row">
+            <div class="modal-search-group"><div class="modal-search-label">🔍 題目關鍵字</div><input type="text" id="dueQSearch" class="modal-search" placeholder="搜尋題目…"></div>
+            <div class="modal-search-group"><div class="modal-search-label">🔍 答案關鍵字</div><input type="text" id="dueASearch" class="modal-search" placeholder="搜尋答案…"></div>
+        </div>
+        <div id="dueCount2" class="q-count cd"></div>
+        <div id="dueList" class="question-list"></div>
+        <div class="modal-buttons"><button id="closeDueBtn" class="btn">關閉</button></div>
+    </div>
+</div>
+
+<div id="mastModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">已掌握題目</div>
+        <div class="modal-search-row">
+            <div class="modal-search-group"><div class="modal-search-label">🔍 題目關鍵字</div><input type="text" id="mastQSearch" class="modal-search" placeholder="搜尋題目…"></div>
+            <div class="modal-search-group"><div class="modal-search-label">🔍 答案關鍵字</div><input type="text" id="mastASearch" class="modal-search" placeholder="搜尋答案…"></div>
+        </div>
+        <div id="mastCount2" class="q-count cm"></div>
+        <div id="mastList" class="question-list"></div>
+        <div class="modal-buttons"><button id="closeMastBtn" class="btn">關閉</button></div>
+    </div>
+</div>
+
+<script>
+var qaData=[
+  {
+    "question": "an-cp1",
+    "answer": "\u003Cp\u003E头部1的动作检查是将你的手指放在患者面前两个手的距离\u003Cbr /\u003E要求患者眼睛跟着你的手指向下看\u003Cbr /\u003E检查眼球活动是否顺畅\u003Cbr /\u003E可以做两次\u003Cbr /\u003E确保眼球向上 向下活动正常\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（向下追視）：我在患者面前、約兩手距離處移動手指，請患者眼睛往下追視。需要確認瞳孔移動是否平滑、無異常震顫；我會重複至少兩次，檢查下行與回到上方的動作是否順暢。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110518-move-an-cp1.jpeg\" alt=\"move-an-cp1\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-cp1",
+    "answer": "\u003Cp\u003E要求患者跟着手指向上看\u003Cbr /\u003E检查眼球是否有震颤 有抖动\u003Cbr /\u003E两次\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（向上追視）：請患者眼睛往上追視，同樣觀察是否有震顫、抽動或眼瞼痙攣；此測試也重複兩次。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110528-move-re-cp1.jpeg\" alt=\"move-re-cp1\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cp1 / la-cp1",
+    "answer": "\u003Cp\u003E向外和向内-头部1\u003Cbr /\u003E做一个半月形运动 左右各一次\u003Cbr /\u003E检查右边\u003Cbr /\u003E向外-头部1\u003Cbr /\u003E左侧的向内-头部1\u003Cbr /\u003E看眼睛的情况\u003Cbr /\u003E这样检查的向外-头1左侧和向内-头1右侧\u003Cbr /\u003E另一边同理\u003Cbr /\u003E检查患者的眼球活动是否正常\u003Cbr /\u003E尽量往远端活动手指\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral／Medial（半月弧追視）：我以半月形軌跡帶動手指至右側與左側，檢查右側外轉（latero）與左側內轉（medio）的追視反應。根據患者注視方向，我在本次檢查中先做左外轉與右內轉，並於相反側重複檢查，觀察雙眼同步性及可追視的最遠範圍。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110538-move-me-la-cp1a.jpeg\" alt=\"move-me-la-cp1a\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260531110556-move-me-la-cp1b.jpeg\" alt=\"move-me-la-cp1b\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-cp1",
+    "answer": "\u003Cp\u003E向斜上方\u003Cbr /\u003E这里检查的是外旋-头部1左侧\u003Cbr /\u003E右侧同理\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EExtra：手指往高位並偏側移動，我先檢查左側的額外範圍（extra）並回位，之後同樣檢查右側。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120611-move-er-cp1a.jpeg\" alt=\"move-er-cp1a\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120630-move-er-cp1b.jpeg\" alt=\"move-er-cp1b\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cp1",
+    "answer": "\u003Cp\u003E患者随着你的手指向下看\u003Cbr /\u003E然后回来\u003Cbr /\u003E如果你想的话\u003Cbr /\u003E你可以将手指靠近鼻尖同时检查双侧\u003Cbr /\u003E然后手指拿回 检查双侧的协同性\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra：患者向下追視後回到中線，必要時我會將手指靠近鼻樑再往外移，以同時檢查雙眼的同步性。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120643-move-ir-cp1a.jpeg\" alt=\"move-ir-cp1a\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120655-move-ir-cp1b.jpeg\" alt=\"move-ir-cp1b\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-cp2",
+    "answer": "\u003Cp\u003E向前-头部2是要求患者做一个微笑动作\u003Cbr /\u003E这样激活所有的肌肉 观察对称性\u003Cbr /\u003E看有没有任何抖动 肌肉抽筋\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（深笑）：我請患者做「深笑」，以活化顏面肌群，觀察對稱性、是否有抖動或抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100605-move-cp2-an.jpeg\" alt=\"move-cp2-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-cp2",
+    "answer": "\u003Cp\u003E让患者抬起眉毛\u003Cbr /\u003E观察抬头纹和额肌的活动情况\u003Cbr /\u003E没有皱纹的地方是病理性的\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（抬眉與皺額）：請患者上提眉毛並做額肌的皺摺；我檢查是否為水平且對稱。較平坦的區域可能提示病理。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100611-move-cp2-re.jpeg\" alt=\"move-cp2-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cp2",
+    "answer": "\u003Cp\u003E将耳朵向后挤压\u003Cbr /\u003E把手放在这里 向后推耳朵\u003Cbr /\u003E看耳周肌群的紧张程度 以及有无疼痛、尖锐疼痛、僵硬感\u003Cbr /\u003E查看末端感觉 应该是左右对称的\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra（耳向後擠壓）：我以手握住患者耳朵，向後推以測試前耳肌（auricularis anterior）是否平順自由，並詢問是否有疼痛、刺痛或僵硬；同時檢查終末感（end feel）且比較兩側是否對稱。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100633-move-cp2-ir.jpeg\" alt=\"move-cp2-ir\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-cp2",
+    "answer": "\u003Cp\u003E同样的原理检查耳上肌 所以手放在耳朵上面\u003Cbr /\u003E把耳朵向下压\u003Cbr /\u003E检查对称性 以及有无疼痛、尖锐疼痛和僵硬\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EExtra（耳向下壓）：我在耳朵上緣施力，將整個耳朵往下推以測試上耳肌（auricularis superior），檢查終末感、是否有不對稱或疼痛，留意患者回報的銳痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100638-move-cp2-er.jpeg\" alt=\"move-cp2-er\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-cp2",
+    "answer": "\u003Cp\u003E牵拉下颌\u003Cbr /\u003E做一个被动的挤压下颌关节\u003Cbr /\u003E这是左侧一次做一遍\u003Cbr /\u003E然后做另一侧\u003Cbr /\u003E末端感觉需要是一样的\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（顳肌伸展）：我以被動方式擠壓下顎，測試單側顳肌伸展，接著換側，比較終末感是否一致且平順。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100643-move-cp2-la.jpeg\" alt=\"move-cp2-la\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100647-move-cp2-la2.jpeg\" alt=\"move-cp2-la2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cp2",
+    "answer": "\u003Cp\u003E向内没有动作 因为是一条感知链\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial：此為感知中線（line of perception），不進行動作。\u003C/li\u003E\u003Cli\u003E\u003C/li\u003E\u003C/ul\u003E"
+  },
+  {
+    "question": "an-cp3",
+    "answer": "\u003Cp\u003E让患者张嘴抗组\u003Cbr /\u003E把手放在下颌下面 让患者推你\u003Cbr /\u003E检查有无抽筋、疼痛等\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（張口抗阻）：我在下顎下方托住，請患者張口並對抗我的阻力，觀察是否出現抽筋或痙攣。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100606-move-cp3-an.jpeg\" alt=\"move-cp3-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-cp3",
+    "answer": "\u003Cp\u003E让患者看屋顶\u003Cbr /\u003E颈部后伸\u003Cbr /\u003E可以轻柔的按压一下额头区域\u003Cbr /\u003E看一下枕骨区域有无尖锐疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（頸伸看天花板）：我請患者仰頭伸展頸部，並可在額部施以輕微推力，同時檢查枕部是否出現銳痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100610-move-cp3-re.jpeg\" alt=\"move-cp3-re\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100616-move-cp3-re.jpeg\" alt=\"move-cp3-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cp3",
+    "answer": "\u003Cp\u003E看下颌关节在抗组下能否回到中立位\u003Cbr /\u003E所以要求患者\u003Cbr /\u003E让他将下颌向一侧活动\u003Cbr /\u003E然后让患者对抗你的手\u003Cbr /\u003E检查是否有疼痛 抽筋 以及无力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra（下顎回中線抗阻）：我請患者將下顎偏向一側，我施加阻力，讓患者往回推以評估疼痛、抽筋或無力；雙側皆需測試。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100620-move-cp3-ir.jpeg\" alt=\"move-cp3-ir\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-cp3",
+    "answer": "\u003Cp\u003E我们想要牵拉他的耳肌区域\u003Cbr /\u003E把耳朵向前活动\u003Cbr /\u003E检查双侧是否对称 是否有僵硬感 是否疼痛\u003Cbr /\u003E检查一侧 然后再检查另一侧\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EExtra（後耳肌伸展）：我向前推動耳朵，兩側都要檢查，觀察終末感是否引發疼痛、僵硬或兩側差異。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100628-move-cp3-er.jpeg\" alt=\"move-cp3-er\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-cp3",
+    "answer": "\u003Cp\u003E双侧牵拉颞肌\u003Cbr /\u003E让患者放三个指关节在嘴里\u003Cbr /\u003E观察患者是否有疼痛或无法张口的情况\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（雙側顳肌伸展）：我請患者以三個指節寬度嘗試置入口中，觀察是否能達成、是否有疼痛或不能完成。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100638-move-cp3-la.jpeg\" alt=\"move-cp3-la\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cp3",
+    "answer": "\u003Cp\u003E向内是一条感知链 所以没有动作\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial：為感知中線，不進行動作。\u003C/li\u003E\u003C/ul\u003E"
+  },
+  {
+    "question": "an-cl",
+    "answer": "\u003Cp\u003E让患者的头对抗你的手\u003Cbr /\u003E有无任何疼痛、无力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（前屈抗阻）：我以手掌作為阻力，請患者頸部前推，檢查力量、疼痛或無力。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100636-move-cl-an.jpeg\" alt=\"move-cl-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-cl",
+    "answer": "\u003Cp\u003E让患者向后抗组 看有无疼痛无力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（後伸抗阻）：請患者向後推頸部，觀察阻力、無力或疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100640-move-cl-re.jpeg\" alt=\"move-cl-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cl",
+    "answer": "\u003Cp\u003E可以从刚才的姿势开始 手放在颧骨上\u003Cbr /\u003E患者抗阻回到中立位 检查疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra（鎖定顴骨後推抗阻）：在上述姿勢下，我鎖定顴骨，讓患者往後推，檢查是否出現無力或疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100600-move-cl-ir.jpeg\" alt=\"move-cl-ir\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100607-move-cl-ir2.jpeg\" alt=\"move-cl-ir2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-cl",
+    "answer": "\u003Cp\u003E让患者转头看向一侧\u003Cbr /\u003E用手施加一些压力 看患者有无疼痛以及检查末端感觉\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EExtra（旋轉與端穩測試）：我請患者將頸部旋轉至一側，可用手托住枕骨並在顴骨處提供推力，檢查終末感、疼痛或受限。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100648-move-cl-er.jpeg\" alt=\"move-cl-er\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100655-move-cl-er2.jpeg\" alt=\"move-cl-er2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-cl",
+    "answer": "\u003Cp\u003E要求患者头部侧屈\u003Cbr /\u003E然后回到中立位\u003Cbr /\u003E可以轻微的牵拉一下\u003Cbr /\u003E查看末端感觉以及有无疼痛\u003Cbr /\u003E对侧同理\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（側彎）：我請患者頸部向一側側彎、目光維持正前方，若無痛，我會輕壓局部以檢查終末感或是否誘發疼痛；需雙側重複。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100612-move-cl-la.jpeg\" alt=\"move-cl-la\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100616-move-cl-la2.jpeg\" alt=\"move-cl-la2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cl",
+    "answer": "\u003Cp\u003E是一条感知链没有动作\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial：為中線感知，不進行動作。\u003C/li\u003E\u003C/ul\u003E"
+  },
+  {
+    "question": "an-th",
+    "answer": "\u003Cp\u003E让患者做一个类卷腹\u003Cbr /\u003E手放在胸部\u003Cbr /\u003E做一个小卷腹抗阻\u003Cbr /\u003E也可以仰卧位做\u003Cbr /\u003E查看是否有疼痛 抽筋 无力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（小型仰臥起坐）：我請患者雙手放在胸前，進行小幅度仰臥起坐並加上阻力（可在仰臥位），觀察是否有抽筋、無力或感覺異常。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100635-move-th-an.jpeg\" alt=\"move-th-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-th",
+    "answer": "\u003Cp\u003E降低胸椎曲度 让患者伸直背部\u003Cbr /\u003E让患者碰你的手 可能会局部有抽筋\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（降低後凸）：我請患者盡量向上挺，收縮脊旁肌群，患者常在該處出現抽筋感。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100639-move-th-re.jpeg\" alt=\"move-th-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-th",
+    "answer": "\u003Cp\u003E患者双手放在头后\u003Cbr /\u003E让患者顶住你的手\u003Cbr /\u003E看患者有无疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra（雙手置頭後、上半身固定）：我固定患者上半身，請其向手部方向推以檢查肋骨層面的抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100654-move-th-ir.jpeg\" alt=\"move-th-ir\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100600-move-th-ir.jpeg\" alt=\"move-th-ir\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-th",
+    "answer": "\u003Cp\u003E去挤压患者的前锯肌\u003Cbr /\u003E可以提起患者的肩膀 挤压颈部根部\u003Cbr /\u003E患者或感觉尖锐疼痛\u003Cbr /\u003E在肩胛骨的上缘\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EExtra（上後鋸肌擠壓）：我協助抬肩並擠壓頸根部，患者會在肩胛上緣感到銳痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100645-move-th-er.jpeg\" alt=\"move-th-er\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100650-move-th-er.jpeg\" alt=\"move-th-er\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-th",
+    "answer": "\u003Cp\u003E让患者尽量伸出手臂\u003Cbr /\u003E检查肘关节是否跨过中线\u003Cbr /\u003E这意味着他可以拉伸髂肋肌\u003Cbr /\u003E所以这是向外-胸部的正常功能\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（手臂外移最大化）：請患者將手臂向外移動至最大，觀察肘部是否越過身體中線（肚臍）；若能達成，表示可拉伸髂肋肌，視為外側胸廓之適應。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601100605-move-th-la.jpeg\" alt=\"move-th-la\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-th",
+    "answer": "\u003Cp\u003E向内仍然没有动作因为是感知链\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial：為中線感知，不進行動作。\u003C/li\u003E\u003C/ul\u003E"
+  },
+  {
+    "question": "an-lu",
+    "answer": "\u003Cp\u003E让患者向后伸 观察是否单侧\u003Cbr /\u003E后伸过度 双侧是否对称 以及有无疼痛\u003Cbr /\u003E双侧下肢是否站立对称\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（後伸）：我檢查患者在後伸時是否偏向單側、是否疼痛、對稱性是否良好。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120630-move-lu-an.jpeg\" alt=\"move-lu-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-lu",
+    "answer": "\u003Cp\u003E让患者尽量前屈\u003Cbr /\u003E看两侧张力是否一致\u003Cbr /\u003E在下背部区域 以及检查有无疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（前屈）：我請患者前彎至最大，觀察下背左右是否對稱以及是否有疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120634-move-lu-re.jpeg\" alt=\"move-lu-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-lu / er-lu",
+    "answer": "\u003Cp\u003E让患者转身 你的手固定住患者的骨盆\u003Cbr /\u003E让患者向后看\u003Cbr /\u003E你可以轻微的挤压一下 看有无疼痛\u003C/p\u003E\u003Cp\u003E内旋的检查\u003Cbr /\u003E让患者抗阻向中线转身\u003Cbr /\u003E看患者有无疼痛和无力\u003Cbr /\u003E对侧同理\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra／Extra（軀幹扭轉）：我以雙手固定胸前，固定骨盆後請患者做軀幹扭轉並「回頭看身後」，我可輕壓以檢查是否有特異性疼痛；在 Intra 測試中，我固定肩部，讓患者以阻力方式回到中線，評估疼痛、無力，並於對側重複。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120639-move-lu-ir-er1.jpeg\" alt=\"move-lu-ir-er1\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120648-move-lu-ir-er2.jpeg\" alt=\"move-lu-ir-er2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120655-move-lu-ir-er3.jpeg\" alt=\"move-lu-ir-er3\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120602-move-lu-ir-er4.jpeg\" alt=\"move-lu-ir-er4\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120613-move-lu-ir-er5.jpeg\" alt=\"move-lu-ir-er5\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-lu",
+    "answer": "\u003Cp\u003E十分简单 让患者向一边侧屈\u003Cbr /\u003E查看患者的手有无越过腓骨\u003Cbr /\u003E一侧 然后检查对侧\u003Cbr /\u003E这个动作也应该是双侧对称的\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（側彎滑手）：我請患者單手沿身側滑下，檢查手指是否可觸及或越過腓骨位置；雙側需對稱。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120619-move-lu-la.jpeg\" alt=\"move-lu-la\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-lu",
+    "answer": "\u003Cp\u003E腰部向内也没有动作 向内是一条感知链\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial：為中線感知，不進行動作。\u003C/li\u003E\u003C/ul\u003E"
+  },
+  {
+    "question": "an-pv",
+    "answer": "\u003Cp\u003E患者一只腿向前一只在后\u003Cbr /\u003E左腳在後 现在检查的左侧 患者后伸\u003Cbr /\u003E观察患者有无在腹股沟区域出现疼痛\u003Cbr /\u003E左侧 对侧同理\u003Cbr /\u003E右腳向後 这里检查的是右边 有无牵拉感 以及疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（弓箭步前後擺）：我讓一腿前、一腿後，檢查左側時，患者往後移並回報左側腹股溝是否有拉扯或緊繃；之後檢查右側，同樣觀察張力或牽拉感。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E以下圖片為檢查左邊\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120652-move-pv-an.jpeg\" alt=\"move-pv-an\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120656-move-pv-an.jpeg\" alt=\"move-pv-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-pv",
+    "answer": "\u003Cp\u003E让患者握拳放在臀部\u003Cbr /\u003E把骨盆往前推\u003Cbr /\u003E检查L5-S1有无疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（骨盆前推）：患者以雙手置於髂後上棘，向前推骨盆；我檢查 L5-S1 是否有疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120602-move-pv-re.jpeg\" alt=\"move-pv-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-pv / er-pv",
+    "answer": "\u003Cp\u003E让患者固定肩膀\u003Cbr /\u003E双手放在你肩上\u003Cbr /\u003E让患者旋转骨盆 尽量大的角度\u003Cbr /\u003E所以躯干保持不动\u003Cbr /\u003E你可以用手提示他\u003Cbr /\u003E患者可能感觉有抽筋\u003C/p\u003E\u003Cp\u003E内旋-骨盆 我们先稳定住患者的骨盆\u003Cbr /\u003E然后让患者抗阻回到中立位\u003Cbr /\u003E检查有无疼痛和无力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra／Extra（骨盆扭轉）：我固定患者肩部避免軀幹代償，請其盡量扭轉骨盆；若患者於骨盆區域主訴不適，我記錄於相應分類。在 Intra 測試中，我穩定骨盆並請患者以阻力向後回位，觀察無力、疼痛等症狀。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120607-move-pv-er.jpeg\" alt=\"move-pv-er\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120622-move-pv-er2.jpeg\" alt=\"move-pv-er2\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120631-move-pv-ir.jpeg\" alt=\"move-pv-ir\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120636-move-pv-ir2.jpeg\" alt=\"move-pv-ir2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-pv",
+    "answer": "\u003Cp\u003E一样先固定患者的躯体\u003Cbr /\u003E患者的手放在你的肩膀上\u003Cbr /\u003E然后让患者把腿向外侧抬起\u003Cbr /\u003E保持五秒\u003Cbr /\u003E患者可能感觉臀肌有抽筋\u003Cbr /\u003E因为该肌筋膜单元的异常\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（單側抬腿保持）：我讓患者將手臂支撐在我肩上以增加穩定，單腿向外抬起如同 Trendelenburg，維持 5 秒；由於筋膜單元活化，患者常在臀部出現類抽筋感。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120641-move-pv-la.jpeg\" alt=\"move-pv-la\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-pv",
+    "answer": "\u003Cp\u003E没有向内运动 因为向内是一条感知链\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial：為中線感知，不進行動作。\u003C/li\u003E\u003C/ul\u003E"
+  },
+  {
+    "question": "an-cx",
+    "answer": "\u003Cp\u003E让患者垂直向前抬腿\u003Cbr /\u003E向前方 去激活该单元\u003Cbr /\u003E双手可以放在你肩上 以保持平衡\u003Cbr /\u003E保持腿部伸直 检查有无疼痛和抽筋等\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（直膝前抬）：患者直膝前抬腿並可扶住我或桌面以平衡；我觀察是否有抽筋、牽拉或疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120606-move-cx-an.jpeg\" alt=\"move-cx-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-cx",
+    "answer": "\u003Cp\u003E让患者双手放在床面或是你肩上腿向后伸直\u003Cbr /\u003E患者可能会感觉臀部有抽筋\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（伸髖）：患者於穩定支撐下做髖伸展，膝保持伸直；常在臀部出現抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120610-move-cx-re.jpeg\" alt=\"move-cx-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cx",
+    "answer": "\u003Cp\u003E让患者挤压膝盖这个部位\u003Cbr /\u003E患者可能会在耻骨区域抱怨疼痛\u003Cbr /\u003E或是大腿内侧\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial（擠膝）：我以手作為阻力，請患者將雙膝向中線擠壓；患者可能在恥骨或大腿內側出現疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120631-move-cx-me.jpeg\" alt=\"move-cx-me\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-cx",
+    "answer": "\u003Cp\u003E是一个弹动的侧屈 让患者首先稳定自己\u003Cbr /\u003E腿部垂直向外踢\u003Cbr /\u003E双手放在你肩上\u003Cbr /\u003E这样患者可以激活阔筋膜张肌\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（側向彈性弓箭步）：患者扶穩後，將腿向外側拉出，足尖朝前、足背上抬，以強化闊筋膜張肌；若於該處出現抽筋即為陽性反應。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120626-move-cx-la.jpeg\" alt=\"move-cx-la\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cx",
+    "answer": "\u003Cp\u003E患者抬起膝盖\u003Cbr /\u003E被动做一个髋部内旋\u003Cbr /\u003E检查一下末端感觉\u003Cbr /\u003E对侧同理\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra（內旋）：患者屈膝抬起後，我以被動方式內旋下肢，於雙側檢查終末感。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120621-move-cx-ir.jpeg\" alt=\"move-cx-ir\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-cx",
+    "answer": "\u003Cp\u003E外旋-髋部 做一个髋关节的外旋动作\u003Cbr /\u003E将膝关节向外\u003Cbr /\u003E检查有无疼痛以及关节的活动度如何\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EExtra（外旋）：我引導膝蓋向外，檢查外旋時是否出現疼痛並測量活動度。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120616-move-cx-er.jpeg\" alt=\"move-cx-er\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-ge",
+    "answer": "\u003Cp\u003E做一个弓箭步\u003Cbr /\u003E重量放在膝盖上\u003Cbr /\u003E然后回到中立位 查看有无疼痛或无力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（前跨弓箭步）：患者向前弓箭步、膝過腳尖後回到原位；我檢查疼痛、無力、抖動。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120651-move-ge-an.jpeg\" alt=\"move-ge-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-ge",
+    "answer": "\u003Cp\u003E让患者弯曲膝盖\u003Cbr /\u003E用力向后弯曲 患者可能会感觉胭绳肌抽筋\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（屈膝貼臀）：患者屈膝讓腳跟貼近臀部並維持 5 秒；常引發大腿後側（腘繩肌）抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120654-move-ge-re.jpeg\" alt=\"move-ge-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-ge / er-ge",
+    "answer": "\u003Cp\u003E用一个深蹲的动作可以检查膝部的水平面情况\u003Cbr /\u003E患者感觉疼痛\u003Cbr /\u003E外侧膝盖 是外旋-膝部\u003Cbr /\u003E内侧疼痛是内旋-膝部\u003Cbr /\u003E然后让患者将重量放在一侧 另一侧\u003Cbr /\u003E检查是否有特殊的疼痛或无力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra／Extra（深蹲水平面評估）：透過完整深蹲，我能在水平面評估膝部問題；若疼痛在膝外側為 Extra，內側為 Intra。我亦可推動患者重心至一側，觀察是否出現特定疼痛或無力。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120600-move-ge-ir-er.jpeg\" alt=\"move-ge-ir-er\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-ge / la-ge",
+    "answer": "\u003Cp\u003E让患者抗阻进行内收用你的手顶住患者的小腿\u003Cbr /\u003E患者可能感觉膝盖内侧有疼痛\u003Cbr /\u003E然后让患者做相反的方向的动作 向外侧推\u003Cbr /\u003E患者可能会感觉膝盖外侧痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial（內側加壓外展）：我穩定患者，請其做外展並對抗我的阻力，通常會在膝內側邊緣出現疼痛。\u003C/li\u003E\u003Cli\u003ELateral（外側加壓內推）：我在踝部提供阻力，請患者向外側推，患者會在膝外側的張力處感到疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120605-move-ge-me.jpeg\" alt=\"move-ge-me\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120610-move-ge-la.jpeg\" alt=\"move-ge-la\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-ta",
+    "answer": "\u003Cp\u003E向前-踝部是让患者用脚跟走路\u003Cbr /\u003E尽量保持同一直线\u003Cbr /\u003E患者做了一个背屈的动作 可能在小腿处发生疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（足跟行走）：我請患者以足跟走路、近直線前進；若背屈不足或足跟痛，測試呈現異常。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120620-move-ta-an.jpeg\" alt=\"move-ta-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-ta",
+    "answer": "\u003Cp\u003E向后-踝部 用脚尖走路\u003Cbr /\u003E询问患者是否有拉扯感 疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（足尖行走）：患者以足尖行走，我詢問是否有牽拉、緊繃或其他不適。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120624-move-ta-re.jpeg\" alt=\"move-ta-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-ta / er-ta",
+    "answer": "\u003Cp\u003E内旋可以让患者提起脚趾\u003Cbr /\u003E脚跟踩地 脚尖顶你的手\u003Cbr /\u003E检查踝关节是否有疼痛\u003Cbr /\u003E同理向外侧\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra（足趾上舉、足跟承重向內推）：患者抬起足趾、足跟著地，向我手掌內推；我檢查踝內側是否有疼痛或牽拉。\u003C/li\u003E\u003Cli\u003EExtra（向外推）：同姿勢下向外推，觀察踝外側牽拉或緊繃。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120631-move-ta-ir.jpeg\" alt=\"move-ta-ir\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120635-move-ta-er.jpeg\" alt=\"move-ta-er\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-ta / la-ta",
+    "answer": "\u003Cp\u003E向内-向外 踝部 向外用足部外侧缘行走\u003Cbr /\u003E向内用足部内侧缘行走\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial／Lateral（邊緣行走）：Medial 為沿足內緣行走；Lateral 為沿足外緣行走。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120639-move-ta-la.jpeg\" alt=\"move-ta-la\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601120646-move-ta-me.jpeg\" alt=\"move-ta-me\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-pe",
+    "answer": "\u003Cp\u003E让患者用大脚趾抗阻\u003Cbr /\u003E检查疼痛 无力 抽筋等症状\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（拇趾背屈抗阻）：我請患者拇趾背屈並給予阻力，檢查是否有無力、疼痛或抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010639-move-pe-an.jpeg\" alt=\"move-pe-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-pe",
+    "answer": "\u003Cp\u003E让患者左腳往后迈半步\u003Cbr /\u003E我们检查的是左脚\u003Cbr /\u003E患者抬起脚跟 将重量压在第五跖骨上\u003Cbr /\u003E患者可能感觉小指有尖锐疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（半步後退負重於第五跖骨）：檢查左足時，我請患者後退半步、抬起足跟，讓重量落在第五跖骨；患者在趾短屈肌群（adductor digitorum 指示的區域）常有銳痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010643-move-pe-re.jpeg\" alt=\"move-pe-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-pe",
+    "answer": "\u003Cp\u003E让患者做一个大脚趾外展 或者用你的手挤压大脚趾\u003Cbr /\u003E患者可能感觉大脚趾处疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra（拇趾外展或擠壓）：我請患者做拇趾外展，或以手擠壓拇趾；患者於拇趾外展肌（abductor hallucis）出現抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010653-move-pe-ir.jpeg\" alt=\"move-pe-ir\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-pe",
+    "answer": "\u003Cp\u003E让患者抬起所有的脚趾抗阻\u003Cbr /\u003E可能在脚背感觉疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EExtra（全趾上舉抗阻）：我請患者所有足趾上舉並施加阻力，患者在足背（epididymis 之名稱於此處指足背隆起部位）可能出現抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010649-move-pe-er.jpeg\" alt=\"move-pe-er\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-pe",
+    "answer": "\u003Cp\u003E让患者做一个完全的脚趾屈曲\u003Cbr /\u003E保持五秒患者可能会感觉脚掌抽筋\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial（全趾屈曲保持）：我請患者全趾屈曲並維持 5 秒；患者常在足底（plantar ridge）出現抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010602-move-pe-me.jpeg\" alt=\"move-pe-me\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-pe",
+    "answer": "\u003Cp\u003E让患者抬起脚掌\u003Cbr /\u003E用手挤压患者的脚掌\u003Cbr /\u003E检查足弓前半部分有无疼痛或是抽筋\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（足弓前段擠壓）：我請患者放鬆，擠壓足部以檢查終末感；若在足弓前段出現銳痛即為陽性。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010658-move-pe-la.jpeg\" alt=\"move-pe-la\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-sc",
+    "answer": "\u003Cp\u003E让患者肩膀向前\u003Cbr /\u003E你用手顶住患者的背部\u003Cbr /\u003E检查有无无力或疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（肩向前推）：我請患者將肩向前帶，並在肩胛中段停止背部，檢查力量、無力與疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010629-move-sc-an.jpeg\" alt=\"move-sc-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-sc",
+    "answer": "\u003Cp\u003E让患者向后缩肩胛骨\u003Cbr /\u003E患者会感觉中间有紧张\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（肩胛後收）：患者盡力將肩胛骨靠攏並維持 5 秒；常在背部中段出現抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010633-move-sc-re.jpeg\" alt=\"move-sc-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-sc",
+    "answer": "\u003Cp\u003E让患者将手放在对侧的肩膀\u003Cbr /\u003E你可以用手轻微施加压力\u003Cbr /\u003E检查末端感觉\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra（對側上抬、肘靠頸）：我請患者以手臂穿越至對側，讓肘部盡量靠近頸部；我可輕壓鎖骨區並檢查終末感與疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010638-move-sc-ir.jpeg\" alt=\"move-sc-ir\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010642-move-sc-ir.jpeg\" alt=\"move-sc-ir\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-sc",
+    "answer": "\u003Cp\u003E让患者将手放在颈后\u003Cbr /\u003E挤压肘关节越过中线\u003Cbr /\u003E向中线推\u003Cbr /\u003E患者可能感觉背部的尖锐疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EExtra（手置頸後、肘向中線）：我讓患者手置於頸後，輕推肘靠近中線（非向後），患者背後可能感到銳痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010646-move-sc-er.jpeg\" alt=\"move-sc-er\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010651-move-sc-er2.jpeg\" alt=\"move-sc-er2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-sc",
+    "answer": "\u003Cp\u003E让患者手臂朝前\u003Cbr /\u003E抗阻对抗你的推力\u003Cbr /\u003E检查的是前锯肌\u003Cbr /\u003E另一手扶助患者的肩胛骨区域\u003Cbr /\u003E查看有无疼痛或是无力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial（手臂前推抗阻）：我請患者手臂前推、對抗我由肩胛下緣施加的向後推力，以檢測前鋸肌功能；觀察是否有無力或疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010603-move-sc-me.jpeg\" alt=\"move-sc-me\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010608-move-sc-me2.jpeg\" alt=\"move-sc-me2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-sc",
+    "answer": "\u003Cp\u003E要求患者将手臂举起150°\u003Cbr /\u003E激活斜方肌以及后斜角肌\u003Cbr /\u003E将手臂向下压\u003Cbr /\u003E患者抗阻\u003Cbr /\u003E如果患者此处有问题 可能会无力或是疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（手臂過 150 度）：我請患者將手臂抬過 150 度以活化斜方肌與後斜角肌；我向下推手臂，若患者無法維持，代表外側肩胛測試陽性，有無力或疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010658-move-sc-la.jpeg\" alt=\"move-sc-la\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-hu",
+    "answer": "\u003Cp\u003E患者屈肘向前推臂\u003Cbr /\u003E患者可能在肱骨节段感觉有疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（前拉抗阻）：我請患者彎肘，向前拉手臂，我在肱骨層面給阻力；若患者於肱骨處出現疼痛，記錄為 Ante。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010606-move-hu-an.jpeg\" alt=\"move-hu-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-hu",
+    "answer": "\u003Cp\u003E一样的动作向后抗阻\u003Cbr /\u003E查看是否有疼痛或无力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（後推抗阻）：我請患者向後推手臂，觀察肩部是否出現牽拉或疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010610-move-hu-re.jpeg\" alt=\"move-hu-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-hu",
+    "answer": "\u003Cp\u003E抗阻向内推\u003Cbr /\u003E检查是否有肩膀内侧的疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra（內推）：我請患者向內推，觀察肩內側區域疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010622-move-hu-ir.jpeg\" alt=\"move-hu-ir\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-hu",
+    "answer": "\u003Cp\u003E外旋让患者向外侧推\u003Cbr /\u003E查看三角肌周围是否有疼痛\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EExtra（外推）：我請患者向外推，常於三角肌區出現疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010617-move-hu-er.jpeg\" alt=\"move-hu-er\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-hu",
+    "answer": "\u003Cp\u003E让患者抬起手臂小于90°\u003Cbr /\u003E在患者的上臂抗阻 检查是否有疼痛\u003Cbr /\u003E对抗我们的阻力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（低於 90 度外展抗阻）：我在肘上方施加阻力，請患者維持手臂外展低於 90 度以對抗。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010627-move-hu-la.jpeg\" alt=\"move-hu-la\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-hu",
+    "answer": "\u003Cp\u003E抗阻点在上臂\u003Cbr /\u003E患者做内收的的动作检查是否有疼痛和无力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial（向下推抗阻）：我請患者向下推並給予阻力，檢查腋窩區的疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010633-move-hu-me.jpeg\" alt=\"move-hu-me\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-cu / re-cu",
+    "answer": "\u003Cp\u003E肘部可以同时检查 患者屈肘\u003Cbr /\u003E然后你用手轻微的将他的手推向肩膀\u003Cbr /\u003E检查肘部的前侧是否有疼痛\u003Cbr /\u003E如果有的话是向前-肘部阳性\u003Cbr /\u003E如果后侧疼痛则是向后-肘部\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte／Retro（屈肘同時測試）：我請患者屈肘，同時以手輕壓手掌靠近前臂；若疼痛在肘前方為 Ante，若在鷹嘴（olecranon）為 Retro。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010658-move-cu-an-re.jpeg\" alt=\"move-cu-an-re\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010604-move-cu-an-re2.jpeg\" alt=\"move-cu-an-re2\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-cu / er-cu",
+    "answer": "\u003Cp\u003E我们固定住手部\u003Cbr /\u003E让患者旋后检查外旋\u003Cbr /\u003E然后旋前 检查的是内旋\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra／Extra（旋前旋後）：我將手固定在中性位，請患者做旋後以檢查 Extra，做旋前以檢查 Intra。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010612-move-cu-er.jpeg\" alt=\"move-cu-er\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010617-move-cu-ir.jpeg\" alt=\"move-cu-ir\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-cu",
+    "answer": "\u003Cp\u003E手腕处抗阻内收让患者将手臂向内\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial（中線下推）：我在手腕中段施阻，請患者向下推。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010626-move-cu-me.jpeg\" alt=\"move-cu-me\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-cu",
+    "answer": "\u003Cp\u003E患者手臂外展 在手腕处抗阻\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（拇指朝上抗阻）：我請患者拇指朝上維持姿勢，在手腕處施加阻力，觀察肘外側疼痛。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010621-move-cu-la.jpeg\" alt=\"move-cu-la\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-ca",
+    "answer": "\u003Cp\u003E让患者抬起前臂 手掌朝上\u003Cbr /\u003E在第二掌骨这里施加压力\u003Cbr /\u003E这样的动作检查的是患者的屈肌\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte（掌心向上、第二跖骨壓力）：我請患者前伸手臂、掌心向上，於第二掌骨施壓以測試腕部叢（plexus del scarpis）；患者需做屈腕加橈偏。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010639-move-ca-an.jpeg\" alt=\"move-ca-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-ca",
+    "answer": "\u003Cp\u003E推患者的第五掌骨\u003Cbr /\u003E所以患者要做的是尺侧外展\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ERetro（第五掌骨壓力）：我於第五掌骨施壓，患者需做伸腕加尺偏。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010644-move-ca-re.jpeg\" alt=\"move-ca-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-ca",
+    "answer": "\u003Cp\u003E第二掌骨处抗阻\u003Cbr /\u003E患者要做一个桡侧外展 向外-腕部\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（純橈偏抗阻）：我在第二掌骨施阻，請患者做純橈偏。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010621-move-ca-la.jpeg\" alt=\"move-ca-la\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-ca",
+    "answer": "\u003Cp\u003E在第五掌骨处抗阻\u003Cbr /\u003E尺侧外展 向内-腕部\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial（純尺偏抗阻）：我在第五掌骨施阻，請患者做純尺偏。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010606-move-ca-me.jpeg\" alt=\"move-ca-me\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010616-move-ca-me.jpeg\" alt=\"move-ca-me\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-ca / er-ca",
+    "answer": "\u003Cp\u003E握住患者手部\u003Cbr /\u003E患者做一个旋后\u003Cbr /\u003E然后我们向外转 患者需要旋前抗阻\u003Cbr /\u003E然后我们向外转 患者需要旋前抗阻（检查的是内旋-腕部）\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra／Extra（滾動測試）：我握住患者手進行「向內滾動」，患者做旋後（即 Extra）；再「向外滾動」，患者做旋前（即 Intra）。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010652-move-ca-er.jpeg\" alt=\"move-ca-er\" /\u003E\u003C/p\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010600-move-ca-ir.jpeg\" alt=\"move-ca-ir\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "an-di",
+    "answer": "\u003Cp\u003E患者伸出手 抬起手至\u003Cbr /\u003E抬起大拇指 我们施加一个压力\u003Cbr /\u003E在大拇指的外侧 指甲边缘\u003Cbr /\u003E患者可能感觉大鱼际的抽筋\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte／Retro（全指外展抗阻）：我請患者所有手指外展並以小指作為阻力測試；患者於小魚際（hypothenar eminence）出現抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010636-move-di-an.jpeg\" alt=\"move-di-an\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "re-di",
+    "answer": "\u003Cp\u003E让患者张开五指\u003Cbr /\u003E让患者第五手指对抗阻力\u003Cbr /\u003E患者可能感觉小鱼际的抽筋\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EAnte／Retro（全指外展抗阻）：我請患者所有手指外展並以小指作為阻力測試；患者於小魚際（hypothenar eminence）出現抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010643-move-di-re.jpeg\" alt=\"move-di-re\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "ir-di",
+    "answer": "\u003Cp\u003E患者抗阻收起所有的手指\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EIntra（全指屈曲抗阻）：請患者全指屈曲並對抗阻力。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010649-move-di-ir.jpeg\" alt=\"move-di-ir\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "er-di",
+    "answer": "\u003Cp\u003E外旋抗阻伸开所有的手指\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EExtra（全指伸展抗阻）：請患者全指伸展並對抗阻力。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010656-move-di-er.jpeg\" alt=\"move-di-er\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "me-di",
+    "answer": "\u003Cp\u003E抗阻收起五指\u003C/p\u003E\u003Cul\u003E\u003Cli\u003EMedial（全指內收抗阻）：請患者所有手指做內收，我檢查力量。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010609-move-di-me.jpeg\" alt=\"move-di-me\" /\u003E\u003C/p\u003E"
+  },
+  {
+    "question": "la-di",
+    "answer": "\u003Cp\u003E患者抗阻张开五指 检查肌力\u003C/p\u003E\u003Cul\u003E\u003Cli\u003ELateral（拇指外側壓力）：我請患者伸直手、抬起拇指，於拇指外側（靠近指甲側）施加壓力；患者在魚際（thenar eminence）可能出現抽筋。\u003C/li\u003E\u003C/ul\u003E\u003Cp\u003E\u003Cimg src=\"https://github.com/piccture74/twpic/raw/master/images/20260601010603-move-di-la.jpeg\" alt=\"move-di-la\" /\u003E\u003C/p\u003E"
+  }
+];
+var srsData={};
+var filteredData=qaData.slice();
+var currentQ=null;
+var studyMode="srs";
+var answerVisible=false;
+var storageOk=false;
+var SRS_KEY="srs_"+"CC 點動作驗證".replace(/\W/g,"_").slice(0,40);
+
+function pad2(n){return n<10?"0"+n:""+n;}
+function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
+function addDays(s,n){var d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
+function ivText(days){
+  if(days<=0)return "重學";
+  if(days===1)return "1天";
+  if(days<7)return days+"天";
+  if(days<30)return Math.round(days/7)+"週";
+  return Math.round(days/30)+"月";
+}
+function stripHtml(s){return s.replace(/<[^>]*>/g,"");}
+function filterModalList(list,qSearch,aSearch){
+  return list.filter(function(item){
+    var qOk=!qSearch||item.question.toLowerCase().indexOf(qSearch.toLowerCase())!==-1;
+    var aOk=!aSearch||stripHtml(item.answer).toLowerCase().indexOf(aSearch.toLowerCase())!==-1;
+    return qOk&&aOk;
+  });
+}
+
+function chkStorage(){try{localStorage.setItem("_t","1");localStorage.removeItem("_t");storageOk=true;}catch(e){storageOk=false;}}
+function saveSrs(){if(!storageOk)return;try{localStorage.setItem(SRS_KEY,JSON.stringify(srsData));}catch(e){}}
+function loadSrs(){if(!storageOk)return;try{var d=localStorage.getItem(SRS_KEY);if(d)srsData=JSON.parse(d);}catch(e){srsData={};}}
+
+function getCard(q){
+  if(!srsData[q])srsData[q]={interval:0,reps:0,ef:2.5,nextReview:null,total:0};
+  return srsData[q];
+}
+function getStatus(q){
+  var c=getCard(q);
+  if(!c.nextReview)return "new";
+  if(c.interval>=21)return "mastered";
+  if(c.nextReview<=todayStr())return "due";
+  return "upcoming";
+}
+
+function sm2(card,quality){
+  var ef=card.ef||2.5, reps=card.reps||0, iv=card.interval||0;
+  var nef,niv,nreps;
+  if(quality<3){
+    nef=Math.max(1.3,ef-0.2); niv=1; nreps=0;
+  } else {
+    nef=Math.max(1.3,ef+(0.1-(5-quality)*(0.08+(5-quality)*0.02)));
+    nreps=reps+1;
+    if(reps===0){
+      niv=(quality===5?4:quality===4?2:1);
+    } else if(reps===1){
+      niv=(quality===5?Math.round(6*nef):quality===3?4:6);
+    } else {
+      niv=Math.round(iv*nef);
+      if(quality===3)niv=Math.max(1,Math.round(niv*0.7));
+      if(quality===5)niv=Math.round(niv*1.3);
+    }
+  }
+  return {interval:niv,reps:nreps,ef:nef};
+}
+function previewAll(q){
+  var c=getCard(q);
+  return {1:sm2(c,1).interval,3:sm2(c,3).interval,4:sm2(c,4).interval,5:sm2(c,5).interval};
+}
+function applyRating(q,quality){
+  var card=getCard(q);
+  var r=sm2(card,quality);
+  card.interval=r.interval; card.reps=r.reps; card.ef=r.ef;
+  card.nextReview=addDays(todayStr(),quality<3?0:r.interval);
+  card.total=(card.total||0)+1;
+  saveSrs();
+}
+
+function updateStats(){
+  var tot=filteredData.length,nw=0,due=0,mast=0;
+  filteredData.forEach(function(item){
+    var st=getStatus(item.question);
+    if(st==="new")nw++;
+    else if(st==="due")due++;
+    else if(st==="mastered")mast++;
+  });
+  document.getElementById("totalCount").textContent=tot;
+  document.getElementById("newCount").textContent=nw;
+  document.getElementById("dueCount").textContent=due;
+  document.getElementById("mastCount").textContent=mast;
+  document.getElementById("progBar").style.width=(tot>0?Math.round((mast/tot)*100):0)+"%";
+}
+
+function getPool(){
+  if(studyMode==="srs"){
+    var due=[],nw=[];
+    filteredData.forEach(function(item){
+      var st=getStatus(item.question);
+      if(st==="due")due.push(item);
+      else if(st==="new")nw.push(item);
+    });
+    return due.concat(nw);
+  }
+  return filteredData;
+}
+
+function hideAnswer(){
+  document.getElementById("answerContent").classList.remove("show");
+  document.getElementById("ratingWrap").classList.remove("show");
+  document.getElementById("showAnsBtn").textContent="顯示答案";
+  answerVisible=false;
+}
+function toggleAnswer(){
+  if(!currentQ)return;
+  if(answerVisible){hideAnswer();}
+  else{
+    document.getElementById("answerContent").classList.add("show");
+    document.getElementById("ratingWrap").classList.add("show");
+    document.getElementById("showAnsBtn").textContent="隱藏答案";
+    answerVisible=true;
+    updateHints(currentQ.question);
+  }
+}
+function updateHints(q){
+  var iv=previewAll(q);
+  document.getElementById("hint-1").textContent="重學";
+  document.getElementById("hint-3").textContent=ivText(iv[3]);
+  document.getElementById("hint-4").textContent=ivText(iv[4]);
+  document.getElementById("hint-5").textContent=ivText(iv[5]);
+}
+function onRating(quality){
+  if(!currentQ)return;
+  applyRating(currentQ.question,quality);
+  drawQuestion();
+}
+
+function setSrsInfo(q){
+  var el=document.getElementById("srsInfo");
+  if(!q){el.style.display="none";el.innerHTML="";return;}
+  var card=getCard(q); var st=getStatus(q);
+  var labels={"new":"🆕 新卡片","due":"📅 到期複習","upcoming":"✅ 排程中","mastered":"🏆 已掌握"};
+  var html='<span class="srs-badge st-'+st+'">'+labels[st]+'</span>';
+  if(st!=="new"){
+    html+='<span class="srs-meta">間隔 '+card.interval+'天&nbsp;·&nbsp;複習 '+card.total+'次&nbsp;·&nbsp;EF '+card.ef.toFixed(2)+'</span>';
+    if(card.nextReview)html+='<span class="srs-meta">下次複習：'+card.nextReview+'</span>';
+  } else {
+    html+='<span class="srs-meta">從未複習</span>';
+  }
+  if(studyMode==="srs"){
+    html+='<span class="srs-meta">（待學 '+getPool().length+' 題）</span>';
+  }
+  el.innerHTML=html; el.style.display="flex";
+}
+
+function drawQuestion(){
+  hideAnswer();
+  var pool=getPool();
+  if(pool.length===0){
+    var msg=studyMode==="srs"
+      ?"🎉 今日所有卡片已複習完畢！請明日再來，或切換「隨機練習」繼續練習。"
+      :"🎉 目前篩選範圍無符合題目。";
+    document.getElementById("question").innerHTML=msg;
+    document.getElementById("answerContent").innerHTML="";
+    document.getElementById("showAnsWrap").style.display="none";
+    setSrsInfo(null); currentQ=null; updateStats(); return;
+  }
+  var item;
+  if(studyMode==="srs"){
+    var dueOnly=pool.filter(function(i){return getStatus(i.question)==="due";});
+    var src=(dueOnly.length>0&&Math.random()<0.8)?dueOnly:pool;
+    item=src[Math.floor(Math.random()*src.length)];
+  } else {
+    item=pool[Math.floor(Math.random()*pool.length)];
+  }
+  currentQ=item;
+  document.getElementById("question").innerHTML=item.question;
+  document.getElementById("answerContent").innerHTML=item.answer;
+  document.getElementById("showAnsWrap").style.display="block";
+  setSrsInfo(item.question); updateStats();
+}
+
+function setMode(mode){
+  studyMode=mode;
+  document.getElementById("modeRndBtn").classList.toggle("active",mode==="random");
+  document.getElementById("modeSrsBtn").classList.toggle("active",mode==="srs");
+  updateStats();
+  drawQuestion();
+}
+
+function applyFilter(){
+  var pat=document.getElementById("filterInput").value;
+  if(!pat.trim()){filteredData=qaData.slice();updateStats();drawQuestion();return;}
+  try{var re=new RegExp(pat,"i");filteredData=qaData.filter(function(q){return re.test(q.question);});updateStats();drawQuestion();}catch(e){}
+}
+function clearFilter(){document.getElementById("filterInput").value="";filteredData=qaData.slice();updateStats();drawQuestion();}
+
+function doReset(){
+  srsData={};saveSrs();currentQ=null;
+  updateStats();
+  document.getElementById("resetModal").classList.remove("open");
+  drawQuestion();
+}
+
+function toggleModalQA(idx,type){
+  var ans=document.getElementById(type+"-ans-"+idx);
+  var btn=document.getElementById(type+"-btn-"+idx);
+  if(!ans||!btn)return;
+  var show=!ans.classList.contains("show");
+  ans.classList.toggle("show",show);
+  btn.textContent=show?"隱藏答案":"顯示答案";
+}
+function buildList(list,type){
+  if(!list.length)return'<div class="no-results">（無符合結果）</div>';
+  return list.map(function(item,i){
+    var c=getCard(item.question),st=getStatus(item.question);
+    var meta=st==="new"
+      ?"新卡片（從未複習）"
+      :("間隔 "+c.interval+"天 · EF "+c.ef.toFixed(2)+(c.nextReview?" · 下次 "+c.nextReview:""));
+    var cls="question-item"+(st==="mastered"?" is-mast":"");
+    return '<div class="'+cls+'">'
+      +'<div class="question-header">'
+      +'<div class="question-text">'+item.question+'<div class="srs-mini">'+meta+'</div></div>'
+      +'<button id="'+type+"-btn-"+i+'" class="btn btn-sm qa-tog" data-type="'+type+'" data-idx="'+i+'">顯示答案</button>'
+      +'</div>'
+      +'<div id="'+type+"-ans-"+i+'" class="question-answer">'+item.answer+'</div>'
+      +'</div>';
+  }).join("");
+}
+
+function renderAllModal(){
+  var q=document.getElementById("allQSearch").value;
+  var a=document.getElementById("allASearch").value;
+  var base=filteredData.slice();
+  var list=filterModalList(base,q,a);
+  var suffix=(q||a)?" / "+base.length:"";
+  document.getElementById("allCount2").textContent="全部題目（"+list.length+suffix+" 題）";
+  document.getElementById("allList").innerHTML=buildList(list,"all");
+}
+function showAllModal(){
+  document.getElementById("allQSearch").value="";
+  document.getElementById("allASearch").value="";
+  renderAllModal();
+  document.getElementById("allModal").classList.add("open");
+}
+function renderDueModal(){
+  var q=document.getElementById("dueQSearch").value;
+  var a=document.getElementById("dueASearch").value;
+  var base=filteredData.filter(function(item){var st=getStatus(item.question);return st==="due"||st==="new";});
+  var list=filterModalList(base,q,a);
+  var suffix=(q||a)?" / "+base.length:"";
+  document.getElementById("dueCount2").textContent="今日待學（"+list.length+suffix+" 題）";
+  document.getElementById("dueList").innerHTML=buildList(list,"due");
+}
+function showDueModal(){
+  document.getElementById("dueQSearch").value="";
+  document.getElementById("dueASearch").value="";
+  renderDueModal();
+  document.getElementById("dueModal").classList.add("open");
+}
+function renderMastModal(){
+  var q=document.getElementById("mastQSearch").value;
+  var a=document.getElementById("mastASearch").value;
+  var base=filteredData.filter(function(item){return getStatus(item.question)==="mastered";});
+  var list=filterModalList(base,q,a);
+  var suffix=(q||a)?" / "+base.length:"";
+  document.getElementById("mastCount2").textContent="已掌握（"+list.length+suffix+" 題）";
+  document.getElementById("mastList").innerHTML=buildList(list,"mast");
+}
+function showMastModal(){
+  document.getElementById("mastQSearch").value="";
+  document.getElementById("mastASearch").value="";
+  renderMastModal();
+  document.getElementById("mastModal").classList.add("open");
+}
+function setupModal(modal){
+  modal.addEventListener("click",function(e){
+    if(e.target===modal){modal.classList.remove("open");return;}
+    if(e.target.classList.contains("qa-tog"))
+      toggleModalQA(parseInt(e.target.getAttribute("data-idx"),10),e.target.getAttribute("data-type"));
+  });
+}
+
+chkStorage(); loadSrs(); updateStats();
+document.getElementById("showAnsBtn").addEventListener("click",toggleAnswer);
+var _rbs=document.querySelectorAll(".r-btn");
+for(var _ri=0;_ri<_rbs.length;_ri++){
+  (function(btn){
+    btn.addEventListener("click",function(){
+      onRating(parseInt(btn.getAttribute("data-q"),10));
+    });
+  })(_rbs[_ri]);
+}
+document.getElementById("modeRndBtn").addEventListener("click",function(){setMode("random");});
+document.getElementById("modeSrsBtn").addEventListener("click",function(){setMode("srs");});
+document.getElementById("resetBtn").addEventListener("click",function(){document.getElementById("resetModal").classList.add("open");});
+document.getElementById("confirmResetBtn").addEventListener("click",doReset);
+document.getElementById("cancelResetBtn").addEventListener("click",function(){document.getElementById("resetModal").classList.remove("open");});
+document.getElementById("showAllBtn").addEventListener("click",showAllModal);
+document.getElementById("showDueBtn").addEventListener("click",showDueModal);
+document.getElementById("showMastBtn").addEventListener("click",showMastModal);
+document.getElementById("closeAllBtn").addEventListener("click",function(){document.getElementById("allModal").classList.remove("open");});
+document.getElementById("closeDueBtn").addEventListener("click",function(){document.getElementById("dueModal").classList.remove("open");});
+document.getElementById("closeMastBtn").addEventListener("click",function(){document.getElementById("mastModal").classList.remove("open");});
+document.getElementById("allQSearch").addEventListener("input",renderAllModal);
+document.getElementById("allASearch").addEventListener("input",renderAllModal);
+document.getElementById("dueQSearch").addEventListener("input",renderDueModal);
+document.getElementById("dueASearch").addEventListener("input",renderDueModal);
+document.getElementById("mastQSearch").addEventListener("input",renderMastModal);
+document.getElementById("mastASearch").addEventListener("input",renderMastModal);
+document.getElementById("filterBtn").addEventListener("click",applyFilter);
+document.getElementById("clearFilterBtn").addEventListener("click",clearFilter);
+document.getElementById("filterInput").addEventListener("keydown",function(e){if(e.key==="Enter")applyFilter();});
+setupModal(document.getElementById("resetModal"));
+setupModal(document.getElementById("allModal"));
+setupModal(document.getElementById("dueModal"));
+setupModal(document.getElementById("mastModal"));
+try{
+  drawQuestion();
+}catch(e){
+  console.error("drawQuestion 失敗：", e);
+  var qEl=document.getElementById("question");
+  if(qEl) qEl.textContent="⚠️ 初始化失敗，請開啟瀏覽器 Console 查看錯誤："+e.message;
+}
+</script>
+</body>
+</html>
