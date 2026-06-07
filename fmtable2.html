@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stecco FM -- Assessment Form</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    background: #8faec8;
+    padding: 10px;
+    min-height: 100vh;
+  }
+
+  .app {
+    max-width: 1600px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.32);
+    overflow: hidden;
+  }
+
+  .app-hdr {
+    background: linear-gradient(135deg, #0b2540 0%, #1b5d8e 100%);
+    color: #fff;
+    padding: 14px 22px;
+    text-align: center;
+  }
+  .app-hdr h1 { font-size: 17px; letter-spacing: .3px; }
+  .app-hdr p  { font-size: 11px; opacity: .72; margin-top: 4px; }
+
+  .tab-bar {
+    display: flex;
+    background: #edf2f8;
+    border-bottom: 2px solid #0b2540;
+  }
+  .tab-btn {
+    padding: 10px 28px;
+    background: transparent;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    color: #556;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: background .15s, color .15s;
+  }
+  .tab-btn:hover  { background: #dde6f0; color: #0b2540; }
+  .tab-btn.active { background: #fff; color: #0b2540; border-bottom-color: #1b5d8e; }
+
+  .panel { display: none; padding: 14px; overflow-x: auto; }
+  .panel.active { display: block; }
+
+  .sec-title {
+    font-weight: 700;
+    font-size: 12px;
+    color: #0b2540;
+    background: #d8e8f5;
+    padding: 5px 10px;
+    margin-bottom: 6px;
+    border-left: 4px solid #0b2540;
+    border-radius: 0 4px 4px 0;
+    margin-top: 12px;
+  }
+
+  /* Scroll wrapper so tables don't break layout */
+  .tbl-scroll { overflow-x: auto; margin-bottom: 4px; }
+
+  .ft { border-collapse: collapse; width: 100%; font-size: 11px; }
+  .ft th, .ft td { border: 1px solid #7a8a9e; padding: 1px 2px; vertical-align: middle; }
+  .ft th {
+    background: #c5d5e6; font-weight: 700; text-align: center;
+    font-size: 10px; white-space: nowrap; padding: 3px 2px; line-height: 1.3;
+  }
+  .th-hint { font-size: 9px; font-weight: normal; opacity: .75; display: block; }
+
+  .rl {
+    background: #dde8f2; font-weight: 700; text-align: center;
+    font-size: 10px; color: #1a2a3a; white-space: nowrap; padding: 3px 4px;
+  }
+  .rl-sub {
+    background: #edf4fc; font-weight: 700; text-align: center;
+    font-size: 10px; color: #0b2540; padding: 2px 4px; white-space: nowrap;
+  }
+  .sh { background: #8aaec8; font-weight: 700; text-align: center; font-size: 11px; padding: 4px; }
+  .ph { background: #a6c4dc; font-weight: 700; text-align: center; font-size: 10px; padding: 3px; }
+
+  .row-sipa   > td:not(.rl):not(.rl-sub) { background: #fff8d6; }
+  .row-paconc > td:not(.rl):not(.rl-sub) { background: #fffbe8; }
+  .row-cp     > td:not(.rl):not(.rl-sub) { background: #fff8d6; }
+  .row-di     > td:not(.rl):not(.rl-sub) { background: #fffbe8; }
+  .row-pe     > td:not(.rl):not(.rl-sub) { background: #fff8d6; }
+  .row-prev   > td:not(.rl):not(.rl-sub) { background: #f4f8ff; }
+  .row-surg   > td:not(.rl):not(.rl-sub) { background: #f8f4ff; }
+  .row-traum  > td:not(.rl):not(.rl-sub) { background: #f4fff6; }
+
+  .ci, .cs {
+    width: 100%; border: none; background: transparent;
+    font-size: 11px; padding: 2px; outline: none; font-family: inherit; color: #1a2a3a;
+  }
+  .ci:focus, .cs:focus { background: #fffff0; outline: 1px solid #1b5d8e; border-radius: 2px; }
+  .cs { cursor: pointer; -webkit-appearance: auto; appearance: auto; }
+  .ci::placeholder { color: #aab; font-size: 10px; }
+
+  /* ── Patient Details Table ── */
+  .pt-tbl {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 660px;       /* prevents collapse on small screens */
+    table-layout: fixed;    /* enforces equal columns */
+    font-size: 11px;
+  }
+  .pt-tbl th, .pt-tbl td {
+    border: 1px solid #7a8a9e;
+    vertical-align: top;
+    padding: 0;
+  }
+  .pt-tbl th {
+    background: #c5d5e6;
+    font-weight: 700;
+    text-align: center;
+    font-size: 11px;
+    padding: 5px 6px;
+    color: #0b2540;
+  }
+
+  .pif { padding: 8px 10px; }
+
+  /* Grid layout for label+input rows -- much more stable than flex in narrow cells */
+  .pir {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    align-items: center;
+    padding: 4px 0;
+    gap: 4px;
+    border-bottom: 1px solid #eef;
+  }
+  .pir:last-child { border-bottom: none; }
+
+  .pil {
+    font-weight: 700;
+    font-size: 10px;
+    color: #334;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pii {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #aab;
+    background: transparent;
+    font-size: 11px;
+    font-family: inherit;
+    outline: none;
+    padding: 1px 2px;
+    min-width: 0;           /* crucial for grid children */
+  }
+  .pii:focus { border-bottom-color: #0b2540; background: #fffff0; }
+
+  .ext-note {
+    margin-top: 8px;
+    font-size: 9px;
+    color: #556;
+    line-height: 1.7;
+    padding: 5px 6px;
+    background: #f0f6fc;
+    border-radius: 3px;
+  }
+
+  /* Reference cards */
+  .ref-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin-top: 4px; }
+  .ref-card { border: 1px solid #c0d0e0; border-radius: 4px; overflow: hidden; font-size: 10px; }
+  .ref-card-hdr { background: #c5d5e6; padding: 4px 8px; font-weight: 700; font-size: 10.5px; color: #0b2540; }
+  .ref-card-body { padding: 5px 8px; }
+  .ref-row { display: flex; gap: 6px; padding: 1.5px 0; border-bottom: 1px solid #eef; }
+  .ref-row:last-child { border-bottom: none; }
+  .ref-code { font-weight: 700; color: #0b2540; min-width: 52px; font-family: monospace; }
+  .ref-desc { color: #445; }
+
+  /* JSON panel */
+  .jw { display: flex; flex-direction: column; gap: 10px; }
+  .ja { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    padding: 7px 16px; border: none; border-radius: 4px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    transition: filter .15s, transform .1s;
+  }
+  .btn:hover  { filter: brightness(1.1); }
+  .btn:active { transform: scale(.97); }
+  .b-blue  { background: #0b2540; color: #fff; }
+  .b-green { background: #1a6e34; color: #fff; }
+  .b-red   { background: #9e1616; color: #fff; }
+  #smsg { display: none; padding: 5px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  #smsg.ok  { background: #d0f0dc; color: #14521e; display: inline-block; }
+  #smsg.err { background: #fde0e0; color: #8a1010; display: inline-block; }
+  .jh  { color: #667; font-size: 11px; line-height: 1.5; }
+  .jta {
+    width: 100%; height: 580px;
+    font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.5;
+    padding: 12px; border: 2px solid #bfcad6; border-radius: 4px; resize: vertical; color: #1a2a3a;
+  }
+  .jta:focus { border-color: #0b2540; outline: none; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="app-hdr">
+    <h1>🦴 Stecco Fascial Manipulation (FM) -- Assessment Form</h1>
+    <p>Fill the form → JSON updates live &nbsp;|&nbsp; Paste JSON into Tab 2 → form auto-populates</p>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('form')">📋 &nbsp;Assessment Form</button>
+    <button class="tab-btn"        onclick="showTab('json')">{ } &nbsp;JSON Data</button>
+  </div>
+
+  <!-- FORM PANEL -->
+  <div id="panel-form" class="panel active">
+
+    <!-- ══ PATIENT DETAILS ══ -->
+    <div class="sec-title">▸ Patient Details</div>
+    <div class="tbl-scroll">
+      <table class="pt-tbl">
+        <thead>
+          <tr>
+            <th>🧑 Patient Information</th>
+            <th>🏃 Lifestyle &amp; Extremity Key</th>
+            <th>🏥 Clinical History</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <!-- Patient Information -->
+            <td class="pif">
+              <div class="pir">
+                <span class="pil">Surname:</span>
+                <input class="pii" id="surname">
+              </div>
+              <div class="pir">
+                <span class="pil">First Name:</span>
+                <input class="pii" id="firstname">
+              </div>
+              <div class="pir">
+                <span class="pil">Date of Birth:</span>
+                <input class="pii" id="dob" type="date">
+              </div>
+            </td>
+
+            <!-- Lifestyle & Extremity Key -->
+            <td class="pif">
+              <div class="pir">
+                <span class="pil">Occupation:</span>
+                <input class="pii" id="occupation">
+              </div>
+              <div class="pir">
+                <span class="pil">Sports:</span>
+                <input class="pii" id="sports">
+              </div>
+              <div class="ext-note">
+                <b>CP</b> Caput -- migraine, headache, sensory<br>
+                <b>DI</b> Digits -- pain, numbness, trigger finger<br>
+                <b>PE</b> Pes -- pain, numbness, hammer toe<br>
+                <hr style="border:none;border-top:1px solid #ccd;margin:4px 0">
+                <i>CP1 la rt &nbsp;·&nbsp; DI II-IV lf &nbsp;·&nbsp; PE an lf</i>
+              </div>
+            </td>
+
+            <!-- Clinical History -->
+            <td class="pif">
+              <div class="pir">
+                <span class="pil">Investigations:</span>
+                <input class="pii" id="investigations" placeholder="X-ray, MRI…">
+              </div>
+              <div class="pir">
+                <span class="pil">Medications:</span>
+                <input class="pii" id="medications" placeholder="Current meds…">
+              </div>
+              <div class="pir">
+                <span class="pil">Internal dysf.:</span>
+                <input class="pii" id="int_dysf" placeholder="visceral conditions…">
+              </div>
+              <div class="pir">
+                <span class="pil">Posture:</span>
+                <input class="pii" id="posture" placeholder="postural observations…">
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══ PAIN HISTORY ══ -->
+    <div class="sec-title">▸ Pain History &amp; Patient Assessment</div>
+    <div class="tbl-scroll">
+      <table class="ft" style="min-width:800px;">
+        <colgroup>
+          <col style="width:62px">
+          <col style="width:30px">
+          <col style="width:80px">
+          <col style="width:60px">
+          <col style="width:60px">
+          <col style="width:76px">
+          <col style="width:45px">
+          <col style="width:68px">
+          <col style="width:70px">
+          <col>
+        </colgroup>
+        <thead>
+          <tr>
+            <th colspan="2"></th>
+            <th>Segments<span class="th-hint">e.g. CL, HU, LU</span></th>
+            <th>Locat<span class="th-hint">AN/RE/LA/ME</span></th>
+            <th>Side<span class="th-hint">rt/lt/bi</span></th>
+            <th>Durat<span class="th-hint">(acu – 1°)</span></th>
+            <th>T / ?<span class="th-hint">cause</span></th>
+            <th>VRS<span class="th-hint">(now – max)</span></th>
+            <th>Rec / con<span class="th-hint">frequency</span></th>
+            <th>Painful Movements<span class="th-hint">specific aggravating movement</span></th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- Si Pa -->
+          <tr class="row-sipa">
+            <td class="rl" colspan="2">Si Pa</td>
+            <td id="td-sipa-seg"></td>
+            <td id="td-sipa-locat"></td>
+            <td id="td-sipa-side"></td>
+            <td><input class="ci" id="sipa_durat" placeholder="e.g. 3m"></td>
+            <td id="td-sipa-t"></td>
+            <td><input class="ci" id="sipa_vrs" placeholder="e.g. 4-8"></td>
+            <td id="td-sipa-reccon"></td>
+            <td><input class="ci" id="sipa_pain" placeholder="e.g. RE -20°"></td>
+          </tr>
+
+          <!-- Pa Conc -->
+          <tr class="row-paconc">
+            <td class="rl" colspan="2">Pa Conc</td>
+            <td id="td-paconc-seg"></td>
+            <td id="td-paconc-locat"></td>
+            <td id="td-paconc-side"></td>
+            <td><input class="ci" id="paconc_durat" placeholder="e.g. 6m"></td>
+            <td id="td-paconc-t"></td>
+            <td><input class="ci" id="paconc_vrs" placeholder="e.g. 2-5"></td>
+            <td id="td-paconc-reccon"></td>
+            <td><input class="ci" id="paconc_pain" placeholder="e.g. headache during RE"></td>
+          </tr>
+
+          <!-- Extremit CP -->
+          <tr class="row-cp">
+            <td class="rl" rowspan="3">Extremit.</td>
+            <td class="rl-sub">CP</td>
+            <td id="td-cp-seg"></td>
+            <td id="td-cp-locat"></td>
+            <td id="td-cp-side"></td>
+            <td><input class="ci" id="cp_durat" placeholder="e.g. 1y"></td>
+            <td id="td-cp-t"></td>
+            <td><input class="ci" id="cp_vrs" placeholder="e.g. 3-7"></td>
+            <td id="td-cp-reccon"></td>
+            <td><input class="ci" id="cp_pain" placeholder="migraine, headache, sensory"></td>
+          </tr>
+
+          <!-- Extremit DI -->
+          <tr class="row-di">
+            <td class="rl-sub">DI</td>
+            <td id="td-di-seg"></td>
+            <td id="td-di-locat"></td>
+            <td id="td-di-side"></td>
+            <td><input class="ci" id="di_durat" placeholder="e.g. 2w"></td>
+            <td id="td-di-t"></td>
+            <td><input class="ci" id="di_vrs" placeholder="e.g. 5-8"></td>
+            <td id="td-di-reccon"></td>
+            <td><input class="ci" id="di_pain" placeholder="numbness, tingling fingers"></td>
+          </tr>
+
+          <!-- Extremit PE -->
+          <tr class="row-pe">
+            <td class="rl-sub">PE</td>
+            <td id="td-pe-seg"></td>
+            <td id="td-pe-locat"></td>
+            <td id="td-pe-side"></td>
+            <td><input class="ci" id="pe_durat" placeholder="e.g. 5m"></td>
+            <td id="td-pe-t"></td>
+            <td><input class="ci" id="pe_vrs" placeholder="e.g. 2-4"></td>
+            <td id="td-pe-reccon"></td>
+            <td><input class="ci" id="pe_pain" placeholder="plantar pain, toe deformity"></td>
+          </tr>
+
+          <!-- Pa Prev -->
+          <tr class="row-prev">
+            <td class="rl" colspan="2">Pa Prev</td>
+            <td id="td-paprev-seg"></td>
+            <td id="td-paprev-locat"></td>
+            <td id="td-paprev-side"></td>
+            <td><input class="ci" id="paprev_durat" placeholder="e.g. 1y (3y)"></td>
+            <td id="td-paprev-t"></td>
+            <td><input class="ci" id="paprev_vrs" placeholder="e.g. 6-9"></td>
+            <td id="td-paprev-reccon"></td>
+            <td><input class="ci" id="paprev_pain" placeholder="Previous pain movement"></td>
+          </tr>
+
+          <!-- Surgery -->
+          <tr class="row-surg">
+            <td class="rl" colspan="2">Surgery</td>
+            <td id="td-surg-seg"></td>
+            <td id="td-surg-locat"></td>
+            <td id="td-surg-side"></td>
+            <td><input class="ci" id="surg_durat" placeholder="e.g. 2y ago"></td>
+            <td id="td-surg-t"></td>
+            <td><input class="ci" id="surg_vrs" placeholder="e.g. 3-7"></td>
+            <td id="td-surg-reccon"></td>
+            <td><input class="ci" id="surg_pain" placeholder="Post-surgical limitation"></td>
+          </tr>
+
+          <!-- Trauma -->
+          <tr class="row-traum">
+            <td class="rl" colspan="2">Trauma/<br>Fracture</td>
+            <td id="td-traum-seg"></td>
+            <td id="td-traum-locat"></td>
+            <td id="td-traum-side"></td>
+            <td><input class="ci" id="traum_durat" placeholder="e.g. 5y ago"></td>
+            <td id="td-traum-t"></td>
+            <td><input class="ci" id="traum_vrs" placeholder="e.g. 7-10"></td>
+            <td id="td-traum-reccon"></td>
+            <td><input class="ci" id="traum_pain" placeholder="Post-trauma movement impact"></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══ HYPOTHESIS ══ -->
+    <div class="sec-title">▸ Hypothesis (Myofascial Sequences)</div>
+    <div class="tbl-scroll">
+      <table class="ft" style="min-width:700px;">
+        <thead>
+          <tr>
+            <th colspan="4" class="sh">HYPOTHESIS</th>
+            <th colspan="2" class="ph">SAGITTAL PLANE</th>
+            <th colspan="2" class="ph">FRONTAL PLANE</th>
+            <th colspan="2" class="ph">HORIZONTAL PLANE</th>
+          </tr>
+          <tr>
+            <th style="width:36px">Type</th>
+            <th style="width:28px">A</th>
+            <th style="width:28px">D</th>
+            <th style="width:90px">Segments</th>
+            <th>(lt) ANTE (rt)</th>
+            <th>(lt) RETRO (rt)</th>
+            <th>(an lt) MEDIO (rt)</th>
+            <th>(lt) LATERO (rt)</th>
+            <th>(lt) INTRA (rt)</th>
+            <th>(lt) EXTRA (rt)</th>
+          </tr>
+        </thead>
+        <tbody id="hyp-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- ══ TREATMENT ══ -->
+    <div class="sec-title">▸ Treatment Record</div>
+    <div class="tbl-scroll">
+      <table class="ft" style="min-width:500px;">
+        <colgroup>
+          <col style="width:60px">
+          <col style="width:140px">
+          <col>
+          <col style="width:100px">
+          <col style="width:200px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th colspan="2" class="sh">TREATMENT SESSION</th>
+            <th>Outcome / Findings</th>
+            <th>Now (VRS)</th>
+            <th>2° Treatment Plan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rl">Date</td>
+            <td><input class="ci" id="treat_date" type="date"></td>
+            <td><input class="ci" id="treat_outcome" placeholder="e.g. improved ROM, pain ↓ from 7 to 3"></td>
+            <td><input class="ci" id="treat_now" placeholder="e.g. 2"></td>
+            <td><input class="ci" id="treat_2nd" placeholder="e.g. re-assess CL sequence"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══ QUICK REFERENCE ══ -->
+    <div class="sec-title">▸ Quick Reference Guide</div>
+    <div class="ref-wrap">
+      <div class="ref-card">
+        <div class="ref-card-hdr">📍 Segments (upper body)</div>
+        <div class="ref-card-body">
+          <div class="ref-row"><span class="ref-code">CP</span><span class="ref-desc">Caput -- Head</span></div>
+          <div class="ref-row"><span class="ref-code">CL</span><span class="ref-desc">Collum -- Neck / Cervical</span></div>
+          <div class="ref-row"><span class="ref-code">TH</span><span class="ref-desc">Thorax</span></div>
+          <div class="ref-row"><span class="ref-code">SC</span><span class="ref-desc">Scapula -- Shoulder</span></div>
+          <div class="ref-row"><span class="ref-code">HU</span><span class="ref-desc">Humerus -- Upper arm</span></div>
+          <div class="ref-row"><span class="ref-code">CU</span><span class="ref-desc">Cubitus -- Elbow</span></div>
+          <div class="ref-row"><span class="ref-code">CA</span><span class="ref-desc">Carpus -- Wrist</span></div>
+          <div class="ref-row"><span class="ref-code">MA</span><span class="ref-desc">Manus -- Hand</span></div>
+          <div class="ref-row"><span class="ref-code">DI</span><span class="ref-desc">Digits -- Fingers</span></div>
+        </div>
+      </div>
+      <div class="ref-card">
+        <div class="ref-card-hdr">📍 Segments (lower body)</div>
+        <div class="ref-card-body">
+          <div class="ref-row"><span class="ref-code">LU</span><span class="ref-desc">Lumbar</span></div>
+          <div class="ref-row"><span class="ref-code">PV</span><span class="ref-desc">Pelvis</span></div>
+          <div class="ref-row"><span class="ref-code">CX</span><span class="ref-desc">Coxa -- Hip</span></div>
+          <div class="ref-row"><span class="ref-code">GE</span><span class="ref-desc">Genu -- Knee</span></div>
+          <div class="ref-row"><span class="ref-code">TA</span><span class="ref-desc">Talus -- Ankle</span></div>
+          <div class="ref-row"><span class="ref-code">PE</span><span class="ref-desc">Pes -- Foot</span></div>
+        </div>
+      </div>
+      <div class="ref-card">
+        <div class="ref-card-hdr">📐 Location / Side / T/?</div>
+        <div class="ref-card-body">
+          <div class="ref-row"><span class="ref-code">AN</span><span class="ref-desc">Anterior</span></div>
+          <div class="ref-row"><span class="ref-code">RE</span><span class="ref-desc">Retro -- Posterior</span></div>
+          <div class="ref-row"><span class="ref-code">LA</span><span class="ref-desc">Lateral</span></div>
+          <div class="ref-row"><span class="ref-code">ME</span><span class="ref-desc">Medial</span></div>
+          <div class="ref-row"><span class="ref-code">IR</span><span class="ref-desc">Internal Rotation</span></div>
+          <div class="ref-row"><span class="ref-code">ER</span><span class="ref-desc">External Rotation</span></div>
+          <div class="ref-row" style="margin-top:4px"><span class="ref-code">T</span><span class="ref-desc">Trauma</span></div>
+          <div class="ref-row"><span class="ref-code">?</span><span class="ref-desc">Unknown / Insidious</span></div>
+        </div>
+      </div>
+      <div class="ref-card">
+        <div class="ref-card-hdr">⏱ Duration / VRS / Rec</div>
+        <div class="ref-card-body">
+          <div class="ref-row"><span class="ref-code">1d / 2w</span><span class="ref-desc">1 day / 2 weeks</span></div>
+          <div class="ref-row"><span class="ref-code">3m / 2y</span><span class="ref-desc">3 months / 2 years</span></div>
+          <div class="ref-row"><span class="ref-code">3m (2y)</span><span class="ref-desc">Episode (total history)</span></div>
+          <div class="ref-row" style="margin-top:4px"><span class="ref-code">4-8</span><span class="ref-desc">VRS: now=4, max=8</span></div>
+          <div class="ref-row"><span class="ref-code">cont</span><span class="ref-desc">Continuous</span></div>
+          <div class="ref-row"><span class="ref-code">1xd</span><span class="ref-desc">Once / day</span></div>
+          <div class="ref-row"><span class="ref-code">2xw</span><span class="ref-desc">Twice / week</span></div>
+          <div class="ref-row"><span class="ref-code">1xm</span><span class="ref-desc">Once / month</span></div>
+        </div>
+      </div>
+      <div class="ref-card">
+        <div class="ref-card-hdr">💡 Entry Examples</div>
+        <div class="ref-card-body">
+          <div class="ref-row"><span class="ref-code">SiPa:</span><span class="ref-desc">CL re bi 6m ? (2-6) 1xm</span></div>
+          <div class="ref-row"><span class="ref-code">SiPa:</span><span class="ref-desc">HU la rt 2y T (4-8) 2xw</span></div>
+          <div class="ref-row"><span class="ref-code">SiPa:</span><span class="ref-desc">PV er lt 3m ? (8) cont</span></div>
+          <div class="ref-row"><span class="ref-code">CP:</span>  <span class="ref-desc">CP1 la rt -- migraine</span></div>
+          <div class="ref-row"><span class="ref-code">DI:</span>  <span class="ref-desc">DI II-IV lf -- numbness</span></div>
+          <div class="ref-row"><span class="ref-code">PE:</span>  <span class="ref-desc">PE an lf -- plantar pain</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panel-form -->
+
+  <!-- JSON PANEL -->
+  <div id="panel-json" class="panel">
+    <div class="jw">
+      <div class="ja">
+        <button class="btn b-blue"  onclick="applyJSON()">⬆ Apply JSON → Form</button>
+        <button class="btn b-green" onclick="copyJSON()">📋 Copy JSON</button>
+        <button class="btn b-red"   onclick="clearAll()">🗑 Clear All</button>
+        <span id="smsg"></span>
+      </div>
+      <p class="jh">JSON updates automatically as you type in the form. Paste JSON here and click Apply, or wait for auto-apply.</p>
+      <textarea class="jta" id="jta" spellcheck="false" placeholder="JSON will appear here…"></textarea>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+  /* ── OPTIONS ── */
+  var SEG_OPTS    = ['CP','CL','TH','SC','HU','CU','CA','MA','DI','LU','PV','CX','GE','TA','PE'];
+  var LOCAT_OPTS  = ['AN','RE','LA','ME','IR','ER'];
+  var SIDE_OPTS   = ['rt','lt','bi','lt>rt','rt>lt'];
+  var T_OPTS      = ['T','?'];
+  var RECCON_OPTS = ['cont','rec','1xd','2xd','1xw','2xw','1xm'];
+
+  /* ── HELPERS ── */
+  function getVal(id) {
+    var el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+  function setVal(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.value = (v !== undefined && v !== null) ? v : '';
+  }
+
+  /* ── BUILD SELECT ── */
+  function mkSel(id, opts) {
+    var sel = document.createElement('select');
+    sel.id = id;
+    sel.className = 'cs';
+    var blank = document.createElement('option');
+    blank.value = ''; blank.textContent = '';
+    sel.appendChild(blank);
+    opts.forEach(function(v) {
+      var opt = document.createElement('option');
+      opt.value = v; opt.textContent = v;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', updateJSON);
+    return sel;
+  }
+
+  function injectSel(tdId, fieldId, opts) {
+    var td = document.getElementById(tdId);
+    if (!td) return;
+    td.style.padding = '0';
+    td.appendChild(mkSel(fieldId, opts));
+  }
+
+  /* ── ROW PREFIXES ── */
+  var ROWS = ['sipa','paconc','cp','di','pe','paprev','surg','traum'];
+
+  function buildSelects() {
+    ROWS.forEach(function(p) {
+      injectSel('td-' + p + '-seg',    p + '_seg',    SEG_OPTS);
+      injectSel('td-' + p + '-locat',  p + '_locat',  LOCAT_OPTS);
+      injectSel('td-' + p + '-side',   p + '_side',   SIDE_OPTS);
+      injectSel('td-' + p + '-t',      p + '_t',      T_OPTS);
+      injectSel('td-' + p + '-reccon', p + '_reccon', RECCON_OPTS);
+    });
+  }
+
+  /* ── HYPOTHESIS ── */
+  var HYP_GROUPS = [
+    {label:'Mo', rows:2},
+    {label:'Ve', rows:2},
+    {label:'Pa', rows:2},
+    {label:'Ve', rows:2}
+  ];
+  var HYP_TOTAL = HYP_GROUPS.reduce(function(acc, grp) { return acc + grp.rows; }, 0);
+
+  function buildHyp() {
+    var tb = document.getElementById('hyp-tbody');
+    tb.innerHTML = '';
+    var ri = 0;
+    HYP_GROUPS.forEach(function(grp) {
+      for (var r = 0; r < grp.rows; r++) {
+        var tr = document.createElement('tr');
+
+        if (r === 0) {
+          var tdType = document.createElement('td');
+          tdType.className = 'rl';
+          tdType.rowSpan = grp.rows;
+          tdType.textContent = grp.label;
+          tr.appendChild(tdType);
+        }
+
+        // A
+        var tdA = document.createElement('td');
+        var inA = document.createElement('input');
+        inA.className = 'ci'; inA.id = 'h' + ri + '_a';
+        inA.type = 'number'; inA.min = '0'; inA.max = '20';
+        inA.style.width = '100%';
+        inA.addEventListener('input', updateJSON);
+        tdA.appendChild(inA); tr.appendChild(tdA);
+
+        // D
+        var tdD = document.createElement('td');
+        var inD = document.createElement('input');
+        inD.className = 'ci'; inD.id = 'h' + ri + '_d';
+        inD.type = 'number'; inD.min = '0'; inD.max = '20';
+        inD.style.width = '100%';
+        inD.addEventListener('input', updateJSON);
+        tdD.appendChild(inD); tr.appendChild(tdD);
+
+        // Segment
+        var tdSeg = document.createElement('td');
+        tdSeg.style.padding = '0';
+        tdSeg.appendChild(mkSel('h' + ri + '_seg', SEG_OPTS));
+        tr.appendChild(tdSeg);
+
+        // Direction inputs
+        ['ante','retro','medio','latero','intra','extra'].forEach(function(f) {
+          var td2 = document.createElement('td');
+          var inp = document.createElement('input');
+          inp.className = 'ci';
+          inp.id = 'h' + ri + '_' + f;
+          inp.placeholder = '--';
+          inp.addEventListener('input', updateJSON);
+          td2.appendChild(inp);
+          tr.appendChild(td2);
+        });
+
+        tb.appendChild(tr);
+        ri++;
+      }
+    });
+  }
+
+  /* ── COLLECT ROW ── */
+  function rowData(p) {
+    return {
+      segment:          getVal(p + '_seg'),
+      locat:            getVal(p + '_locat'),
+      side:             getVal(p + '_side'),
+      durat:            getVal(p + '_durat'),
+      t:                getVal(p + '_t'),
+      vrs:              getVal(p + '_vrs'),
+      reccon:           getVal(p + '_reccon'),
+      painfulMovements: getVal(p + '_pain')
+    };
+  }
+
+  function setRow(p, o) {
+    if (!o) return;
+    setVal(p + '_seg',    o.segment);
+    setVal(p + '_locat',  o.locat);
+    setVal(p + '_side',   o.side);
+    setVal(p + '_durat',  o.durat);
+    setVal(p + '_t',      o.t);
+    setVal(p + '_vrs',    o.vrs);
+    setVal(p + '_reccon', o.reccon);
+    setVal(p + '_pain',   o.painfulMovements);
+  }
+
+  /* ── COLLECT ALL → JSON ── */
+  function collectData() {
+    var hyp = [];
+    var ri = 0;
+    HYP_GROUPS.forEach(function(grp) {
+      for (var r = 0; r < grp.rows; r++) {
+        hyp.push({
+          type:    grp.label,
+          a:       getVal('h' + ri + '_a'),
+          d:       getVal('h' + ri + '_d'),
+          segment: getVal('h' + ri + '_seg'),
+          ante:    getVal('h' + ri + '_ante'),
+          retro:   getVal('h' + ri + '_retro'),
+          medio:   getVal('h' + ri + '_medio'),
+          latero:  getVal('h' + ri + '_latero'),
+          intra:   getVal('h' + ri + '_intra'),
+          extra:   getVal('h' + ri + '_extra')
+        });
+        ri++;
+      }
+    });
+    return {
+      patientInfo: {
+        surname:    getVal('surname'),
+        firstName:  getVal('firstname'),
+        dob:        getVal('dob'),
+        occupation: getVal('occupation'),
+        sports:     getVal('sports')
+      },
+      clinical: {
+        investigations: getVal('investigations'),
+        medications:    getVal('medications'),
+        internalDysf:   getVal('int_dysf'),
+        posture:        getVal('posture')
+      },
+      painHistory: {
+        siPa:           rowData('sipa'),
+        paConcurrent:   rowData('paconc'),
+        extremit_CP:    rowData('cp'),
+        extremit_DI:    rowData('di'),
+        extremit_PE:    rowData('pe'),
+        paPrevious:     rowData('paprev'),
+        surgery:        rowData('surg'),
+        traumaFracture: rowData('traum')
+      },
+      hypothesis: hyp,
+      treatment: {
+        date:        getVal('treat_date'),
+        outcome:     getVal('treat_outcome'),
+        nowVRS:      getVal('treat_now'),
+        secondTreat: getVal('treat_2nd')
+      }
+    };
+  }
+
+  /* ── APPLY JSON → FORM ── */
+  function applyData(d) {
+    if (!d) return;
+    var pi = d.patientInfo || {};
+    setVal('surname',    pi.surname);
+    setVal('firstname',  pi.firstName);
+    setVal('dob',        pi.dob);
+    setVal('occupation', pi.occupation);
+    setVal('sports',     pi.sports);
+
+    var cl = d.clinical || {};
+    setVal('investigations', cl.investigations);
+    setVal('medications',    cl.medications);
+    setVal('int_dysf',       cl.internalDysf);
+    setVal('posture',        cl.posture);
+
+    var ph = d.painHistory || {};
+    setRow('sipa',   ph.siPa);
+    setRow('paconc', ph.paConcurrent);
+    setRow('cp',     ph.extremit_CP);
+    setRow('di',     ph.extremit_DI);
+    setRow('pe',     ph.extremit_PE);
+    setRow('paprev', ph.paPrevious);
+    setRow('surg',   ph.surgery);
+    setRow('traum',  ph.traumaFracture);
+
+    if (Array.isArray(d.hypothesis)) {
+      d.hypothesis.forEach(function(row, idx) {
+        if (idx >= HYP_TOTAL) return;
+        setVal('h' + idx + '_a',      row.a);
+        setVal('h' + idx + '_d',      row.d);
+        setVal('h' + idx + '_seg',    row.segment);
+        setVal('h' + idx + '_ante',   row.ante);
+        setVal('h' + idx + '_retro',  row.retro);
+        setVal('h' + idx + '_medio',  row.medio);
+        setVal('h' + idx + '_latero', row.latero);
+        setVal('h' + idx + '_intra',  row.intra);
+        setVal('h' + idx + '_extra',  row.extra);
+      });
+    }
+
+    var tr = d.treatment || {};
+    setVal('treat_date',    tr.date);
+    setVal('treat_outcome', tr.outcome);
+    setVal('treat_now',     tr.nowVRS);
+    setVal('treat_2nd',     tr.secondTreat);
+  }
+
+  /* ── JSON ↔ TEXTAREA ── */
+  function updateJSON() {
+    var ta = document.getElementById('jta');
+    if (ta) ta.value = JSON.stringify(collectData(), null, 2);
+  }
+
+  var debTimer = null;
+  function onJtaInput() {
+    clearTimeout(debTimer);
+    debTimer = setTimeout(function() {
+      try {
+        applyData(JSON.parse(document.getElementById('jta').value));
+        showStatus('✓ Auto-applied from JSON', 'ok');
+      } catch(e) {
+        showStatus('⚠ Invalid JSON -- keep typing…', 'err');
+      }
+    }, 700);
+  }
+
+  function applyJSON() {
+    try {
+      applyData(JSON.parse(document.getElementById('jta').value));
+      showStatus('✓ JSON applied to form!', 'ok');
+    } catch(e) {
+      showStatus('✗ Invalid JSON: ' + e.message, 'err');
+    }
+  }
+
+  function fallbackCopy() {
+    var ta = document.getElementById('jta');
+    ta.select();
+    try {
+      document.execCommand('copy');
+      showStatus('✓ Copied!', 'ok');
+    } catch(e) {
+      showStatus('Select text manually then Ctrl+C', 'err');
+    }
+  }
+
+  function copyJSON() {
+    updateJSON();
+    var txt = document.getElementById('jta').value;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt)
+        .then(function() { showStatus('✓ Copied!', 'ok'); })
+        .catch(function() { fallbackCopy(); });
+    } else {
+      fallbackCopy();
+    }
+  }
+
+  function clearAll() {
+    document.querySelectorAll('input.ci, select.cs, input.pii').forEach(function(el) {
+      el.value = '';
+    });
+    updateJSON();
+    showStatus('✓ Form cleared.', 'ok');
+  }
+
+  function showStatus(msg, type) {
+    var el = document.getElementById('smsg');
+    el.textContent = msg;
+    el.className = type;
+    clearTimeout(el._timer);
+    el._timer = setTimeout(function() {
+      el.className = '';
+      el.textContent = '';
+    }, 3500);
+  }
+
+  /* ── TABS ── */
+  function showTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('onclick') === "showTab('" + name + "')");
+    });
+    document.querySelectorAll('.panel').forEach(function(p) {
+      p.classList.remove('active');
+    });
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'json') updateJSON();
+  }
+
+  /* ── INIT ── */
+  buildSelects();
+  buildHyp();
+
+  document.querySelectorAll('input.ci, input.pii').forEach(function(el) {
+    el.addEventListener('input', updateJSON);
+  });
+  document.getElementById('jta').addEventListener('input', onJtaInput);
+
+  updateJSON();
+</script>
+</body>
+</html>
