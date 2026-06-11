@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stecco FM -- Assessment Form</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; background: #8faec8; padding: 10px; min-height: 100vh; }
+  .app { max-width: 1800px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,.32); overflow: hidden; }
+  .app-hdr { background: linear-gradient(135deg, #0b2540 0%, #1b5d8e 100%); color: #fff; padding: 14px 22px; text-align: center; }
+  .app-hdr h1 { font-size: 17px; letter-spacing: .3px; }
+  .app-hdr p  { font-size: 11px; opacity: .72; margin-top: 4px; }
+  .tab-bar { display: flex; background: #edf2f8; border-bottom: 2px solid #0b2540; }
+  .tab-btn { padding: 10px 28px; background: transparent; border: none; font-size: 13px; font-weight: 700; color: #556; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: background .15s, color .15s; }
+  .tab-btn:hover  { background: #dde6f0; color: #0b2540; }
+  .tab-btn.active { background: #fff; color: #0b2540; border-bottom-color: #1b5d8e; }
+  .panel { display: none; padding: 14px; overflow-x: auto; }
+  .panel.active { display: block; }
+  .sec-title { font-weight: 700; font-size: 12px; color: #0b2540; background: #d8e8f5; padding: 5px 10px; margin-bottom: 6px; border-left: 4px solid #0b2540; border-radius: 0 4px 4px 0; margin-top: 12px; }
+  .tbl-scroll { overflow-x: auto; margin-bottom: 4px; }
+  .ft { border-collapse: collapse; width: 100%; font-size: 11px; }
+  .ft th, .ft td { border: 1px solid #7a8a9e; padding: 1px 2px; vertical-align: middle; }
+  .ft th { background: #c5d5e6; font-weight: 700; text-align: center; font-size: 10px; white-space: nowrap; padding: 3px 2px; line-height: 1.3; }
+  .th-hint { font-size: 9px; font-weight: normal; opacity: .75; display: block; }
+  .rl     { background: #dde8f2; font-weight: 700; text-align: center; font-size: 10px; color: #1a2a3a; white-space: nowrap; padding: 3px 4px; }
+  .rl-sub { background: #edf4fc; font-weight: 700; text-align: center; font-size: 10px; color: #0b2540; padding: 2px 4px; white-space: nowrap; }
+  .sh { background: #8aaec8; font-weight: 700; text-align: center; font-size: 11px; padding: 4px; }
+  .ph { background: #a6c4dc; font-weight: 700; text-align: center; font-size: 10px; padding: 3px; }
+  .row-sipa   > td:not(.rl):not(.rl-sub) { background: #fff8d6; }
+  .row-paconc > td:not(.rl):not(.rl-sub) { background: #fffbe8; }
+  .row-cp     > td:not(.rl):not(.rl-sub) { background: #fff8d6; }
+  .row-di     > td:not(.rl):not(.rl-sub) { background: #fffbe8; }
+  .row-pe     > td:not(.rl):not(.rl-sub) { background: #fff8d6; }
+  .row-prev   > td:not(.rl):not(.rl-sub) { background: #f4f8ff; }
+  .row-surg   > td:not(.rl):not(.rl-sub) { background: #f8f4ff; }
+  .row-traum  > td:not(.rl):not(.rl-sub) { background: #f4fff6; }
+  .ci, .cs { width: 100%; border: none; background: transparent; font-size: 11px; padding: 2px; outline: none; font-family: inherit; color: #1a2a3a; }
+  .ci:focus, .cs:focus { background: #fffff0; outline: 1px solid #1b5d8e; border-radius: 2px; }
+  .cs { cursor: pointer; -webkit-appearance: auto; appearance: auto; }
+  .ci::placeholder { color: #aab; font-size: 10px; }
+  .dual-seg { display: flex; align-items: center; gap: 2px; padding: 1px; }
+  .dual-seg .cs { flex: 1; width: auto; min-width: 36px; font-size: 10px; }
+  .dual-seg .sep { font-size: 10px; color: #667; flex-shrink: 0; }
+  .treat-cell { display: flex; flex-direction: column; gap: 2px; padding: 2px; }
+  .treat-row  { display: flex; align-items: center; gap: 2px; }
+  .treat-lbl  { font-size: 9px; color: #667; white-space: nowrap; min-width: 24px; font-weight: 700; }
+  .treat-cell .cs { flex: 1; width: auto; min-width: 0; font-size: 10px; border: 1px solid #c0cfd8; border-radius: 2px; background: #fafcff; padding: 1px; }
+  .treat-cell .cs:focus { background: #fffff0; outline: 1px solid #1b5d8e; }
+  .treat-sep-row td { background: #f0f5fa; }
+  .treat-sep-label { font-size: 10px; font-weight: 700; color: #334; margin-right: 4px; }
+  .treat-sep-inp { font-size: 11px; font-family: inherit; border: none; border-bottom: 1px solid #aab; background: transparent; outline: none; padding: 1px 2px; width: 120px; }
+  .treat-sep-inp:focus { border-bottom-color: #0b2540; background: #fffff0; }
+  .treat-sep-plan { font-size: 11px; font-family: inherit; border: none; border-bottom: 1px solid #aab; background: transparent; outline: none; padding: 1px 2px; width: 100%; }
+  .treat-sep-plan:focus { border-bottom-color: #0b2540; background: #fffff0; }
+  .pt-tbl { border-collapse: collapse; width: 100%; min-width: 660px; table-layout: fixed; font-size: 11px; }
+  .pt-tbl th, .pt-tbl td { border: 1px solid #7a8a9e; vertical-align: top; padding: 0; }
+  .pt-tbl th { background: #c5d5e6; font-weight: 700; text-align: center; font-size: 11px; padding: 5px 6px; color: #0b2540; }
+  .pif { padding: 8px 10px; }
+  .pir { display: grid; grid-template-columns: 90px 1fr; align-items: center; padding: 4px 0; gap: 4px; border-bottom: 1px solid #eef; }
+  .pir:last-child { border-bottom: none; }
+  .pil { font-weight: 700; font-size: 10px; color: #334; white-space: nowrap; }
+  .pii { width: 100%; border: none; border-bottom: 1px solid #aab; background: transparent; font-size: 11px; font-family: inherit; outline: none; padding: 1px 2px; min-width: 0; }
+  .pii:focus { border-bottom-color: #0b2540; background: #fffff0; }
+  .ext-note { margin-top: 8px; font-size: 9px; color: #556; line-height: 1.7; padding: 5px 6px; background: #f0f6fc; border-radius: 3px; }
+  .ref-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin-top: 4px; }
+  .ref-card { border: 1px solid #c0d0e0; border-radius: 4px; overflow: hidden; font-size: 10px; }
+  .ref-card-hdr { background: #c5d5e6; padding: 4px 8px; font-weight: 700; font-size: 10.5px; color: #0b2540; }
+  .ref-card-body { padding: 5px 8px; }
+  .ref-row { display: flex; gap: 6px; padding: 1.5px 0; border-bottom: 1px solid #eef; }
+  .ref-row:last-child { border-bottom: none; }
+  .ref-code { font-weight: 700; color: #0b2540; min-width: 52px; font-family: monospace; }
+  .ref-desc { color: #445; }
+  .jw { display: flex; flex-direction: column; gap: 10px; }
+  .ja { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .btn { padding: 7px 16px; border: none; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; transition: filter .15s, transform .1s; }
+  .btn:hover  { filter: brightness(1.1); }
+  .btn:active { transform: scale(.97); }
+  .b-blue  { background: #0b2540; color: #fff; }
+  .b-green { background: #1a6e34; color: #fff; }
+  .b-red   { background: #9e1616; color: #fff; }
+  #smsg { display: none; padding: 5px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  #smsg.ok  { background: #d0f0dc; color: #14521e; display: inline-block; }
+  #smsg.err { background: #fde0e0; color: #8a1010; display: inline-block; }
+  .jh  { color: #667; font-size: 11px; line-height: 1.5; }
+  .jta { width: 100%; height: 580px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.5; padding: 12px; border: 2px solid #bfcad6; border-radius: 4px; resize: vertical; color: #1a2a3a; }
+  .jta:focus { border-color: #0b2540; outline: none; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="app-hdr">
+    <h1>Stecco Fascial Manipulation (FM) -- Assessment Form</h1>
+    <p>Fill the form &rarr; JSON updates live &nbsp;|&nbsp; Paste JSON into Tab 2 &rarr; form auto-populates</p>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('form')">Assessment Form</button>
+    <button class="tab-btn"        onclick="showTab('json')">JSON Data</button>
+  </div>
+
+  <!-- FORM PANEL -->
+  <div id="panel-form" class="panel active">
+
+    <div class="sec-title">&#9658; Patient Details</div>
+    <div class="tbl-scroll">
+      <table class="pt-tbl">
+        <thead>
+          <tr>
+            <th>Patient Information</th>
+            <th>Lifestyle &amp; Extremity Key</th>
+            <th>Clinical History</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="pif">
+              <div class="pir"><span class="pil">Surname:</span><input class="pii" id="surname"></div>
+              <div class="pir"><span class="pil">First Name:</span><input class="pii" id="firstname"></div>
+              <div class="pir"><span class="pil">Date of Birth:</span><input class="pii" id="dob" type="date"></div>
+            </td>
+            <td class="pif">
+              <div class="pir"><span class="pil">Occupation:</span><input class="pii" id="occupation"></div>
+              <div class="pir"><span class="pil">Sports:</span><input class="pii" id="sports"></div>
+              <div class="ext-note">
+                <b>CP</b> Caput &mdash; migraine, headache<br>
+                <b>DI</b> Digits &mdash; pain, numbness<br>
+                <b>PE</b> Pes &mdash; pain, hammer toe
+              </div>
+            </td>
+            <td class="pif">
+              <div class="pir"><span class="pil">Investigations:</span><input class="pii" id="investigations" placeholder="X-ray, MRI..."></div>
+              <div class="pir"><span class="pil">Medications:</span><input class="pii" id="medications"></div>
+              <div class="pir"><span class="pil">Internal dysf.:</span><input class="pii" id="int_dysf"></div>
+              <div class="pir"><span class="pil">Posture:</span><input class="pii" id="posture"></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sec-title">&#9658; Pain History &amp; Patient Assessment</div>
+    <div class="tbl-scroll">
+      <table class="ft" style="min-width:1020px;">
+        <colgroup>
+          <col style="width:52px"><col style="width:24px">
+          <col style="width:118px"><col style="width:42px"><col style="width:38px">
+          <col style="width:60px"><col style="width:66px"><col style="width:30px">
+          <col style="width:42px"><col style="width:42px"><col style="width:68px"><col>
+        </colgroup>
+        <thead>
+          <tr>
+            <th colspan="2"></th>
+            <th>Segments<span class="th-hint">val1 - val2</span></th>
+            <th>Locat<span class="th-hint">AN/RE...</span></th>
+            <th>Side<span class="th-hint">rt/lt/bi</span></th>
+            <th>&#39302;&#27425;&#30332;&#20316;<span class="th-hint">1st onset</span></th>
+            <th>&#36817;&#26399;&#24613;&#24615;&#30332;&#20316;<span class="th-hint">recent acute</span></th>
+            <th>T/?<span class="th-hint">cause</span></th>
+            <th>&#29616;&#22312;<span class="th-hint">VRS now</span></th>
+            <th>&#26368;&#39640;<span class="th-hint">VRS max</span></th>
+            <th>Rec/con<span class="th-hint">cont/1xd/2xw</span></th>
+            <th>Painful Movements<span class="th-hint">aggravating movement</span></th>
+          </tr>
+        </thead>
+        <tbody id="ph-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="sec-title">&#9658; Hypothesis (Myofascial Sequences)</div>
+    <div class="tbl-scroll">
+      <table class="ft" style="min-width:720px;">
+        <thead>
+          <tr>
+            <th colspan="3" class="sh">HYPOTHESIS</th>
+            <th colspan="2" class="ph">SAGITTAL PLANE</th>
+            <th colspan="2" class="ph">FRONTAL PLANE</th>
+            <th colspan="2" class="ph">HORIZONTAL PLANE</th>
+          </tr>
+          <tr>
+            <th style="width:50px">Group</th>
+            <th style="width:50px">Type<span class="th-hint">A / D</span></th>
+            <th style="width:90px">Segments</th>
+            <th>(lt) ANTE (rt)</th>
+            <th>(lt) RETRO (rt)</th>
+            <th>(an lt) MEDIO (rt)</th>
+            <th>(lt) LATERO (rt)</th>
+            <th>(lt) INTRA (rt)</th>
+            <th>(lt) EXTRA (rt)</th>
+          </tr>
+        </thead>
+        <tbody id="hyp-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="sec-title">&#9658; Treatment Record</div>
+    <div class="tbl-scroll">
+      <table class="ft" id="treat-tbl" style="min-width:1100px;">
+        <thead id="treat-thead"></thead>
+        <tbody id="treat-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="sec-title">&#9658; Quick Reference Guide</div>
+    <div class="ref-wrap">
+      <div class="ref-card">
+        <div class="ref-card-hdr">Segments (upper)</div>
+        <div class="ref-card-body">
+          <div class="ref-row"><span class="ref-code">CP1-3</span><span class="ref-desc">Caput &mdash; Head</span></div>
+          <div class="ref-row"><span class="ref-code">CL</span><span class="ref-desc">Collum &mdash; Neck</span></div>
+          <div class="ref-row"><span class="ref-code">TH</span><span class="ref-desc">Thorax</span></div>
+          <div class="ref-row"><span class="ref-code">SC</span><span class="ref-desc">Scapula &mdash; Shoulder</span></div>
+          <div class="ref-row"><span class="ref-code">HU</span><span class="ref-desc">Humerus &mdash; Upper arm</span></div>
+          <div class="ref-row"><span class="ref-code">CU</span><span class="ref-desc">Cubitus &mdash; Elbow</span></div>
+          <div class="ref-row"><span class="ref-code">CA</span><span class="ref-desc">Carpus &mdash; Wrist</span></div>
+          <div class="ref-row"><span class="ref-code">DI</span><span class="ref-desc">Digits &mdash; Fingers</span></div>
+        </div>
+      </div>
+      <div class="ref-card">
+        <div class="ref-card-hdr">Segments (lower)</div>
+        <div class="ref-card-body">
+          <div class="ref-row"><span class="ref-code">LU</span><span class="ref-desc">Lumbar</span></div>
+          <div class="ref-row"><span class="ref-code">PV</span><span class="ref-desc">Pelvis</span></div>
+          <div class="ref-row"><span class="ref-code">CX</span><span class="ref-desc">Coxa &mdash; Hip</span></div>
+          <div class="ref-row"><span class="ref-code">GE</span><span class="ref-desc">Genu &mdash; Knee</span></div>
+          <div class="ref-row"><span class="ref-code">TA</span><span class="ref-desc">Talus &mdash; Ankle</span></div>
+          <div class="ref-row"><span class="ref-code">PE</span><span class="ref-desc">Pes &mdash; Foot</span></div>
+        </div>
+      </div>
+      <div class="ref-card">
+        <div class="ref-card-hdr">Location / Side</div>
+        <div class="ref-card-body">
+          <div class="ref-row"><span class="ref-code">AN</span><span class="ref-desc">Anterior</span></div>
+          <div class="ref-row"><span class="ref-code">RE</span><span class="ref-desc">Retro (Posterior)</span></div>
+          <div class="ref-row"><span class="ref-code">LA</span><span class="ref-desc">Lateral</span></div>
+          <div class="ref-row"><span class="ref-code">ME</span><span class="ref-desc">Medial</span></div>
+          <div class="ref-row"><span class="ref-code">IR</span><span class="ref-desc">Internal Rotation</span></div>
+          <div class="ref-row"><span class="ref-code">ER</span><span class="ref-desc">External Rotation</span></div>
+          <div class="ref-row"><span class="ref-code">T / ?</span><span class="ref-desc">Trauma / Unknown</span></div>
+        </div>
+      </div>
+      <div class="ref-card">
+        <div class="ref-card-hdr">Duration / VRS / Rec</div>
+        <div class="ref-card-body">
+          <div class="ref-row"><span class="ref-code">1d / 2w</span><span class="ref-desc">1 day / 2 weeks</span></div>
+          <div class="ref-row"><span class="ref-code">3m / 2y</span><span class="ref-desc">3 months / 2 years</span></div>
+          <div class="ref-row"><span class="ref-code">0-10</span><span class="ref-desc">VRS scale</span></div>
+          <div class="ref-row"><span class="ref-code">cont</span><span class="ref-desc">Continuous</span></div>
+          <div class="ref-row"><span class="ref-code">1xd</span><span class="ref-desc">Once / day</span></div>
+          <div class="ref-row"><span class="ref-code">2xw</span><span class="ref-desc">Twice / week</span></div>
+        </div>
+      </div>
+      <div class="ref-card">
+        <div class="ref-card-hdr">Hypothesis Planes</div>
+        <div class="ref-card-body">
+          <div class="ref-row"><span class="ref-code">*</span><span class="ref-desc">Low priority</span></div>
+          <div class="ref-row"><span class="ref-code">**</span><span class="ref-desc">Medium priority</span></div>
+          <div class="ref-row"><span class="ref-code">***</span><span class="ref-desc">High priority</span></div>
+          <div class="ref-row"><span class="ref-code">A</span><span class="ref-desc">Agonist sequence</span></div>
+          <div class="ref-row"><span class="ref-code">D</span><span class="ref-desc">Diagonal sequence</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panel-form -->
+
+  <div id="panel-json" class="panel">
+    <div class="jw">
+      <div class="ja">
+        <button class="btn b-blue"  onclick="applyJSON()">Apply JSON to Form</button>
+        <button class="btn b-green" onclick="copyJSON()">Copy JSON</button>
+        <button class="btn b-red"   onclick="clearAll()">Clear All</button>
+        <span id="smsg"></span>
+      </div>
+      <p class="jh">JSON updates automatically as you type. Paste JSON here and click Apply.</p>
+      <textarea class="jta" id="jta" spellcheck="false" placeholder="JSON will appear here..."></textarea>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+/* ===== OPTIONS ===== */
+var SEG_OPTS   = ['CP1','CP2','CP3','CL','TH','LU','PV','CX','GE','TA','PE','SC','HU','CU','CA','DI'];
+var LOCAT_OPTS = ['AN','RE','ME','LA','IR','ER'];
+var SIDE_OPTS  = ['rt','lt','bi'];
+var T_OPTS     = ['T','?'];
+var VRS_OPTS   = ['0','1','2','3','4','5','6','7','8','9','10'];
+var PLANE_OPTS = ['*','**','***'];
+var TYPE_OPTS  = ['A','D'];
+var IMPR_OPTS  = ['+','++','+++','N.C.'];
+var LOC_OPTS   = ['AN','RE','ME','LA','IR','ER'];
+
+/* ===== HELPERS ===== */
+function getVal(id) {
+  var el = document.getElementById(id);
+  return (el) ? el.value.trim() : '';
+}
+function setVal(id, v) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.value = (v !== undefined && v !== null) ? String(v) : '';
+}
+
+function mkSel(id, opts) {
+  var sel = document.createElement('select');
+  sel.id = id;
+  sel.className = 'cs';
+  var blank = document.createElement('option');
+  blank.value = '';
+  blank.textContent = '';
+  sel.appendChild(blank);
+  for (var i = 0; i < opts.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = opts[i];
+    opt.textContent = opts[i];
+    sel.appendChild(opt);
+  }
+  sel.addEventListener('change', updateJSON);
+  return sel;
+}
+
+function mkInp(id, ph, title) {
+  var inp = document.createElement('input');
+  inp.id = id;
+  inp.className = 'ci';
+  if (ph)    inp.placeholder = ph;
+  if (title) inp.title = title;
+  inp.addEventListener('input', updateJSON);
+  return inp;
+}
+
+function mkDualSegTd(id1, id2) {
+  var td  = document.createElement('td');
+  td.style.padding = '1px';
+  var div = document.createElement('div');
+  div.className = 'dual-seg';
+
+  var s1  = document.createElement('select');
+  s1.id = id1; s1.className = 'cs';
+  var s2  = document.createElement('select');
+  s2.id = id2; s2.className = 'cs';
+
+  var blank1 = document.createElement('option');
+  blank1.value = ''; blank1.textContent = '';
+  s1.appendChild(blank1);
+  var blank2 = document.createElement('option');
+  blank2.value = ''; blank2.textContent = '';
+  s2.appendChild(blank2);
+
+  for (var i = 0; i < SEG_OPTS.length; i++) {
+    var o1 = document.createElement('option');
+    o1.value = SEG_OPTS[i]; o1.textContent = SEG_OPTS[i];
+    s1.appendChild(o1);
+    var o2 = document.createElement('option');
+    o2.value = SEG_OPTS[i]; o2.textContent = SEG_OPTS[i];
+    s2.appendChild(o2);
+  }
+  s1.addEventListener('change', updateJSON);
+  s2.addEventListener('change', updateJSON);
+
+  var sep = document.createElement('span');
+  sep.className = 'sep';
+  sep.textContent = '-';
+
+  div.appendChild(s1);
+  div.appendChild(sep);
+  div.appendChild(s2);
+  td.appendChild(div);
+  return td;
+}
+
+function addSelTd(tr, id, opts) {
+  var td = document.createElement('td');
+  td.style.padding = '0';
+  td.appendChild(mkSel(id, opts));
+  tr.appendChild(td);
+}
+
+function addInpTd(tr, id, ph, title) {
+  var td = document.createElement('td');
+  td.style.padding = '0';
+  td.appendChild(mkInp(id, ph, title));
+  tr.appendChild(td);
+}
+
+/* ===== PAIN HISTORY ROW BUILDERS ===== */
+
+/* Standard row: separate VRS-now, VRS-max, reccon cells */
+function buildStdRow(cls, labelHtml, prefix, isFirst, rowSpanCount) {
+  var tr = document.createElement('tr');
+  tr.className = cls;
+
+  if (isFirst) {
+    var tdL = document.createElement('td');
+    tdL.className = 'rl';
+    tdL.colSpan = 2;
+    if (rowSpanCount > 1) { tdL.rowSpan = rowSpanCount; }
+    tdL.innerHTML = labelHtml;
+    tr.appendChild(tdL);
+  }
+
+  tr.appendChild(mkDualSegTd(prefix + '_seg1', prefix + '_seg2'));
+  addSelTd(tr, prefix + '_locat',    LOCAT_OPTS);
+  addSelTd(tr, prefix + '_side',     SIDE_OPTS);
+  addInpTd(tr, prefix + '_firstdur', '1st onset');
+  addInpTd(tr, prefix + '_recentdur','recent acute');
+  addSelTd(tr, prefix + '_t',        T_OPTS);
+  addSelTd(tr, prefix + '_vrsnow',   VRS_OPTS);
+  addSelTd(tr, prefix + '_vrsmax',   VRS_OPTS);
+  addInpTd(tr, prefix + '_reccon',   'cont/1xd/2xw', 'cont / 1xd / 2xw');
+  addInpTd(tr, prefix + '_pain',     'e.g. RE -20');
+  return tr;
+}
+
+/* Surgery row: VRS-now / VRS-max / Rec-con merged into one text cell */
+function buildMergedVrsRow(cls, labelHtml, prefix, isFirst, rowSpanCount) {
+  var tr = document.createElement('tr');
+  tr.className = cls;
+
+  if (isFirst) {
+    var tdL = document.createElement('td');
+    tdL.className = 'rl';
+    tdL.colSpan = 2;
+    tdL.rowSpan = rowSpanCount;
+    tdL.innerHTML = labelHtml;
+    tr.appendChild(tdL);
+  }
+
+  tr.appendChild(mkDualSegTd(prefix + '_seg1', prefix + '_seg2'));
+  addSelTd(tr, prefix + '_locat',    LOCAT_OPTS);
+  addSelTd(tr, prefix + '_side',     SIDE_OPTS);
+  addInpTd(tr, prefix + '_firstdur', '1st onset');
+  addInpTd(tr, prefix + '_recentdur','recent acute');
+  addSelTd(tr, prefix + '_t',        T_OPTS);
+
+  var tdM = document.createElement('td');
+  tdM.colSpan = 3;
+  tdM.style.padding = '0';
+  tdM.appendChild(mkInp(prefix + '_merged', 'VRS now-max / freq  e.g. 4-8 / 2xw'));
+  tr.appendChild(tdM);
+
+  addInpTd(tr, prefix + '_pain', 'Painful movement');
+  return tr;
+}
+
+/* Trauma row: T/? + VRS + Rec-con merged into one text cell */
+function buildMergedTRow(cls, labelHtml, prefix, isFirst, rowSpanCount) {
+  var tr = document.createElement('tr');
+  tr.className = cls;
+
+  if (isFirst) {
+    var tdL = document.createElement('td');
+    tdL.className = 'rl';
+    tdL.colSpan = 2;
+    tdL.rowSpan = rowSpanCount;
+    tdL.innerHTML = labelHtml;
+    tr.appendChild(tdL);
+  }
+
+  tr.appendChild(mkDualSegTd(prefix + '_seg1', prefix + '_seg2'));
+  addSelTd(tr, prefix + '_locat',    LOCAT_OPTS);
+  addSelTd(tr, prefix + '_side',     SIDE_OPTS);
+  addInpTd(tr, prefix + '_firstdur', '1st onset');
+  addInpTd(tr, prefix + '_recentdur','recent acute');
+
+  var tdM = document.createElement('td');
+  tdM.colSpan = 4;
+  tdM.style.padding = '0';
+  tdM.appendChild(mkInp(prefix + '_tmerged', 'T/?  VRS now-max / freq  e.g. T  6-8/2xw'));
+  tr.appendChild(tdM);
+
+  addInpTd(tr, prefix + '_pain', 'Post-trauma impact');
+  return tr;
+}
+
+/* ===== BUILD PAIN HISTORY TABLE ===== */
+function buildPainHistory() {
+  var tb = document.getElementById('ph-tbody');
+  if (!tb) return;
+  tb.innerHTML = '';
+
+  /* Si Pa */
+  tb.appendChild(buildStdRow('row-sipa', 'Si Pa', 'sipa', true, 1));
+
+  /* Pa Conc x2 -- standard separate cells (no merge) */
+  tb.appendChild(buildStdRow('row-paconc', 'Pa Conc', 'paconc0', true,  2));
+  tb.appendChild(buildStdRow('row-paconc', 'Pa Conc', 'paconc1', false, 2));
+
+  /* Extremit CP / DI / PE */
+  var extSubs = [
+    { cls:'row-cp', sub:'CP', pre:'cp', ph:'migraine, headache, sensory' },
+    { cls:'row-di', sub:'DI', pre:'di', ph:'numbness, tingling fingers'  },
+    { cls:'row-pe', sub:'PE', pre:'pe', ph:'plantar pain, toe deformity' }
+  ];
+  for (var ei = 0; ei < extSubs.length; ei++) {
+    var row = extSubs[ei];
+    var tr  = document.createElement('tr');
+    tr.className = row.cls;
+
+    if (ei === 0) {
+      var tdExt = document.createElement('td');
+      tdExt.className  = 'rl';
+      tdExt.rowSpan    = 3;
+      tdExt.textContent = 'Extremit.';
+      tr.appendChild(tdExt);
+    }
+
+    var tdSub = document.createElement('td');
+    tdSub.className  = 'rl-sub';
+    tdSub.textContent = row.sub;
+    tr.appendChild(tdSub);
+
+    tr.appendChild(mkDualSegTd(row.pre + '_seg1', row.pre + '_seg2'));
+    addSelTd(tr, row.pre + '_locat',    LOCAT_OPTS);
+    addSelTd(tr, row.pre + '_side',     SIDE_OPTS);
+    addInpTd(tr, row.pre + '_firstdur', '1st onset');
+    addInpTd(tr, row.pre + '_recentdur','recent acute');
+    addSelTd(tr, row.pre + '_t',        T_OPTS);
+    addSelTd(tr, row.pre + '_vrsnow',   VRS_OPTS);
+    addSelTd(tr, row.pre + '_vrsmax',   VRS_OPTS);
+    addInpTd(tr, row.pre + '_reccon',   'cont/1xd/2xw', 'cont / 1xd / 2xw');
+    addInpTd(tr, row.pre + '_pain',     row.ph);
+    tb.appendChild(tr);
+  }
+
+  /* Pa Prev x2 */
+  tb.appendChild(buildStdRow('row-prev', 'Pa Prev', 'paprev0', true,  2));
+  tb.appendChild(buildStdRow('row-prev', 'Pa Prev', 'paprev1', false, 2));
+
+  /* Surgery x2 -- merged VRS+reccon */
+  tb.appendChild(buildMergedVrsRow('row-surg', 'Surgery', 'surg0', true,  2));
+  tb.appendChild(buildMergedVrsRow('row-surg', 'Surgery', 'surg1', false, 2));
+
+  /* Trauma x2 -- merged T/? + VRS + reccon */
+  tb.appendChild(buildMergedTRow('row-traum', 'Trauma/<br>Fracture', 'traum0', true,  2));
+  tb.appendChild(buildMergedTRow('row-traum', 'Trauma/<br>Fracture', 'traum1', false, 2));
+}
+
+/* ===== BUILD HYPOTHESIS TABLE ===== */
+function buildHyp() {
+  var tb = document.getElementById('hyp-tbody');
+  if (!tb) return;
+  tb.innerHTML = '';
+
+  var groups = [
+    { label: 'Mo<br>Ve', count: 4 },
+    { label: 'Pa<br>Ve', count: 4 }
+  ];
+
+  var ri = 0;
+  for (var gi = 0; gi < groups.length; gi++) {
+    var grp = groups[gi];
+    for (var r = 0; r < grp.count; r++) {
+      var tr = document.createElement('tr');
+
+      if (r === 0) {
+        var tdG = document.createElement('td');
+        tdG.className = 'rl';
+        tdG.rowSpan   = grp.count;
+        tdG.innerHTML = grp.label;
+        tr.appendChild(tdG);
+      }
+
+      var tdType = document.createElement('td');
+      tdType.style.padding = '0';
+      tdType.appendChild(mkSel('h' + ri + '_type', TYPE_OPTS));
+      tr.appendChild(tdType);
+
+      var tdSeg = document.createElement('td');
+      tdSeg.style.padding = '0';
+      tdSeg.appendChild(mkSel('h' + ri + '_seg', SEG_OPTS));
+      tr.appendChild(tdSeg);
+
+      var planes = ['ante','retro','medio','latero','intra','extra'];
+      for (var pi = 0; pi < planes.length; pi++) {
+        var tdP = document.createElement('td');
+        tdP.style.padding = '0';
+        tdP.appendChild(mkSel('h' + ri + '_' + planes[pi], PLANE_OPTS));
+        tr.appendChild(tdP);
+      }
+
+      tb.appendChild(tr);
+      ri++;
+    }
+  }
+}
+
+/* ===== BUILD TREATMENT TABLE ===== */
+function buildTreatment() {
+  var thead = document.getElementById('treat-thead');
+  var tbody = document.getElementById('treat-tbody');
+  if (!thead || !tbody) return;
+  thead.innerHTML = '';
+  tbody.innerHTML = '';
+
+  /* Header row */
+  var htr    = document.createElement('tr');
+  var thDate = document.createElement('th');
+  thDate.className   = 'sh';
+  thDate.textContent = 'Date';
+  thDate.style.width = '72px';
+  htr.appendChild(thDate);
+
+  for (var t = 1; t <= 10; t++) {
+    var th = document.createElement('th');
+    th.className = 'ph';
+    th.innerHTML = 'T' + t + '<span class="th-hint">Loc/Seg/Side/Imp</span>';
+    th.style.width = '100px';
+    htr.appendChild(th);
+  }
+  thead.appendChild(htr);
+
+  /* 2 sessions */
+  for (var si = 0; si < 2; si++) {
+    /* Row 1: Date + 10 treatment cells */
+    var tr1    = document.createElement('tr');
+    var tdDate = document.createElement('td');
+    tdDate.className       = 'rl';
+    tdDate.rowSpan         = 2;
+    tdDate.style.verticalAlign = 'top';
+
+    var dateInp = document.createElement('input');
+    dateInp.className = 'ci';
+    dateInp.id        = 'treat' + si + '_date';
+    dateInp.type      = 'date';
+    dateInp.addEventListener('input', updateJSON);
+    tdDate.appendChild(dateInp);
+    tr1.appendChild(tdDate);
+
+    for (var ti = 0; ti < 10; ti++) {
+      var td  = document.createElement('td');
+      td.style.padding       = '2px';
+      td.style.verticalAlign = 'top';
+      var div = document.createElement('div');
+      div.className = 'treat-cell';
+
+      var tfields = [
+        { lbl:'Loc',  sfx:'_loc',  opts: LOC_OPTS   },
+        { lbl:'Seg',  sfx:'_seg',  opts: SEG_OPTS   },
+        { lbl:'Side', sfx:'_side', opts: SIDE_OPTS  },
+        { lbl:'Imp',  sfx:'_impr', opts: IMPR_OPTS  }
+      ];
+
+      for (var fi = 0; fi < tfields.length; fi++) {
+        var f    = tfields[fi];
+        var frow = document.createElement('div');
+        frow.className = 'treat-row';
+        var lbl  = document.createElement('span');
+        lbl.className  = 'treat-lbl';
+        lbl.textContent = f.lbl;
+        var fid  = 'treat' + si + '_t' + ti + f.sfx;
+        frow.appendChild(lbl);
+        frow.appendChild(mkSel(fid, f.opts));
+        div.appendChild(frow);
+      }
+      td.appendChild(div);
+      tr1.appendChild(td);
+    }
+    tbody.appendChild(tr1);
+
+    /* Row 2: Now VRS + 2nd Treatment Plan */
+    var tr2 = document.createElement('tr');
+
+    var tdVrs = document.createElement('td');
+    tdVrs.colSpan         = 4;
+    tdVrs.style.padding   = '4px 6px';
+    tdVrs.style.verticalAlign = 'middle';
+
+    var vrsLabel = document.createElement('span');
+    vrsLabel.className   = 'treat-sep-label';
+    vrsLabel.textContent = 'Now VRS:';
+
+    var vrsInp = document.createElement('input');
+    vrsInp.className   = 'treat-sep-inp';
+    vrsInp.id          = 'treat' + si + '_vrsnow';
+    vrsInp.placeholder = 'e.g. 2';
+    vrsInp.addEventListener('input', updateJSON);
+
+    tdVrs.appendChild(vrsLabel);
+    tdVrs.appendChild(vrsInp);
+    tr2.appendChild(tdVrs);
+
+    var tdPlan = document.createElement('td');
+    tdPlan.colSpan         = 6;
+    tdPlan.style.padding   = '4px 6px';
+    tdPlan.style.verticalAlign = 'middle';
+
+    var planLabel = document.createElement('span');
+    planLabel.className   = 'treat-sep-label';
+    planLabel.textContent = '2nd Treatment Plan:';
+
+    var planInp = document.createElement('input');
+    planInp.className   = 'treat-sep-plan';
+    planInp.id          = 'treat' + si + '_plan';
+    planInp.placeholder = 'e.g. re-assess CL sequence';
+    planInp.addEventListener('input', updateJSON);
+
+    tdPlan.appendChild(planLabel);
+    tdPlan.appendChild(planInp);
+    tr2.appendChild(tdPlan);
+
+    tbody.appendChild(tr2);
+  }
+}
+
+/* ===== DATA COLLECTION HELPERS ===== */
+function stdRowData(p) {
+  return {
+    seg1: getVal(p + '_seg1'),
+    seg2: getVal(p + '_seg2'),
+    locat: getVal(p + '_locat'),
+    side:  getVal(p + '_side'),
+    firstAttackDuration:  getVal(p + '_firstdur'),
+    recentAcuteDuration:  getVal(p + '_recentdur'),
+    t:      getVal(p + '_t'),
+    vrsNow: getVal(p + '_vrsnow'),
+    vrsMax: getVal(p + '_vrsmax'),
+    reccon: getVal(p + '_reccon'),
+    painfulMovements: getVal(p + '_pain')
+  };
+}
+
+function mergedVrsRowData(p) {
+  return {
+    seg1: getVal(p + '_seg1'),
+    seg2: getVal(p + '_seg2'),
+    locat: getVal(p + '_locat'),
+    side:  getVal(p + '_side'),
+    firstAttackDuration: getVal(p + '_firstdur'),
+    recentAcuteDuration: getVal(p + '_recentdur'),
+    t:          getVal(p + '_t'),
+    mergedVrsRec: getVal(p + '_merged'),
+    painfulMovements: getVal(p + '_pain')
+  };
+}
+
+function mergedTRowData(p) {
+  return {
+    seg1: getVal(p + '_seg1'),
+    seg2: getVal(p + '_seg2'),
+    locat: getVal(p + '_locat'),
+    side:  getVal(p + '_side'),
+    firstAttackDuration: getVal(p + '_firstdur'),
+    recentAcuteDuration: getVal(p + '_recentdur'),
+    mergedTVrsRec: getVal(p + '_tmerged'),
+    painfulMovements: getVal(p + '_pain')
+  };
+}
+
+/* ===== COLLECT ALL -> JSON ===== */
+function collectData() {
+  /* Hypothesis */
+  var hyp    = [];
+  var hgroups = [{ label:'Mo-Ve', count:4 }, { label:'Pa-Ve', count:4 }];
+  var ri = 0;
+  for (var gi = 0; gi < hgroups.length; gi++) {
+    for (var r = 0; r < hgroups[gi].count; r++) {
+      hyp.push({
+        group:   hgroups[gi].label,
+        type:    getVal('h' + ri + '_type'),
+        segment: getVal('h' + ri + '_seg'),
+        ante:    getVal('h' + ri + '_ante'),
+        retro:   getVal('h' + ri + '_retro'),
+        medio:   getVal('h' + ri + '_medio'),
+        latero:  getVal('h' + ri + '_latero'),
+        intra:   getVal('h' + ri + '_intra'),
+        extra:   getVal('h' + ri + '_extra')
+      });
+      ri++;
+    }
+  }
+
+  /* Treatment */
+  var treat = [];
+  for (var si = 0; si < 2; si++) {
+    var tArr = [];
+    for (var ti = 0; ti < 10; ti++) {
+      tArr.push({
+        location:    getVal('treat' + si + '_t' + ti + '_loc'),
+        segment:     getVal('treat' + si + '_t' + ti + '_seg'),
+        side:        getVal('treat' + si + '_t' + ti + '_side'),
+        improvement: getVal('treat' + si + '_t' + ti + '_impr')
+      });
+    }
+    treat.push({
+      date:            getVal('treat' + si + '_date'),
+      treatments:      tArr,
+      nowVRS:          getVal('treat' + si + '_vrsnow'),
+      secondTreatPlan: getVal('treat' + si + '_plan')
+    });
+  }
+
+  return {
+    patientInfo: {
+      surname:    getVal('surname'),
+      firstName:  getVal('firstname'),
+      dob:        getVal('dob'),
+      occupation: getVal('occupation'),
+      sports:     getVal('sports')
+    },
+    clinical: {
+      investigations: getVal('investigations'),
+      medications:    getVal('medications'),
+      internalDysf:   getVal('int_dysf'),
+      posture:        getVal('posture')
+    },
+    painHistory: {
+      siPa:          stdRowData('sipa'),
+      paConcurrent:  [ stdRowData('paconc0'), stdRowData('paconc1') ],
+      extremit_CP:   stdRowData('cp'),
+      extremit_DI:   stdRowData('di'),
+      extremit_PE:   stdRowData('pe'),
+      paPrevious:    [ stdRowData('paprev0'),    stdRowData('paprev1')   ],
+      surgery:       [ mergedVrsRowData('surg0'), mergedVrsRowData('surg1') ],
+      traumaFracture:[ mergedTRowData('traum0'),  mergedTRowData('traum1')  ]
+    },
+    hypothesis: hyp,
+    treatment:  treat
+  };
+}
+
+/* ===== APPLY JSON -> FORM ===== */
+function applyStdRow(p, o) {
+  if (!o) return;
+  setVal(p + '_seg1',      o.seg1);
+  setVal(p + '_seg2',      o.seg2);
+  setVal(p + '_locat',     o.locat);
+  setVal(p + '_side',      o.side);
+  setVal(p + '_firstdur',  o.firstAttackDuration);
+  setVal(p + '_recentdur', o.recentAcuteDuration);
+  setVal(p + '_t',         o.t);
+  setVal(p + '_vrsnow',    o.vrsNow);
+  setVal(p + '_vrsmax',    o.vrsMax);
+  setVal(p + '_reccon',    o.reccon);
+  setVal(p + '_pain',      o.painfulMovements);
+}
+
+function applyMergedVrsRow(p, o) {
+  if (!o) return;
+  setVal(p + '_seg1',      o.seg1);
+  setVal(p + '_seg2',      o.seg2);
+  setVal(p + '_locat',     o.locat);
+  setVal(p + '_side',      o.side);
+  setVal(p + '_firstdur',  o.firstAttackDuration);
+  setVal(p + '_recentdur', o.recentAcuteDuration);
+  setVal(p + '_t',         o.t);
+  setVal(p + '_merged',    o.mergedVrsRec);
+  setVal(p + '_pain',      o.painfulMovements);
+}
+
+function applyMergedTRow(p, o) {
+  if (!o) return;
+  setVal(p + '_seg1',      o.seg1);
+  setVal(p + '_seg2',      o.seg2);
+  setVal(p + '_locat',     o.locat);
+  setVal(p + '_side',      o.side);
+  setVal(p + '_firstdur',  o.firstAttackDuration);
+  setVal(p + '_recentdur', o.recentAcuteDuration);
+  setVal(p + '_tmerged',   o.mergedTVrsRec);
+  setVal(p + '_pain',      o.painfulMovements);
+}
+
+function applyData(d) {
+  if (!d) return;
+
+  var pi = d.patientInfo || {};
+  setVal('surname',    pi.surname);
+  setVal('firstname',  pi.firstName);
+  setVal('dob',        pi.dob);
+  setVal('occupation', pi.occupation);
+  setVal('sports',     pi.sports);
+
+  var cl = d.clinical || {};
+  setVal('investigations', cl.investigations);
+  setVal('medications',    cl.medications);
+  setVal('int_dysf',       cl.internalDysf);
+  setVal('posture',        cl.posture);
+
+  var ph = d.painHistory || {};
+  applyStdRow('sipa', ph.siPa);
+
+  /* Pa Conc -- standard rows, no merge */
+  if (Array.isArray(ph.paConcurrent)) {
+    for (var ci = 0; ci < ph.paConcurrent.length; ci++) {
+      applyStdRow('paconc' + ci, ph.paConcurrent[ci]);
+    }
+  }
+
+  applyStdRow('cp', ph.extremit_CP);
+  applyStdRow('di', ph.extremit_DI);
+  applyStdRow('pe', ph.extremit_PE);
+
+  if (Array.isArray(ph.paPrevious)) {
+    for (var ppi = 0; ppi < ph.paPrevious.length; ppi++) {
+      applyStdRow('paprev' + ppi, ph.paPrevious[ppi]);
+    }
+  }
+
+  if (Array.isArray(ph.surgery)) {
+    for (var sgi = 0; sgi < ph.surgery.length; sgi++) {
+      applyMergedVrsRow('surg' + sgi, ph.surgery[sgi]);
+    }
+  }
+
+  if (Array.isArray(ph.traumaFracture)) {
+    for (var tri = 0; tri < ph.traumaFracture.length; tri++) {
+      applyMergedTRow('traum' + tri, ph.traumaFracture[tri]);
+    }
+  }
+
+  if (Array.isArray(d.hypothesis)) {
+    for (var hi = 0; hi < d.hypothesis.length && hi < 8; hi++) {
+      var hrow = d.hypothesis[hi];
+      setVal('h' + hi + '_type',   hrow.type);
+      setVal('h' + hi + '_seg',    hrow.segment);
+      setVal('h' + hi + '_ante',   hrow.ante);
+      setVal('h' + hi + '_retro',  hrow.retro);
+      setVal('h' + hi + '_medio',  hrow.medio);
+      setVal('h' + hi + '_latero', hrow.latero);
+      setVal('h' + hi + '_intra',  hrow.intra);
+      setVal('h' + hi + '_extra',  hrow.extra);
+    }
+  }
+
+  if (Array.isArray(d.treatment)) {
+    for (var tsi = 0; tsi < d.treatment.length && tsi < 2; tsi++) {
+      var sess = d.treatment[tsi];
+      setVal('treat' + tsi + '_date',   sess.date);
+      setVal('treat' + tsi + '_vrsnow', sess.nowVRS);
+      setVal('treat' + tsi + '_plan',   sess.secondTreatPlan);
+      if (Array.isArray(sess.treatments)) {
+        for (var tti = 0; tti < sess.treatments.length && tti < 10; tti++) {
+          var tc = sess.treatments[tti];
+          setVal('treat' + tsi + '_t' + tti + '_loc',  tc.location);
+          setVal('treat' + tsi + '_t' + tti + '_seg',  tc.segment);
+          setVal('treat' + tsi + '_t' + tti + '_side', tc.side);
+          setVal('treat' + tsi + '_t' + tti + '_impr', tc.improvement);
+        }
+      }
+    }
+  }
+}
+
+/* ===== JSON <-> TEXTAREA ===== */
+function updateJSON() {
+  var ta = document.getElementById('jta');
+  if (ta) { ta.value = JSON.stringify(collectData(), null, 2); }
+}
+
+var debTimer = null;
+function onJtaInput() {
+  clearTimeout(debTimer);
+  debTimer = setTimeout(function() {
+    try {
+      applyData(JSON.parse(document.getElementById('jta').value));
+      showStatus('Auto-applied from JSON', 'ok');
+    } catch(e) {
+      showStatus('Invalid JSON - keep typing...', 'err');
+    }
+  }, 700);
+}
+
+function applyJSON() {
+  try {
+    applyData(JSON.parse(document.getElementById('jta').value));
+    showStatus('JSON applied to form!', 'ok');
+  } catch(e) {
+    showStatus('Invalid JSON: ' + e.message, 'err');
+  }
+}
+
+function fallbackCopy() {
+  var ta = document.getElementById('jta');
+  ta.select();
+  try { document.execCommand('copy'); showStatus('Copied!', 'ok'); }
+  catch(e) { showStatus('Select text manually then Ctrl+C', 'err'); }
+}
+
+function copyJSON() {
+  updateJSON();
+  var txt = document.getElementById('jta').value;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt)
+      .then(function() { showStatus('Copied!', 'ok'); })
+      .catch(fallbackCopy);
+  } else {
+    fallbackCopy();
+  }
+}
+
+function clearAll() {
+  var els = document.querySelectorAll('input.ci, select.cs, input.pii, input.treat-sep-inp, input.treat-sep-plan');
+  for (var i = 0; i < els.length; i++) { els[i].value = ''; }
+  updateJSON();
+  showStatus('Form cleared.', 'ok');
+}
+
+function showStatus(msg, type) {
+  var el = document.getElementById('smsg');
+  if (!el) return;
+  el.textContent = msg;
+  el.className   = type;
+  clearTimeout(el._t);
+  el._t = setTimeout(function() { el.className = ''; el.textContent = ''; }, 3500);
+}
+
+/* ===== TABS ===== */
+function showTab(name) {
+  var btns = document.querySelectorAll('.tab-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active',
+      btns[i].getAttribute('onclick') === "showTab('" + name + "')");
+  }
+  var panels = document.querySelectorAll('.panel');
+  for (var j = 0; j < panels.length; j++) { panels[j].classList.remove('active'); }
+  var p = document.getElementById('panel-' + name);
+  if (p) p.classList.add('active');
+  if (name === 'json') updateJSON();
+}
+
+/* ===== INIT ===== */
+buildPainHistory();
+buildHyp();
+buildTreatment();
+
+var allInputs = document.querySelectorAll('input.ci, input.pii, input.treat-sep-inp, input.treat-sep-plan');
+for (var ii = 0; ii < allInputs.length; ii++) {
+  allInputs[ii].addEventListener('input', updateJSON);
+}
+
+var jta = document.getElementById('jta');
+if (jta) { jta.addEventListener('input', onJtaInput); }
+
+updateJSON();
+</script>
+</body>
+</html>
