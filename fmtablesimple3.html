@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>問診記錄 - 極簡手機版</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: -apple-system, "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+        background: #f1f5f9;
+        margin: 0;
+        padding: 5px 0;
+        color: #0f172a;
+    }
+    .container-app { max-width: 420px; margin: 0 auto; padding: 0 6px; }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; padding: 0 3px; }
+    .topbar-title { font-weight: 700; color: #1e293b; font-size: 13.5px; display: flex; align-items: center; gap: 5px; }
+    .save-indicator { font-size: 8.5px; color: #10b981; opacity: 0; display: flex; align-items: center; gap: 2px; transition: opacity .3s ease; }
+    .topbar-actions { display: flex; gap: 3px; }
+    .btn {
+        padding: 2.5px 8px; border-radius: 7px; font-size: 9.5px; display: flex; align-items: center;
+        gap: 3px; border: none; cursor: pointer; font-family: inherit;
+    }
+    .btn-green { background: #059669; color: #fff; }
+    .btn-red { background: #dc2626; color: #fff; }
+    .btn-white { background: #fff; border: 1px solid #cbd5e1; color: #334155; }
+
+    .form-card {
+        max-width: 410px; margin: 0 auto; background: #fff; border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 1px solid #e2e8f0;
+        padding: 8px; font-size: 12px; line-height: 1.15;
+    }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 6px; }
+    .field-label { font-size: 8.5px; color: #64748b; margin-bottom: 1px; }
+
+    .mini-input, .mini-textarea {
+        font-size: 11.5px; padding: 3px 5px; line-height: 1.1; width: 100%;
+        border: 1px solid #cbd5e1; border-radius: 7px; font-family: inherit; color: #0f172a; background: #fff;
+    }
+    .mini-textarea { line-height: 1.25; resize: vertical; }
+    .mini-input::placeholder, .mini-textarea::placeholder { color: #94a3b8; }
+
+    .tight-section { margin-bottom: 6px; }
+    .section-title-row { display: flex; align-items: center; gap: 3px; margin-bottom: 3px; }
+    .section-header { font-size: 11px; font-weight: 600; color: #1e40af; }
+    .icon { font-size: 11.5px; line-height: 1; }
+
+    .grid-12 { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; align-items: end; }
+    .col-2 { grid-column: span 2; }
+    .col-3 { grid-column: span 3; }
+    .col-4 { grid-column: span 4; }
+    .col-5 { grid-column: span 5; }
+    .col-6 { grid-column: span 6; }
+    .col-8 { grid-column: span 8; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .grid-2-tight { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+
+    .pain-row-label { display: flex; justify-content: space-between; font-size: 8.5px; margin-bottom: 1px; }
+    .pain-current { color: #2563eb; font-weight: 600; }
+    .pain-max { color: #ef4444; font-weight: 600; }
+    input[type="range"] { width: 100%; }
+    input[type="range"].accent-blue { accent-color: #2563eb; }
+    input[type="range"].accent-red { accent-color: #ef4444; }
+
+    .section-header-with-btn { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+    .mini-btn {
+        font-size: 8.5px; padding: 1.5px 6px; border-radius: 5px; border: none; color: #fff;
+        display: flex; align-items: center; gap: 2px; cursor: pointer; font-family: inherit;
+    }
+    .mini-btn.teal { background: #0d9488; }
+    .mini-btn.orange { background: #ea580c; }
+
+    .assoc-card, .past-card {
+        background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 7px;
+        padding: 6px; margin-bottom: 6px; position: relative;
+    }
+    .remove-btn {
+        position: absolute; top: 3px; right: 3px; background: none; border: none;
+        color: #fca5a5; cursor: pointer; padding: 1px; font-size: 12px; line-height: 1;
+    }
+    .remove-btn:hover { color: #ef4444; }
+    .pr-guard { padding-right: 16px; }
+
+    .limb-row-wrap { margin-bottom: 3px; }
+    .limb-row {
+        display: grid;
+        grid-template-columns: 18px 1.9fr 0.85fr 1.05fr 0.85fr 0.65fr;
+        gap: 3px;
+        align-items: center;
+    }
+    .limb-row:last-child { margin-bottom: 0; }
+    .limb-row-wrap:last-child { margin-bottom: 0; }
+    .limb-badge-inline {
+        width: 18px; height: 18px; border-radius: 50%;
+        background: #e0e7ff; color: #4338ca; font-size: 9.5px; font-weight: 700;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .limb-row .mini-input { padding: 3px 3.5px; font-size: 10px; }
+
+    .two-col-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+    input[type="date"].mini-input {
+        -webkit-appearance: none; appearance: none; background-color: #ffffff;
+        text-align: left; display: block; height: 24px;
+    }
+    input[type="date"].mini-input::-webkit-datetime-edit { text-align: left; padding: 0; }
+    input[type="date"].mini-input::-webkit-calendar-picker-indicator {
+        filter: invert(0.4) sepia(1) saturate(4) hue-rotate(180deg); opacity: 0.8;
+    }
+</style>
+</head>
+<body>
+    <div class="container-app">
+
+        <div class="topbar">
+            <div class="topbar-title">
+                <span class="icon">📋</span>
+                <span>問診記錄</span>
+                <span id="save_indicator" class="save-indicator"><span>✓</span><span>已儲存</span></span>
+            </div>
+            <div class="topbar-actions">
+                <button onclick="exportToJSON()" class="btn btn-green"><span>⬇</span><span>JSON</span></button>
+                <button onclick="clearAll()" class="btn btn-red"><span>🗑</span><span>清空</span></button>
+                <button onclick="importFromJSON()" class="btn btn-white"><span>⬆</span><span>匯入</span></button>
+            </div>
+        </div>
+
+        <div id="form-card" class="form-card">
+
+            <div class="grid-3">
+                <div>
+                    <div class="field-label">日期</div>
+                    <input type="date" id="record_date" class="mini-input">
+                </div>
+                <div>
+                    <div class="field-label">姓名 / 代號</div>
+                    <input type="text" id="patient_name" class="mini-input" placeholder="陳先生">
+                </div>
+                <div>
+                    <div class="field-label">年齡 / 性別</div>
+                    <input type="text" id="patient_age_gender" class="mini-input" placeholder="42歲 男">
+                </div>
+            </div>
+
+            <div class="tight-section">
+                <div class="section-title-row">
+                    <span class="icon" style="color:#2563eb;">💬</span>
+                    <div class="section-header">主要問題</div>
+                </div>
+                <div class="grid-12">
+                    <div class="col-4">
+                        <div class="field-label">最主要痛的位置與感覺</div>
+                        <input type="text" id="main_location" class="mini-input" placeholder="右腰後方靠近髂骨，深層酸痛">
+                    </div>
+                    <div class="col-2">
+                        <div class="field-label">持續多久？</div>
+                        <input type="text" id="main_duration" class="mini-input" placeholder="約2個月">
+                    </div>
+                    <div class="col-3">
+                        <div class="field-label">第一次出現？</div>
+                        <input type="text" id="first_occurrence" class="mini-input" placeholder="不是，以前有過">
+                    </div>
+                    <div class="col-3">
+                        <div class="field-label">頻率</div>
+                        <input type="text" id="main_frequency" class="mini-input" placeholder="每天">
+                    </div>
+                </div>
+            </div>
+
+            <div class="tight-section">
+                <div class="grid-2">
+                    <div class="grid-2-tight">
+                        <div>
+                            <div class="pain-row-label"><span>現在疼痛</span><span id="current_pain_value" class="pain-current">5</span></div>
+                            <input type="range" id="current_pain" class="accent-blue" min="0" max="10" step="1" value="5">
+                        </div>
+                        <div>
+                            <div class="pain-row-label"><span>最痛</span><span id="max_pain_value" class="pain-max">8</span></div>
+                            <input type="range" id="max_pain" class="accent-red" min="0" max="10" step="1" value="8">
+                        </div>
+                    </div>
+                    <div class="grid-2-tight">
+                        <div>
+                            <div class="field-label">加重因素</div>
+                            <input type="text" id="aggravating_factors" class="mini-input" placeholder="走路久、久坐">
+                        </div>
+                        <div>
+                            <div class="field-label">緩解因素</div>
+                            <input type="text" id="relieving_factors" class="mini-input" placeholder="躺平、熱敷">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tight-section">
+                <div class="section-header-with-btn">
+                    <div class="section-title-row" style="margin-bottom:0;">
+                        <span class="icon" style="color:#0d9488;">☰</span>
+                        <div class="section-header">伴隨疼痛</div>
+                    </div>
+                    <button onclick="addAssociatedRow(null)" class="mini-btn teal"><span>＋</span><span>新增</span></button>
+                </div>
+                <div id="associated_container"></div>
+            </div>
+
+            <div class="tight-section">
+                <div class="section-title-row">
+                    <span class="icon" style="color:#4338ca;">✋</span>
+                    <div class="section-header">頭 / 手 / 腳</div>
+                </div>
+
+                <div class="limb-row-wrap">
+                    <div class="limb-row">
+                        <span class="limb-badge-inline">頭</span>
+                        <input type="text" id="head_location" class="mini-input" placeholder="位置與感覺">
+                        <input type="text" id="head_duration" class="mini-input" placeholder="持續多久">
+                        <input type="text" id="head_first" class="mini-input" placeholder="第一次出現">
+                        <input type="text" id="head_frequency" class="mini-input" placeholder="頻率">
+                        <input type="text" id="head_vrs" class="mini-input" placeholder="VRS">
+                    </div>
+                </div>
+
+                <div class="limb-row-wrap">
+                    <div class="limb-row">
+                        <span class="limb-badge-inline">手</span>
+                        <input type="text" id="hand_location" class="mini-input" placeholder="位置與感覺">
+                        <input type="text" id="hand_duration" class="mini-input" placeholder="持續多久">
+                        <input type="text" id="hand_first" class="mini-input" placeholder="第一次出現">
+                        <input type="text" id="hand_frequency" class="mini-input" placeholder="頻率">
+                        <input type="text" id="hand_vrs" class="mini-input" placeholder="VRS">
+                    </div>
+                </div>
+
+                <div class="limb-row-wrap">
+                    <div class="limb-row">
+                        <span class="limb-badge-inline">腳</span>
+                        <input type="text" id="foot_location" class="mini-input" placeholder="位置與感覺">
+                        <input type="text" id="foot_duration" class="mini-input" placeholder="持續多久">
+                        <input type="text" id="foot_first" class="mini-input" placeholder="第一次出現">
+                        <input type="text" id="foot_frequency" class="mini-input" placeholder="頻率">
+                        <input type="text" id="foot_vrs" class="mini-input" placeholder="VRS">
+                    </div>
+                </div>
+            </div>
+
+            <div class="tight-section">
+                <div class="section-header-with-btn">
+                    <div class="section-title-row" style="margin-bottom:0;">
+                        <span class="icon" style="color:#ea580c;">🕘</span>
+                        <div class="section-header">過去疼痛</div>
+                    </div>
+                    <button onclick="addPastPainRow(null)" class="mini-btn orange"><span>＋</span><span>新增</span></button>
+                </div>
+                <div id="past_pain_container"></div>
+            </div>
+
+            <div class="two-col-footer tight-section">
+                <div>
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#e11d48;">🤕</span>
+                        <div class="section-header">手術 / 外傷史 / 內部失調</div>
+                    </div>
+                    <textarea id="surgery_trauma" rows="3" class="mini-textarea" placeholder="2019右腳踝扭傷"></textarea>
+                </div>
+                <div>
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#475569;">🗒</span>
+                        <div class="section-header">觀察、治療及總結</div>
+                    </div>
+                    <textarea id="summary_notes" rows="3" class="mini-textarea" placeholder="久坐後明顯"></textarea>
+                </div>
+            </div>
+
+            <div class="two-col-footer">
+                <div>
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#7c3aed;">🏃</span>
+                        <div class="section-header">動作驗證</div>
+                    </div>
+                    <textarea id="motion_verification" rows="3" class="mini-textarea" placeholder="彎腰、轉身時誘發疼痛"></textarea>
+                </div>
+                <div>
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#0891b2;">👆</span>
+                        <div class="section-header">觸診驗證</div>
+                    </div>
+                    <textarea id="palpation_verification" rows="3" class="mini-textarea" placeholder="按壓右腰髂骨處有明顯壓痛"></textarea>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    var STORAGE_KEY = 'pain_record_autosave';
+    var saveIndicatorTimeout = null;
+
+    function fieldVal(id) {
+        var el = document.getElementById(id);
+        return el ? el.value : '';
+    }
+
+    function fieldInt(id) {
+        var el = document.getElementById(id);
+        if (!el) return 0;
+        var n = parseInt(el.value, 10);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function setFieldVal(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.value = (val === undefined || val === null) ? '' : val;
+    }
+
+    function qVal(parent, selector) {
+        var el = parent.querySelector(selector);
+        return el ? el.value : '';
+    }
+
+    function qInt(parent, selector) {
+        var el = parent.querySelector(selector);
+        if (!el) return 0;
+        var n = parseInt(el.value, 10);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function updatePainValue(inputId, displayId) {
+        var input = document.getElementById(inputId);
+        var display = document.getElementById(displayId);
+        if (input && display) display.textContent = input.value;
+    }
+
+    function initPainSliders() {
+        var current = document.getElementById('current_pain');
+        var maxPain = document.getElementById('max_pain');
+        if (current) {
+            current.oninput = function () { updatePainValue('current_pain', 'current_pain_value'); };
+            setTimeout(function () { updatePainValue('current_pain', 'current_pain_value'); }, 10);
+        }
+        if (maxPain) {
+            maxPain.oninput = function () { updatePainValue('max_pain', 'max_pain_value'); };
+            setTimeout(function () { updatePainValue('max_pain', 'max_pain_value'); }, 10);
+        }
+    }
+
+    function addAssociatedRow(data) {
+        var container = document.getElementById('associated_container');
+        var card = document.createElement('div');
+        card.className = 'assoc-card';
+
+        var currentPain = 5;
+        var maxPain = 8;
+        if (data && data.current_pain !== undefined && data.current_pain !== null) currentPain = data.current_pain;
+        if (data && data.max_pain !== undefined && data.max_pain !== null) maxPain = data.max_pain;
+
+        var locationVal = (data && data.location) ? data.location : '';
+        var durationVal = (data && data.duration) ? data.duration : '';
+        var firstVal = (data && data.first_occurrence) ? data.first_occurrence : '';
+        var freqVal = (data && data.frequency) ? data.frequency : '';
+        var aggravateVal = (data && data.aggravate) ? data.aggravate : '';
+        var relieveVal = (data && data.relieve) ? data.relieve : '';
+
+        card.innerHTML =
+            '<button type="button" onclick="removeAssocCard(this)" class="remove-btn">✕</button>' +
+            '<div class="grid-12 pr-guard" style="margin-bottom:6px;">' +
+                '<div class="col-4">' +
+                    '<div class="field-label">最主要痛的位置與感覺</div>' +
+                    '<input type="text" class="mini-input assoc-location" placeholder="右腰後方靠近髂骨，深層酸痛" value="' + locationVal + '">' +
+                '</div>' +
+                '<div class="col-2">' +
+                    '<div class="field-label">持續多久？</div>' +
+                    '<input type="text" class="mini-input assoc-duration" placeholder="約2個月" value="' + durationVal + '">' +
+                '</div>' +
+                '<div class="col-3">' +
+                    '<div class="field-label">第一次出現？</div>' +
+                    '<input type="text" class="mini-input assoc-first" placeholder="不是，以前有過" value="' + firstVal + '">' +
+                '</div>' +
+                '<div class="col-3">' +
+                    '<div class="field-label">頻率</div>' +
+                    '<input type="text" class="mini-input assoc-frequency" placeholder="每天" value="' + freqVal + '">' +
+                '</div>' +
+            '</div>' +
+            '<div class="grid-2">' +
+                '<div class="grid-2-tight">' +
+                    '<div>' +
+                        '<div class="pain-row-label"><span>現在疼痛</span><span class="assoc-current-value pain-current">' + currentPain + '</span></div>' +
+                        '<input type="range" class="accent-blue assoc-current-pain" min="0" max="10" step="1" value="' + currentPain + '">' +
+                    '</div>' +
+                    '<div>' +
+                        '<div class="pain-row-label"><span>最痛</span><span class="assoc-max-value pain-max">' + maxPain + '</span></div>' +
+                        '<input type="range" class="accent-red assoc-max-pain" min="0" max="10" step="1" value="' + maxPain + '">' +
+                    '</div>' +
+                '</div>' +
+                '<div class="grid-2-tight">' +
+                    '<div>' +
+                        '<div class="field-label">加重因素</div>' +
+                        '<input type="text" class="mini-input assoc-aggravate" placeholder="走路久、久坐" value="' + aggravateVal + '">' +
+                    '</div>' +
+                    '<div>' +
+                        '<div class="field-label">緩解因素</div>' +
+                        '<input type="text" class="mini-input assoc-relieve" placeholder="躺平、熱敷" value="' + relieveVal + '">' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        container.appendChild(card);
+
+        var currentSlider = card.querySelector('.assoc-current-pain');
+        var currentValueEl = card.querySelector('.assoc-current-value');
+        var maxSlider = card.querySelector('.assoc-max-pain');
+        var maxValueEl = card.querySelector('.assoc-max-value');
+        currentSlider.oninput = function () { currentValueEl.textContent = currentSlider.value; saveToStorage(); };
+        maxSlider.oninput = function () { maxValueEl.textContent = maxSlider.value; saveToStorage(); };
+
+        saveToStorage();
+    }
+
+    function removeAssocCard(btn) {
+        var card = btn.closest('.assoc-card');
+        if (card && card.parentNode) card.parentNode.removeChild(card);
+        saveToStorage();
+    }
+
+    function addPastPainRow(data) {
+        var container = document.getElementById('past_pain_container');
+        var card = document.createElement('div');
+        card.className = 'past-card';
+
+        var currentPain = 3;
+        var maxPain = 6;
+        if (data && data.current_pain !== undefined && data.current_pain !== null) currentPain = data.current_pain;
+        if (data && data.max_pain !== undefined && data.max_pain !== null) maxPain = data.max_pain;
+
+        var locationVal = (data && data.location) ? data.location : '';
+        var durationVal = (data && data.duration) ? data.duration : '';
+        var whenVal = (data && data.when) ? data.when : '';
+        var aggravateVal = (data && data.aggravate) ? data.aggravate : '';
+        var relieveVal = (data && data.relieve) ? data.relieve : '';
+
+        card.innerHTML =
+            '<button type="button" onclick="removePastCard(this)" class="remove-btn">✕</button>' +
+            '<div class="grid-12 pr-guard" style="margin-bottom:6px;">' +
+                '<div class="col-5">' +
+                    '<div class="field-label">位置與當時情況</div>' +
+                    '<input type="text" class="mini-input past-location" placeholder="左腰，扭傷後酸痛" value="' + locationVal + '">' +
+                '</div>' +
+                '<div class="col-3">' +
+                    '<div class="field-label">持續多久？</div>' +
+                    '<input type="text" class="mini-input past-duration" placeholder="約半年" value="' + durationVal + '">' +
+                '</div>' +
+                '<div class="col-4">' +
+                    '<div class="field-label">何時發生？</div>' +
+                    '<input type="text" class="mini-input past-when" placeholder="2021年搬重物" value="' + whenVal + '">' +
+                '</div>' +
+            '</div>' +
+            '<div class="grid-2">' +
+                '<div class="grid-2-tight">' +
+                    '<div>' +
+                        '<div class="pain-row-label"><span>當時疼痛</span><span class="past-current-value pain-current">' + currentPain + '</span></div>' +
+                        '<input type="range" class="accent-blue past-current-pain" min="0" max="10" step="1" value="' + currentPain + '">' +
+                    '</div>' +
+                    '<div>' +
+                        '<div class="pain-row-label"><span>最痛</span><span class="past-max-value pain-max">' + maxPain + '</span></div>' +
+                        '<input type="range" class="accent-red past-max-pain" min="0" max="10" step="1" value="' + maxPain + '">' +
+                    '</div>' +
+                '</div>' +
+                '<div class="grid-2-tight">' +
+                    '<div>' +
+                        '<div class="field-label">加重因素</div>' +
+                        '<input type="text" class="mini-input past-aggravate" placeholder="久坐" value="' + aggravateVal + '">' +
+                    '</div>' +
+                    '<div>' +
+                        '<div class="field-label">緩解因素 / 處理方式</div>' +
+                        '<input type="text" class="mini-input past-relieve" placeholder="物理治療" value="' + relieveVal + '">' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        container.appendChild(card);
+
+        var currentSlider = card.querySelector('.past-current-pain');
+        var currentValueEl = card.querySelector('.past-current-value');
+        var maxSlider = card.querySelector('.past-max-pain');
+        var maxValueEl = card.querySelector('.past-max-value');
+        currentSlider.oninput = function () { currentValueEl.textContent = currentSlider.value; saveToStorage(); };
+        maxSlider.oninput = function () { maxValueEl.textContent = maxSlider.value; saveToStorage(); };
+
+        saveToStorage();
+    }
+
+    function removePastCard(btn) {
+        var card = btn.closest('.past-card');
+        if (card && card.parentNode) card.parentNode.removeChild(card);
+        saveToStorage();
+    }
+
+    function getLimbData(prefix) {
+        return {
+            location: fieldVal(prefix + '_location'),
+            duration: fieldVal(prefix + '_duration'),
+            first_occurrence: fieldVal(prefix + '_first'),
+            frequency: fieldVal(prefix + '_frequency'),
+            vrs: fieldVal(prefix + '_vrs')
+        };
+    }
+
+    function setLimbData(prefix, data) {
+        if (!data) data = {};
+        setFieldVal(prefix + '_location', data.location);
+        setFieldVal(prefix + '_duration', data.duration);
+        setFieldVal(prefix + '_first', data.first_occurrence);
+        setFieldVal(prefix + '_frequency', data.frequency);
+        setFieldVal(prefix + '_vrs', data.vrs);
+    }
+
+    function collectFormData() {
+        var data = {
+            version: "9.5-compat-fix",
+            export_date: new Date().toISOString(),
+            record_date: fieldVal('record_date'),
+            patient_name: fieldVal('patient_name'),
+            patient_age_gender: fieldVal('patient_age_gender'),
+            main_problem: {
+                location_description: fieldVal('main_location'),
+                duration: fieldVal('main_duration'),
+                first_occurrence: fieldVal('first_occurrence'),
+                frequency: fieldVal('main_frequency')
+            },
+            pain_intensity: {
+                current: fieldInt('current_pain'),
+                max: fieldInt('max_pain')
+            },
+            pain_pattern: {
+                aggravating_factors: fieldVal('aggravating_factors'),
+                relieving_factors: fieldVal('relieving_factors')
+            },
+            associated_symptoms: [],
+            limb_assessment: {
+                head: getLimbData('head'),
+                hand: getLimbData('hand'),
+                foot: getLimbData('foot')
+            },
+            past_pain_history: [],
+            surgery_trauma: fieldVal('surgery_trauma'),
+            summary_notes: fieldVal('summary_notes'),
+            motion_verification: fieldVal('motion_verification'),
+            palpation_verification: fieldVal('palpation_verification')
+        };
+
+        var assocCards = document.querySelectorAll('#associated_container .assoc-card');
+        for (var i = 0; i < assocCards.length; i++) {
+            var card = assocCards[i];
+            data.associated_symptoms.push({
+                location: qVal(card, '.assoc-location'),
+                duration: qVal(card, '.assoc-duration'),
+                first_occurrence: qVal(card, '.assoc-first'),
+                frequency: qVal(card, '.assoc-frequency'),
+                current_pain: qInt(card, '.assoc-current-pain'),
+                max_pain: qInt(card, '.assoc-max-pain'),
+                aggravate: qVal(card, '.assoc-aggravate'),
+                relieve: qVal(card, '.assoc-relieve')
+            });
+        }
+
+        var pastCards = document.querySelectorAll('#past_pain_container .past-card');
+        for (var j = 0; j < pastCards.length; j++) {
+            var pcard = pastCards[j];
+            data.past_pain_history.push({
+                location: qVal(pcard, '.past-location'),
+                duration: qVal(pcard, '.past-duration'),
+                when: qVal(pcard, '.past-when'),
+                current_pain: qInt(pcard, '.past-current-pain'),
+                max_pain: qInt(pcard, '.past-max-pain'),
+                aggravate: qVal(pcard, '.past-aggravate'),
+                relieve: qVal(pcard, '.past-relieve')
+            });
+        }
+
+        return data;
+    }
+
+    function saveToStorage() {
+        try {
+            var data = collectFormData();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            flashSaveIndicator();
+        } catch (e) {
+            console.error('儲存失敗', e);
+        }
+    }
+
+    function flashSaveIndicator() {
+        var el = document.getElementById('save_indicator');
+        if (!el) return;
+        el.style.opacity = '1';
+        clearTimeout(saveIndicatorTimeout);
+        saveIndicatorTimeout = setTimeout(function () { el.style.opacity = '0'; }, 900);
+    }
+
+    function loadFromStorage() {
+        try {
+            var raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return false;
+            var data = JSON.parse(raw);
+            fillFormWithData(data);
+            return true;
+        } catch (e) {
+            console.error('讀取失敗', e);
+            return false;
+        }
+    }
+
+    function exportToJSON() {
+        var data = collectFormData();
+        var json = JSON.stringify(data, null, 2);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(json).then(function () {
+                alert('JSON 已複製');
+            }, function () {
+                prompt('請手動複製', json);
+            });
+        } else {
+            prompt('請手動複製', json);
+        }
+    }
+
+    function applyImportedText(text) {
+        if (!text) return;
+        try {
+            var parsed = JSON.parse(text);
+            fillFormWithData(parsed);
+            saveToStorage();
+        } catch (e) {
+            alert('格式錯誤');
+        }
+    }
+
+    function importFromJSON() {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            navigator.clipboard.readText().then(function (text) {
+                applyImportedText(text);
+            }, function () {
+                var text = prompt('貼上 JSON');
+                applyImportedText(text);
+            });
+        } else {
+            var text = prompt('貼上 JSON');
+            applyImportedText(text);
+        }
+    }
+
+    function clearAll() {
+        if (!confirm('確定要清空所有已填寫的資料嗎？此操作無法復原。')) return;
+
+        setFieldVal('patient_name', '');
+        setFieldVal('patient_age_gender', '');
+        setFieldVal('main_location', '');
+        setFieldVal('main_duration', '');
+        setFieldVal('first_occurrence', '');
+        setFieldVal('main_frequency', '');
+        setFieldVal('current_pain', 5);
+        setFieldVal('max_pain', 8);
+        updatePainValue('current_pain', 'current_pain_value');
+        updatePainValue('max_pain', 'max_pain_value');
+        setFieldVal('aggravating_factors', '');
+        setFieldVal('relieving_factors', '');
+        setFieldVal('surgery_trauma', '');
+        setFieldVal('summary_notes', '');
+        setFieldVal('motion_verification', '');
+        setFieldVal('palpation_verification', '');
+
+        setLimbData('head', {});
+        setLimbData('hand', {});
+        setLimbData('foot', {});
+
+        document.getElementById('associated_container').innerHTML = '';
+        document.getElementById('past_pain_container').innerHTML = '';
+
+        setFieldVal('record_date', new Date().toISOString().split('T')[0]);
+
+        localStorage.removeItem(STORAGE_KEY);
+        saveToStorage();
+    }
+
+    function fillFormWithData(data) {
+        if (!data) return;
+
+        if (data.record_date) setFieldVal('record_date', data.record_date);
+        if (data.patient_name !== undefined) setFieldVal('patient_name', data.patient_name);
+        if (data.patient_age_gender !== undefined) setFieldVal('patient_age_gender', data.patient_age_gender);
+
+        if (data.main_problem) {
+            setFieldVal('main_location', data.main_problem.location_description || '');
+            setFieldVal('main_duration', data.main_problem.duration || '');
+            setFieldVal('first_occurrence', data.main_problem.first_occurrence || '');
+            setFieldVal('main_frequency', data.main_problem.frequency || '');
+        }
+
+        if (data.pain_intensity) {
+            setFieldVal('current_pain', data.pain_intensity.current || 0);
+            setFieldVal('max_pain', data.pain_intensity.max || 0);
+            updatePainValue('current_pain', 'current_pain_value');
+            updatePainValue('max_pain', 'max_pain_value');
+        }
+
+        if (data.pain_pattern) {
+            setFieldVal('aggravating_factors', data.pain_pattern.aggravating_factors || '');
+            setFieldVal('relieving_factors', data.pain_pattern.relieving_factors || '');
+        }
+
+        document.getElementById('associated_container').innerHTML = '';
+        if (data.associated_symptoms) {
+            for (var i = 0; i < data.associated_symptoms.length; i++) {
+                addAssociatedRow(data.associated_symptoms[i]);
+            }
+        }
+
+        if (data.limb_assessment) {
+            setLimbData('head', data.limb_assessment.head);
+            setLimbData('hand', data.limb_assessment.hand);
+            setLimbData('foot', data.limb_assessment.foot);
+        }
+
+        document.getElementById('past_pain_container').innerHTML = '';
+        if (data.past_pain_history) {
+            for (var j = 0; j < data.past_pain_history.length; j++) {
+                addPastPainRow(data.past_pain_history[j]);
+            }
+        }
+
+        if (data.surgery_trauma !== undefined) setFieldVal('surgery_trauma', data.surgery_trauma);
+        if (data.summary_notes !== undefined) setFieldVal('summary_notes', data.summary_notes);
+        if (data.motion_verification !== undefined) setFieldVal('motion_verification', data.motion_verification);
+        if (data.palpation_verification !== undefined) setFieldVal('palpation_verification', data.palpation_verification);
+    }
+
+    function init() {
+        var restored = loadFromStorage();
+
+        var dateInput = document.getElementById('record_date');
+        if (dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+        initPainSliders();
+
+        var formCard = document.getElementById('form-card');
+        formCard.addEventListener('input', saveToStorage);
+        formCard.addEventListener('change', saveToStorage);
+
+        if (!restored) saveToStorage();
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
