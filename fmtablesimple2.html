@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>問診記錄 - 極簡手機版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: 'Noto Sans TC', system-ui, sans-serif; }
+        .ultra-compact { font-size: 12.8px; line-height: 1.3; }
+        .section-header { font-size: 13px; font-weight: 600; color: #1e40af; }
+        .mini-input { font-size: 12.5px; padding: 5px 8px; line-height: 1.25; }
+        .tiny-table { font-size: 11.5px; border: 1px solid #e2e8f0; border-radius: 6px; }
+        .tiny-table th { background: #f8fafc; font-weight: 600; color: #475569; padding: 4px 6px; font-size: 10.5px; }
+        .tiny-table td { padding: 3px 6px; }
+        .mini-btn { font-size: 10.5px; padding: 2px 8px; border-radius: 5px; }
+        .record-row:hover { background-color: #f8fafc; }
+        .form-card { max-width: 440px; margin: 0 auto; }
+        .tight-section { margin-bottom: 12px; }
+    </style>
+</head>
+<body class="bg-slate-100 py-3">
+    <div class="max-w-[450px] mx-auto px-2">
+        
+        <!-- 頂部按鈕 -->
+        <div class="flex justify-between items-center mb-2 px-1">
+            <div class="font-bold text-slate-800 text-[15px] flex items-center gap-1.5">
+                <i class="fa-solid fa-clipboard-list text-blue-600"></i>
+                <span>問診記錄</span>
+            </div>
+            <div class="flex gap-1">
+                <button onclick="exportScreenshot()" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-700 rounded-lg text-[11px] flex items-center gap-1 shadow-sm">
+                    <i class="fa-solid fa-camera text-blue-600"></i>
+                    <span>截圖</span>
+                </button>
+                <button onclick="exportToJSON()" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[11px] flex items-center gap-1">
+                    <i class="fa-solid fa-download"></i>
+                    <span>JSON</span>
+                </button>
+                <button onclick="importFromJSON()" class="px-2.5 py-1 bg-white border border-slate-300 text-slate-700 rounded-lg text-[11px] flex items-center gap-1">
+                    <i class="fa-solid fa-upload"></i>
+                    <span>匯入</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="form-card" class="form-card bg-white rounded-2xl shadow border border-slate-200 p-4 ultra-compact">
+            
+            <!-- 基本資料 -->
+            <div class="grid grid-cols-3 gap-2.5 mb-4">
+                <div>
+                    <div class="text-[10px] text-slate-500 mb-0.5">日期</div>
+                    <input type="date" id="record_date" class="mini-input w-full border border-slate-300 rounded-lg">
+                </div>
+                <div>
+                    <div class="text-[10px] text-slate-500 mb-0.5">姓名 / 代號</div>
+                    <input type="text" id="patient_name" class="mini-input w-full border border-slate-300 rounded-lg" placeholder="陳先生">
+                </div>
+                <div>
+                    <div class="text-[10px] text-slate-500 mb-0.5">年齡 / 性別</div>
+                    <input type="text" id="patient_age_gender" class="mini-input w-full border border-slate-300 rounded-lg" placeholder="42歲 男">
+                </div>
+            </div>
+
+            <!-- 主要問題 -->
+            <div class="tight-section">
+                <div class="flex items-center gap-1.5 mb-1">
+                    <i class="fa-solid fa-comment-dots text-blue-600 text-xs"></i>
+                    <div class="section-header">主要問題</div>
+                </div>
+                <div>
+                    <div class="text-[10.5px] text-slate-600 mb-0.5">最主要痛的位置與感覺</div>
+                    <textarea id="main_location" rows="1" class="mini-input w-full border border-slate-300 rounded-lg" placeholder="右腰後方靠近髂骨，深層酸痛"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5 mt-1.5">
+                    <div>
+                        <div class="text-[10.5px] text-slate-600 mb-0.5">持續多久？</div>
+                        <input type="text" id="main_duration" class="mini-input w-full border border-slate-300 rounded-lg" placeholder="約2個月">
+                    </div>
+                    <div>
+                        <div class="text-[10.5px] text-slate-600 mb-0.5">第一次出現？</div>
+                        <input type="text" id="first_occurrence" class="mini-input w-full border border-slate-300 rounded-lg" placeholder="不是，以前有過">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 疼痛強度 -->
+            <div class="tight-section">
+                <div class="flex items-center gap-1.5 mb-1">
+                    <i class="fa-solid fa-chart-line text-amber-600 text-xs"></i>
+                    <div class="section-header">疼痛強度（0-10分）</div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="flex justify-between text-[10.5px] mb-0.5">
+                            <span class="text-slate-600">現在</span>
+                            <span id="current_pain_value" class="font-semibold text-blue-600">5</span>
+                        </div>
+                        <input type="range" id="current_pain" min="0" max="10" step="1" value="5" class="w-full accent-blue-600">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[10.5px] mb-0.5">
+                            <span class="text-slate-600">最痛</span>
+                            <span id="max_pain_value" class="font-semibold text-red-600">8</span>
+                        </div>
+                        <input type="range" id="max_pain" min="0" max="10" step="1" value="8" class="w-full accent-red-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 疼痛模式 -->
+            <div class="tight-section">
+                <div class="flex items-center gap-1.5 mb-1">
+                    <i class="fa-solid fa-exchange-alt text-violet-600 text-xs"></i>
+                    <div class="section-header">疼痛模式</div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <div class="text-[10.5px] text-slate-600 mb-0.5">加重因素</div>
+                        <textarea id="aggravating_factors" rows="1" class="mini-input w-full border border-slate-300 rounded-lg" placeholder="走路久、久坐後起身"></textarea>
+                    </div>
+                    <div>
+                        <div class="text-[10.5px] text-slate-600 mb-0.5">緩解因素</div>
+                        <textarea id="relieving_factors" rows="1" class="mini-input w-full border border-slate-300 rounded-lg" placeholder="躺平、熱敷"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 其他痛處 -->
+            <div class="tight-section">
+                <div class="flex items-center justify-between mb-0.5">
+                    <div class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-list-ul text-teal-600 text-xs"></i>
+                        <div class="section-header">其他痛處</div>
+                    </div>
+                    <button onclick="addAssociatedRow()" class="mini-btn bg-teal-600 text-white flex items-center gap-0.5">
+                        <i class="fa-solid fa-plus text-[9px]"></i>
+                        <span>新增</span>
+                    </button>
+                </div>
+                <table class="tiny-table w-full">
+                    <thead>
+                        <tr>
+                            <th class="text-left">位置與感覺</th>
+                            <th class="text-left w-14">時間</th>
+                            <th class="text-left w-11">程度</th>
+                            <th class="w-7"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="associated_tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- 舊傷痛史 -->
+            <div class="tight-section">
+                <div class="flex items-center justify-between mb-0.5">
+                    <div class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-history text-orange-600 text-xs"></i>
+                        <div class="section-header">舊傷痛史</div>
+                    </div>
+                    <button onclick="addPastPainRow()" class="mini-btn bg-orange-600 text-white flex items-center gap-0.5">
+                        <i class="fa-solid fa-plus text-[9px]"></i>
+                        <span>新增</span>
+                    </button>
+                </div>
+                <table class="tiny-table w-full">
+                    <thead>
+                        <tr>
+                            <th class="text-left">位置與當時情況</th>
+                            <th class="text-left w-14">時間</th>
+                            <th class="w-7"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="past_pain_tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- 手術與外傷 + 總結 -->
+            <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                    <div class="flex items-center gap-1.5 mb-0.5">
+                        <i class="fa-solid fa-user-injured text-rose-600 text-xs"></i>
+                        <div class="section-header">手術 / 外傷史</div>
+                    </div>
+                    <textarea id="surgery_trauma" rows="1" class="mini-input w-full border border-slate-300 rounded-lg" placeholder="2019右腳踝扭傷"></textarea>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5 mb-0.5">
+                        <i class="fa-solid fa-sticky-note text-slate-600 text-xs"></i>
+                        <div class="section-header">總結與觀察</div>
+                    </div>
+                    <textarea id="summary_notes" rows="1" class="mini-input w-full border border-slate-300 rounded-lg" placeholder="久坐後明顯"></textarea>
+                </div>
+            </div>
+
+        </div>
+        
+        <div class="text-center text-[9.5px] text-slate-400 mt-2">極簡手機版 • 多加欄位後仍可截圖</div>
+    </div>
+
+    <script>
+        function updatePainValue(inputId, displayId) {
+            const input = document.getElementById(inputId);
+            const display = document.getElementById(displayId);
+            if (input && display) display.textContent = input.value;
+        }
+
+        function initPainSliders() {
+            const current = document.getElementById('current_pain');
+            const maxPain = document.getElementById('max_pain');
+            if (current) {
+                current.oninput = () => updatePainValue('current_pain', 'current_pain_value');
+                setTimeout(() => updatePainValue('current_pain', 'current_pain_value'), 15);
+            }
+            if (maxPain) {
+                maxPain.oninput = () => updatePainValue('max_pain', 'max_pain_value');
+                setTimeout(() => updatePainValue('max_pain', 'max_pain_value'), 15);
+            }
+        }
+
+        function addAssociatedRow(data = null) {
+            const tbody = document.getElementById('associated_tbody');
+            const row = document.createElement('tr');
+            row.className = 'record-row border-t border-slate-100';
+            row.innerHTML = `
+                <td><input type="text" class="assoc-location w-full px-1.5 py-0.5 text-xs border-0 focus:ring-0" placeholder="位置與感覺" value="${data?.location || ''}"></td>
+                <td><input type="text" class="assoc-duration w-full px-1.5 py-0.5 text-xs border-0 focus:ring-0" placeholder="時間" value="${data?.duration || ''}"></td>
+                <td><input type="text" class="assoc-level w-full px-1.5 py-0.5 text-xs border-0 focus:ring-0" placeholder="0-10" value="${data?.level || ''}"></td>
+                <td class="text-center"><button onclick="removeRow(this)" class="text-red-300 hover:text-red-500 p-0"><i class="fa-solid fa-times text-xs"></i></button></td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function addPastPainRow(data = null) {
+            const tbody = document.getElementById('past_pain_tbody');
+            const row = document.createElement('tr');
+            row.className = 'record-row border-t border-slate-100';
+            row.innerHTML = `
+                <td><input type="text" class="past-location w-full px-1.5 py-0.5 text-xs border-0 focus:ring-0" placeholder="位置與當時情況" value="${data?.location || ''}"></td>
+                <td><input type="text" class="past-time w-full px-1.5 py-0.5 text-xs border-0 focus:ring-0" placeholder="時間" value="${data?.time || ''}"></td>
+                <td class="text-center"><button onclick="removeRow(this)" class="text-red-300 hover:text-red-500 p-0"><i class="fa-solid fa-times text-xs"></i></button></td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function removeRow(btn) {
+            btn.closest('tr')?.remove();
+        }
+
+        function collectFormData() {
+            const data = {
+                version: "4.0-ultra",
+                export_date: new Date().toISOString(),
+                record_date: document.getElementById('record_date').value,
+                patient_name: document.getElementById('patient_name').value,
+                patient_age_gender: document.getElementById('patient_age_gender').value,
+                main_problem: {
+                    location_description: document.getElementById('main_location').value,
+                    duration: document.getElementById('main_duration').value,
+                    first_occurrence: document.getElementById('first_occurrence').value
+                },
+                pain_intensity: {
+                    current: parseInt(document.getElementById('current_pain').value) || 0,
+                    max: parseInt(document.getElementById('max_pain').value) || 0
+                },
+                pain_pattern: {
+                    aggravating_factors: document.getElementById('aggravating_factors').value,
+                    relieving_factors: document.getElementById('relieving_factors').value
+                },
+                associated_symptoms: [],
+                past_pain_history: [],
+                surgery_trauma: document.getElementById('surgery_trauma').value,
+                summary_notes: document.getElementById('summary_notes').value
+            };
+
+            document.querySelectorAll('#associated_tbody tr').forEach(row => {
+                const loc = row.querySelector('.assoc-location')?.value.trim();
+                if (loc) data.associated_symptoms.push({
+                    location: loc,
+                    duration: row.querySelector('.assoc-duration')?.value.trim() || '',
+                    level: row.querySelector('.assoc-level')?.value.trim() || ''
+                });
+            });
+
+            document.querySelectorAll('#past_pain_tbody tr').forEach(row => {
+                const loc = row.querySelector('.past-location')?.value.trim();
+                if (loc) data.past_pain_history.push({
+                    location: loc,
+                    time: row.querySelector('.past-time')?.value.trim() || ''
+                });
+            });
+
+            return data;
+        }
+
+        async function exportToJSON() {
+            const data = collectFormData();
+            const json = JSON.stringify(data, null, 2);
+            try {
+                await navigator.clipboard.writeText(json);
+                alert('JSON 已複製');
+            } catch {
+                prompt('請手動複製', json);
+            }
+        }
+
+        async function importFromJSON() {
+            let text = '';
+            try { text = await navigator.clipboard.readText(); } catch { text = prompt('貼上 JSON'); }
+            if (!text) return;
+            try {
+                fillFormWithData(JSON.parse(text));
+            } catch { alert('格式錯誤'); }
+        }
+
+        function fillFormWithData(data) {
+            if (!data) return;
+
+            if (data.record_date) document.getElementById('record_date').value = data.record_date;
+            if (data.patient_name) document.getElementById('patient_name').value = data.patient_name;
+            if (data.patient_age_gender) document.getElementById('patient_age_gender').value = data.patient_age_gender;
+
+            if (data.main_problem) {
+                document.getElementById('main_location').value = data.main_problem.location_description || '';
+                document.getElementById('main_duration').value = data.main_problem.duration || '';
+                document.getElementById('first_occurrence').value = data.main_problem.first_occurrence || '';
+            }
+
+            if (data.pain_intensity) {
+                const c = document.getElementById('current_pain');
+                const m = document.getElementById('max_pain');
+                if (c) { c.value = data.pain_intensity.current || 0; updatePainValue('current_pain', 'current_pain_value'); }
+                if (m) { m.value = data.pain_intensity.max || 0; updatePainValue('max_pain', 'max_pain_value'); }
+            }
+
+            if (data.pain_pattern) {
+                document.getElementById('aggravating_factors').value = data.pain_pattern.aggravating_factors || '';
+                document.getElementById('relieving_factors').value = data.pain_pattern.relieving_factors || '';
+            }
+
+            document.getElementById('associated_tbody').innerHTML = '';
+            data.associated_symptoms?.forEach(item => addAssociatedRow(item));
+
+            document.getElementById('past_pain_tbody').innerHTML = '';
+            data.past_pain_history?.forEach(item => addPastPainRow(item));
+
+            if (data.surgery_trauma) document.getElementById('surgery_trauma').value = data.surgery_trauma;
+            if (data.summary_notes) document.getElementById('summary_notes').value = data.summary_notes;
+        }
+
+        async function exportScreenshot() {
+            const card = document.getElementById('form-card');
+            window.scrollTo(0, 0);
+            card.style.boxShadow = 'none';
+
+            await new Promise(r => setTimeout(r, 80));
+
+            try {
+                const canvas = await html2canvas(card, {
+                    scale: 2.8,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
+                const link = document.createElement('a');
+                link.download = `問診_${new Date().toISOString().slice(0,10)}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch {
+                alert('截圖失敗，可試瀏覽器列印');
+            } finally {
+                card.style.boxShadow = '';
+            }
+        }
+
+        function init() {
+            const dateInput = document.getElementById('record_date');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+            initPainSliders();
+        }
+
+        window.onload = init;
+
+        window.DEBUG_fill = function() {
+            const sample = {
+                "record_date":"2026-07-22",
+                "patient_name":"陳先生",
+                "patient_age_gender":"42歲 男",
+                "main_problem":{"location_description":"右腰後方靠近髂骨，深層酸痛","duration":"約2個月","first_occurrence":"不是，以前有過"},
+                "pain_intensity":{"current":5,"max":8},
+                "pain_pattern":{"aggravating_factors":"走路久、久坐後起身","relieving_factors":"躺平、熱敷"},
+                "associated_symptoms":[{"location":"右膝前側","duration":"1個月","level":"3"},{"location":"左肩緊繃","duration":"3週","level":"4"}],
+                "past_pain_history":[{"location":"左腰","time":"2023年"},{"location":"右腳踝","time":"2021年"}],
+                "surgery_trauma":"2019右腳踝扭傷",
+                "summary_notes":"久坐後明顯"
+            };
+            fillFormWithData(sample);
+        };
+    </script>
+</body>
+</html>
