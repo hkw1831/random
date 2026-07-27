@@ -59,12 +59,8 @@
     .field-label { font-size: 8px; color: #64748b; margin-bottom: 1px; }
     .section-prompt-placeholder { font-size: 8px; color: #94a3b8; }
 
-    .mini-input {
-        font-size: 11px; padding: 2.5px 4px; line-height: 1.05; width: 100%;
-        border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; color: #0f172a; background: #fff;
-    }
     .tiny-input {
-        font-size: 8px; padding: 2.5px 4px; line-height: 1.05; width: 100%;
+        font-size: 7px; padding: 2.5px 4px; line-height: 1.05; width: 100%;
         border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; color: #0f172a; background: #fff;
         height: 22px;
     }
@@ -78,7 +74,7 @@
         border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; color: #0f172a; background: #fff;
         resize: vertical;
     }
-    .mini-input::placeholder, .tiny-input::placeholder, .mini-textarea::placeholder, .micro-textarea::placeholder { color: #94a3b8; }
+    .tiny-input::placeholder, .mini-textarea::placeholder, .micro-textarea::placeholder { color: #94a3b8; }
 
     .tight-section { margin-bottom: 4px; }
     .section-title-row { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
@@ -122,7 +118,7 @@
         display: flex; align-items: center; justify-content: center;
     }
     .limb-field { flex: 1 1 0%; min-width: 0; }
-    .limb-row .mini-input { padding: 2.5px 3px; font-size: 9.5px; }
+    .limb-row .tiny-input { padding: 2.5px 3px; font-size: 7px; }
 
     .past-section { margin-bottom: 4px; }
     .past-row-wrap { margin-bottom: 3px; position: relative; }
@@ -134,7 +130,7 @@
         padding-right: 15px;
     }
     .past-field { flex: 1 1 0%; min-width: 0; }
-    .past-row .mini-input { padding: 2.5px 3px; font-size: 9.5px; }
+    .past-row .tiny-input { padding: 2.5px 3px; font-size: 7px; }
     .past-remove-btn {
         position: absolute; top: 50%; right: 0; transform: translateY(-50%);
         background: none; border: none; color: #fca5a5; cursor: pointer;
@@ -160,13 +156,13 @@
     }
     .six-col-footer .icon { font-size: 9px; }
 
-    input[type="date"].mini-input {
+    input[type="date"].tiny-input {
         -webkit-appearance: none; appearance: none; background-color: #ffffff;
         text-align: left; display: block; height: 22px;
         font-size: 8px;
     }
-    input[type="date"].mini-input::-webkit-datetime-edit { text-align: left; padding: 0; }
-    input[type="date"].mini-input::-webkit-calendar-picker-indicator {
+    input[type="date"].tiny-input::-webkit-datetime-edit { text-align: left; padding: 0; }
+    input[type="date"].tiny-input::-webkit-calendar-picker-indicator {
         filter: invert(0.4) sepia(1) saturate(4) hue-rotate(180deg); opacity: 0.8;
     }
 </style>
@@ -195,7 +191,7 @@
             <div class="flex-row" style="margin-bottom:4px;">
                 <div class="fx-1">
                     <div class="field-label">日期</div>
-                    <input type="date" id="record_date" class="mini-input">
+                    <input type="date" id="record_date" class="tiny-input">
                 </div>
                 <div class="fx-1">
                     <div class="field-label">姓名 / 代號</div>
@@ -219,24 +215,24 @@
                 <div class="section-title-row">
                     <span class="icon" style="color:#2563eb;">💬</span>
                     <div class="section-header">主要問題</div>
-                    <span class="section-prompt-placeholder">提問提示待補充</span>
+                    <span class="section-prompt-placeholder">- Old is Gold</span>
                 </div>
                 <div class="flex-row">
                     <div class="fx-4">
                         <div class="field-label">最主要痛的位置與感覺</div>
-                        <input type="text" id="main_location" class="mini-input" placeholder="右腰後方靠近髂骨，深層酸痛">
+                        <input type="text" id="main_location" class="tiny-input" placeholder="右腰後方靠近髂骨，深層酸痛">
                     </div>
                     <div class="fx-2">
                         <div class="field-label">首次發作時間？</div>
-                        <input type="text" id="main_duration" class="mini-input" placeholder="約2個月">
+                        <input type="text" id="main_duration" class="tiny-input" placeholder="約2個月">
                     </div>
                     <div class="fx-3">
                         <div class="field-label">近期急性發作時間？</div>
-                        <input type="text" id="first_occurrence" class="mini-input" placeholder="3天前">
+                        <input type="text" id="first_occurrence" class="tiny-input" placeholder="3天前">
                     </div>
                     <div class="fx-3">
                         <div class="field-label">頻率</div>
-                        <input type="text" id="main_frequency" class="mini-input" placeholder="每天">
+                        <input type="text" id="main_frequency" class="tiny-input" placeholder="每天">
                     </div>
                 </div>
             </div>
@@ -245,19 +241,19 @@
                 <div class="flex-row">
                     <div class="fx-1">
                         <div class="field-label">創傷 / 過度使用？</div>
-                        <input type="text" id="main_trauma" class="mini-input" placeholder="有無明顯創傷">
+                        <input type="text" id="main_trauma" class="tiny-input" placeholder="有無明顯創傷">
                     </div>
                     <div class="fx-1">
                         <div class="field-label">加重因素</div>
-                        <input type="text" id="aggravating_factors" class="mini-input" placeholder="走路久、久坐">
+                        <input type="text" id="aggravating_factors" class="tiny-input" placeholder="走路久、久坐">
                     </div>
                     <div class="fx-1">
                         <div class="field-label">緩解因素</div>
-                        <input type="text" id="relieving_factors" class="mini-input" placeholder="躺平、熱敷">
+                        <input type="text" id="relieving_factors" class="tiny-input" placeholder="躺平、熱敷">
                     </div>
                     <div class="fx-1">
                         <div class="field-label">VRS</div>
-                        <input type="text" id="main_vrs" class="mini-input" placeholder="0-10">
+                        <input type="text" id="main_vrs" class="tiny-input" placeholder="0-10">
                     </div>
                 </div>
             </div>
@@ -267,7 +263,7 @@
                     <div class="section-title-row" style="margin-bottom:0;">
                         <span class="icon" style="color:#0d9488;">☰</span>
                         <div class="section-header">伴隨疼痛</div>
-                        <span class="section-prompt-placeholder">提問提示待補充</span>
+                        <span class="section-prompt-placeholder">「你有沒有其它問題開始的早於 (sipa) 年前的？」</span>
                     </div>
                     <button onclick="addAssociatedRow(null)" class="mini-btn teal"><span>＋</span><span>新增</span></button>
                 </div>
@@ -278,36 +274,36 @@
                 <div class="limb-row-wrap">
                     <div class="limb-row">
                         <span class="limb-badge-inline">頭</span>
-                        <div class="limb-field"><input type="text" id="head_location" class="mini-input" placeholder="位置與感覺"></div>
-                        <div class="limb-field"><input type="text" id="head_duration" class="mini-input" placeholder="首次發作時間"></div>
-                        <div class="limb-field"><input type="text" id="head_first" class="mini-input" placeholder="近期急性發作時間？"></div>
-                        <div class="limb-field"><input type="text" id="head_trauma" class="mini-input" placeholder="創傷 / 過度使用？"></div>
-                        <div class="limb-field"><input type="text" id="head_frequency" class="mini-input" placeholder="頻率"></div>
-                        <div class="limb-field"><input type="text" id="head_vrs" class="mini-input" placeholder="VRS"></div>
+                        <div class="limb-field"><input type="text" id="head_location" class="tiny-input" placeholder="位置與感覺"></div>
+                        <div class="limb-field"><input type="text" id="head_duration" class="tiny-input" placeholder="首次發作時間"></div>
+                        <div class="limb-field"><input type="text" id="head_first" class="tiny-input" placeholder="近期急性發作時間？"></div>
+                        <div class="limb-field"><input type="text" id="head_trauma" class="tiny-input" placeholder="創傷 / 過度使用？"></div>
+                        <div class="limb-field"><input type="text" id="head_frequency" class="tiny-input" placeholder="頻率"></div>
+                        <div class="limb-field"><input type="text" id="head_vrs" class="tiny-input" placeholder="VRS"></div>
                     </div>
                 </div>
 
                 <div class="limb-row-wrap">
                     <div class="limb-row">
                         <span class="limb-badge-inline">手</span>
-                        <div class="limb-field"><input type="text" id="hand_location" class="mini-input" placeholder="位置與感覺"></div>
-                        <div class="limb-field"><input type="text" id="hand_duration" class="mini-input" placeholder="首次發作時間"></div>
-                        <div class="limb-field"><input type="text" id="hand_first" class="mini-input" placeholder="近期急性發作時間？"></div>
-                        <div class="limb-field"><input type="text" id="hand_trauma" class="mini-input" placeholder="創傷 / 過度使用？"></div>
-                        <div class="limb-field"><input type="text" id="hand_frequency" class="mini-input" placeholder="頻率"></div>
-                        <div class="limb-field"><input type="text" id="hand_vrs" class="mini-input" placeholder="VRS"></div>
+                        <div class="limb-field"><input type="text" id="hand_location" class="tiny-input" placeholder="位置與感覺"></div>
+                        <div class="limb-field"><input type="text" id="hand_duration" class="tiny-input" placeholder="首次發作時間"></div>
+                        <div class="limb-field"><input type="text" id="hand_first" class="tiny-input" placeholder="近期急性發作時間？"></div>
+                        <div class="limb-field"><input type="text" id="hand_trauma" class="tiny-input" placeholder="創傷 / 過度使用？"></div>
+                        <div class="limb-field"><input type="text" id="hand_frequency" class="tiny-input" placeholder="頻率"></div>
+                        <div class="limb-field"><input type="text" id="hand_vrs" class="tiny-input" placeholder="VRS"></div>
                     </div>
                 </div>
 
                 <div class="limb-row-wrap">
                     <div class="limb-row">
                         <span class="limb-badge-inline">腳</span>
-                        <div class="limb-field"><input type="text" id="foot_location" class="mini-input" placeholder="位置與感覺"></div>
-                        <div class="limb-field"><input type="text" id="foot_duration" class="mini-input" placeholder="首次發作時間"></div>
-                        <div class="limb-field"><input type="text" id="foot_first" class="mini-input" placeholder="近期急性發作時間？"></div>
-                        <div class="limb-field"><input type="text" id="foot_trauma" class="mini-input" placeholder="創傷 / 過度使用？"></div>
-                        <div class="limb-field"><input type="text" id="foot_frequency" class="mini-input" placeholder="頻率"></div>
-                        <div class="limb-field"><input type="text" id="foot_vrs" class="mini-input" placeholder="VRS"></div>
+                        <div class="limb-field"><input type="text" id="foot_location" class="tiny-input" placeholder="位置與感覺"></div>
+                        <div class="limb-field"><input type="text" id="foot_duration" class="tiny-input" placeholder="首次發作時間"></div>
+                        <div class="limb-field"><input type="text" id="foot_first" class="tiny-input" placeholder="近期急性發作時間？"></div>
+                        <div class="limb-field"><input type="text" id="foot_trauma" class="tiny-input" placeholder="創傷 / 過度使用？"></div>
+                        <div class="limb-field"><input type="text" id="foot_frequency" class="tiny-input" placeholder="頻率"></div>
+                        <div class="limb-field"><input type="text" id="foot_vrs" class="tiny-input" placeholder="VRS"></div>
                     </div>
                 </div>
             </div>
@@ -317,7 +313,7 @@
                     <div class="section-title-row" style="margin-bottom:0;">
                         <span class="icon" style="color:#ea580c;">🕘</span>
                         <div class="section-header">過去疼痛</div>
-                        <span class="section-prompt-placeholder">提問提示待補充</span>
+                        <span class="section-prompt-placeholder">「你有沒有其它嚴重問題，開始的早於 (sipa) 年前的，但已經康復的？」</span>
                     </div>
                     <button onclick="addHistoryRow('past_pain_container', null, true)" class="mini-btn orange"><span>＋</span><span>新增</span></button>
                 </div>
@@ -329,7 +325,7 @@
                     <div class="section-title-row" style="margin-bottom:0;">
                         <span class="icon" style="color:#e11d48;">🔬</span>
                         <div class="section-header">手術史</div>
-                        <span class="section-prompt-placeholder">提問提示待補充</span>
+                        <span class="section-prompt-placeholder">記錄到達深筋膜的手術、急性手術比一般手術重要</span>
                     </div>
                     <button onclick="addHistoryRow('surgery_history_container', null, true)" class="mini-btn rose"><span>＋</span><span>新增</span></button>
                 </div>
@@ -341,7 +337,7 @@
                     <div class="section-title-row" style="margin-bottom:0;">
                         <span class="icon" style="color:#d97706;">🩹</span>
                         <div class="section-header">外傷史</div>
-                        <span class="section-prompt-placeholder">提問提示待補充</span>
+                        <span class="section-prompt-placeholder">記錄有改變解剖結構的 / 復原時間長的外傷</span>
                     </div>
                     <button onclick="addHistoryRow('injury_history_container', null, false)" class="mini-btn amber"><span>＋</span><span>新增</span></button>
                 </div>
@@ -353,7 +349,7 @@
                     <div class="section-title-row" style="margin-bottom:0;">
                         <span class="icon" style="color:#475569;">🦴</span>
                         <div class="section-header">骨折史</div>
-                        <span class="section-prompt-placeholder">提問提示待補充</span>
+                        <span class="section-prompt-placeholder">復原時間長的更重要</span>
                     </div>
                     <button onclick="addHistoryRow('fracture_history_container', null, false)" class="mini-btn slate"><span>＋</span><span>新增</span></button>
                 </div>
@@ -366,7 +362,7 @@
                         <span class="icon" style="color:#e11d48;">🤕</span>
                         <div class="section-header">藥物 / 內部失調</div>
                     </div>
-                    <textarea id="medication_disorder_overuse" rows="8" class="micro-textarea" placeholder="藥物 / 內部失調 / 過度使用"></textarea>
+                    <textarea id="medication_disorder_overuse" rows="8" class="micro-textarea" placeholder="藥物&#10;&#10;內部失調：腹漲 / 食道反流 / 胃炎 / 結腸炎 / 便秘 etc&#10;&#10;過度使用"></textarea>
                 </div>
                 <div style="flex:1 1 0%;">
                     <div class="section-title-row">
@@ -380,14 +376,14 @@
                         <span class="icon" style="color:#475569;">🗒</span>
                         <div class="section-header">假設</div>
                     </div>
-                    <textarea id="summary_notes" rows="8" class="micro-textarea" placeholder="假設 e.g. 上行/下行？"></textarea>
+                    <textarea id="summary_notes" rows="8" class="micro-textarea" placeholder="作用：&#10;&#10;上行還是下行代償&#10;&#10;決定要觸診的節段&#10;&#10;建立疼痛的關係"></textarea>
                 </div>
                 <div style="flex:1 1 0%;">
                     <div class="section-title-row">
                         <span class="icon" style="color:#475569;">🗒</span>
                         <div class="section-header">治療及總結</div>
                     </div>
-                    <textarea id="summary_notes_2" rows="8" class="micro-textarea" placeholder="治療及總結&#10&#10不要一開始在主訴疼痛部位開始治療，從最久遠或最緻密的點開始&#10&#10每治療一個點叫對方做動作驗證"></textarea>
+                    <textarea id="summary_notes_2" rows="8" class="micro-textarea" placeholder="不要一開始在主訴疼痛部位開始治療，從最久遠或最緻密的點開始&#10;&#10;每治療一個點叫對方做動作驗證和再觸診本來決定要治療的點"></textarea>
                 </div>
             </div>
 
@@ -397,42 +393,42 @@
                         <span class="icon" style="color:#7c3aed;">🏃</span>
                         <div class="section-header">動作驗證</div>
                     </div>
-                    <textarea id="motion_verification" rows="10" class="micro-textarea"></textarea>
+                    <textarea id="motion_verification" rows="10" class="micro-textarea" placeholder="作用：重現患者的症狀&#10;&#10;做主要疼痛和伴隨疼痛的節段&#10;&#10;主動/被動/抗阻&#10;&#10;()：放射到其他節段"></textarea>
                 </div>
                 <div>
                     <div class="section-title-row">
                         <span class="icon" style="color:#0891b2;">👆</span>
                         <div class="section-header">橫向觸診1</div>
                     </div>
-                    <textarea id="horizontal_palpation_1" rows="10" class="micro-textarea" placeholder="從節段找平面&#10&#10通常是疼痛節段&#10&#10太疼痛就選擇相鄰節段"></textarea>
+                    <textarea id="horizontal_palpation_1" rows="10" class="micro-textarea" placeholder="從節段找平面&#10;&#10;通常是疼痛節段&#10;&#10;太疼痛就選擇相鄰節段&#10;&#10;感受粗糙感/兩個兩個做痛楚比較"></textarea>
                 </div>
                 <div>
                     <div class="section-title-row">
                         <span class="icon" style="color:#0891b2;">👆</span>
                         <div class="section-header">橫向觸診2</div>
                     </div>
-                    <textarea id="horizontal_palpation_2" rows="10" class="micro-textarea" placeholder="從節段找平面&#10&#10通常是最舊有問題的節段&#10&#10不要選擇和橫向觸診1相鄰的節段"></textarea>
+                    <textarea id="horizontal_palpation_2" rows="10" class="micro-textarea" placeholder="通常是最舊/有嚴重問題的節段&#10;&#10;不要選擇和橫向觸診1相鄰的節段"></textarea>
                 </div>
                 <div>
                     <div class="section-title-row">
                         <span class="icon" style="color:#0891b2;">👆</span>
                         <div class="section-header">橫向觸診3</div>
                     </div>
-                    <textarea id="horizontal_palpation_3" rows="10" class="micro-textarea" placeholder="從節段找平面&#10&#10只有在之前兩個節段中無法作決左時才使用這個節段"></textarea>
+                    <textarea id="horizontal_palpation_3" rows="10" class="micro-textarea" placeholder="只有在之前兩個節段中無法作決左時才使用這個節段&#10;&#10;如果肢端有症狀：CA TA CL"></textarea>
                 </div>
                 <div>
                     <div class="section-title-row">
                         <span class="icon" style="color:#0891b2;">👆</span>
                         <div class="section-header">縱向觸診</div>
                     </div>
-                    <textarea id="vertical_palpation" rows="10" class="micro-textarea "placeholder="記得找：&#10&#10遠端近端&#10&#10原動拮抗"></textarea>
+                    <textarea id="vertical_palpation" rows="10" class="micro-textarea "placeholder="遠端近端鬆解&#10;&#10;原動拮抗平衡（1:1 - 1:3）"></textarea>
                 </div>
                 <div>
                     <div class="section-title-row">
                         <span class="icon" style="color:#16a34a;">⚖️</span>
                         <div class="section-header">軀幹平衡</div>
                     </div>
-                    <textarea id="trunk_balance" rows="10" class="micro-textarea" "placeholder="軀幹左右也要找&#10&#10不能只找一邊"></textarea>
+                    <textarea id="trunk_balance" rows="10" class="micro-textarea" placeholder="軀幹左右也要找&#10;&#10;不能只找一邊"></textarea>
                 </div>
             </div>
 
@@ -498,37 +494,37 @@
         html += '<div class="flex-row pr-guard" style="margin-bottom:4px;">';
         html += '<div class="fx-4">';
         html += '<div class="field-label">最主要痛的位置與感覺</div>';
-        html += '<input type="text" class="mini-input assoc-location" placeholder="右腰後方靠近髂骨，深層酸痛" value="' + locationVal + '">';
+        html += '<input type="text" class="tiny-input assoc-location" placeholder="右腰後方靠近髂骨，深層酸痛" value="' + locationVal + '">';
         html += '</div>';
         html += '<div class="fx-2">';
         html += '<div class="field-label">首次發作時間？</div>';
-        html += '<input type="text" class="mini-input assoc-duration" placeholder="約2個月" value="' + onsetVal + '">';
+        html += '<input type="text" class="tiny-input assoc-duration" placeholder="約2個月" value="' + onsetVal + '">';
         html += '</div>';
         html += '<div class="fx-3">';
         html += '<div class="field-label">近期急性發作時間？</div>';
-        html += '<input type="text" class="mini-input assoc-first" placeholder="3天前" value="' + recentVal + '">';
+        html += '<input type="text" class="tiny-input assoc-first" placeholder="3天前" value="' + recentVal + '">';
         html += '</div>';
         html += '<div class="fx-3">';
         html += '<div class="field-label">頻率</div>';
-        html += '<input type="text" class="mini-input assoc-frequency" placeholder="每天" value="' + freqVal + '">';
+        html += '<input type="text" class="tiny-input assoc-frequency" placeholder="每天" value="' + freqVal + '">';
         html += '</div>';
         html += '</div>';
         html += '<div class="flex-row">';
         html += '<div class="fx-1">';
         html += '<div class="field-label">創傷 / 過度使用？</div>';
-        html += '<input type="text" class="mini-input assoc-trauma" placeholder="有無明顯創傷" value="' + traumaVal + '">';
+        html += '<input type="text" class="tiny-input assoc-trauma" placeholder="有無明顯創傷" value="' + traumaVal + '">';
         html += '</div>';
         html += '<div class="fx-1">';
         html += '<div class="field-label">加重因素</div>';
-        html += '<input type="text" class="mini-input assoc-aggravate" placeholder="走路久、久坐" value="' + aggravateVal + '">';
+        html += '<input type="text" class="tiny-input assoc-aggravate" placeholder="走路久、久坐" value="' + aggravateVal + '">';
         html += '</div>';
         html += '<div class="fx-1">';
         html += '<div class="field-label">緩解因素</div>';
-        html += '<input type="text" class="mini-input assoc-relieve" placeholder="躺平、熱敷" value="' + relieveVal + '">';
+        html += '<input type="text" class="tiny-input assoc-relieve" placeholder="躺平、熱敷" value="' + relieveVal + '">';
         html += '</div>';
         html += '<div class="fx-1">';
         html += '<div class="field-label">VRS</div>';
-        html += '<input type="text" class="mini-input assoc-vrs" placeholder="0-10" value="' + vrsVal + '">';
+        html += '<input type="text" class="tiny-input assoc-vrs" placeholder="0-10" value="' + vrsVal + '">';
         html += '</div>';
         html += '</div>';
 
@@ -557,15 +553,15 @@
 
         var traumaHtml = '';
         if (includeTrauma) {
-            traumaHtml = '<div class="past-field"><input type="text" class="mini-input past-trauma" placeholder="創傷 / 過度使用？" value="' + traumaVal + '"></div>';
+            traumaHtml = '<div class="past-field"><input type="text" class="tiny-input past-trauma" placeholder="創傷 / 過度使用？" value="' + traumaVal + '"></div>';
         }
 
         var html = '';
         html += '<div class="past-row">';
-        html += '<div class="past-field"><input type="text" class="mini-input past-location" placeholder="位置" value="' + locationVal + '"></div>';
-        html += '<div class="past-field"><input type="text" class="mini-input past-duration" placeholder="開始日期" value="' + startVal + '"></div>';
-        html += '<div class="past-field"><input type="text" class="mini-input past-when" placeholder="持續多久" value="' + endVal + '"></div>';
-        html += '<div class="past-field"><input type="text" class="mini-input past-description" placeholder="描述" value="' + descriptionVal + '"></div>';
+        html += '<div class="past-field"><input type="text" class="tiny-input past-location" placeholder="位置" value="' + locationVal + '"></div>';
+        html += '<div class="past-field"><input type="text" class="tiny-input past-duration" placeholder="開始日期" value="' + startVal + '"></div>';
+        html += '<div class="past-field"><input type="text" class="tiny-input past-when" placeholder="持續多久" value="' + endVal + '"></div>';
+        html += '<div class="past-field"><input type="text" class="tiny-input past-description" placeholder="描述" value="' + descriptionVal + '"></div>';
         html += traumaHtml;
         html += '</div>';
         html += '<button type="button" onclick="removeHistoryRow(this)" class="past-remove-btn">✕</button>';
