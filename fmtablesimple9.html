@@ -13,7 +13,7 @@
         padding: 4px 0;
         color: #0f172a;
     }
-    .container-app { max-width: 420px; margin: 0 auto; padding: 0 5px; }
+    .container-app { max-width: 420px; margin: 0 auto; padding: 0; }
 
     #error_banner {
         display: none;
@@ -43,7 +43,7 @@
     .btn-white { background: #fff; border: 1px solid #cbd5e1; color: #334155; }
 
     .form-card {
-        max-width: 410px; margin: 0 auto; background: #ffffff; border-radius: 12px;
+        max-width: 420px; margin: 0 auto; background: #ffffff; border-radius: 12px;
         box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 1px solid #e2e8f0;
         padding: 6px; font-size: 12px; line-height: 1.1;
         min-height: 40px;
@@ -57,6 +57,7 @@
     .fx-5  { flex: 5 1 0%; min-width: 0; }
 
     .field-label { font-size: 8px; color: #64748b; margin-bottom: 1px; }
+    .section-prompt-placeholder { font-size: 8px; color: #94a3b8; }
 
     .mini-input {
         font-size: 11px; padding: 2.5px 4px; line-height: 1.05; width: 100%;
@@ -218,6 +219,7 @@
                 <div class="section-title-row">
                     <span class="icon" style="color:#2563eb;">💬</span>
                     <div class="section-header">主要問題</div>
+                    <span class="section-prompt-placeholder">提問提示待補充</span>
                 </div>
                 <div class="flex-row">
                     <div class="fx-4">
@@ -265,6 +267,7 @@
                     <div class="section-title-row" style="margin-bottom:0;">
                         <span class="icon" style="color:#0d9488;">☰</span>
                         <div class="section-header">伴隨疼痛</div>
+                        <span class="section-prompt-placeholder">提問提示待補充</span>
                     </div>
                     <button onclick="addAssociatedRow(null)" class="mini-btn teal"><span>＋</span><span>新增</span></button>
                 </div>
@@ -314,6 +317,7 @@
                     <div class="section-title-row" style="margin-bottom:0;">
                         <span class="icon" style="color:#ea580c;">🕘</span>
                         <div class="section-header">過去疼痛</div>
+                        <span class="section-prompt-placeholder">提問提示待補充</span>
                     </div>
                     <button onclick="addHistoryRow('past_pain_container', null, true)" class="mini-btn orange"><span>＋</span><span>新增</span></button>
                 </div>
@@ -325,6 +329,7 @@
                     <div class="section-title-row" style="margin-bottom:0;">
                         <span class="icon" style="color:#e11d48;">🔬</span>
                         <div class="section-header">手術史</div>
+                        <span class="section-prompt-placeholder">提問提示待補充</span>
                     </div>
                     <button onclick="addHistoryRow('surgery_history_container', null, true)" class="mini-btn rose"><span>＋</span><span>新增</span></button>
                 </div>
@@ -336,6 +341,7 @@
                     <div class="section-title-row" style="margin-bottom:0;">
                         <span class="icon" style="color:#d97706;">🩹</span>
                         <div class="section-header">外傷史</div>
+                        <span class="section-prompt-placeholder">提問提示待補充</span>
                     </div>
                     <button onclick="addHistoryRow('injury_history_container', null, false)" class="mini-btn amber"><span>＋</span><span>新增</span></button>
                 </div>
@@ -347,6 +353,7 @@
                     <div class="section-title-row" style="margin-bottom:0;">
                         <span class="icon" style="color:#475569;">🦴</span>
                         <div class="section-header">骨折史</div>
+                        <span class="section-prompt-placeholder">提問提示待補充</span>
                     </div>
                     <button onclick="addHistoryRow('fracture_history_container', null, false)" class="mini-btn slate"><span>＋</span><span>新增</span></button>
                 </div>
@@ -354,26 +361,33 @@
             </div>
 
             <div class="two-col-footer tight-section">
-                <div class="footer-med-block">
+                <div style="flex:1 1 0%;">
                     <div class="section-title-row">
                         <span class="icon" style="color:#e11d48;">🤕</span>
-                        <div class="section-header">藥物 / 內部失調 / 過度使用</div>
+                        <div class="section-header">藥物 / 內部失調</div>
                     </div>
-                    <textarea id="surgery_trauma" rows="8" class="mini-textarea" placeholder="2019右腳踝扭傷"></textarea>
+                    <textarea id="medication_disorder_overuse" rows="8" class="micro-textarea" placeholder="藥物 / 內部失調 / 過度使用"></textarea>
                 </div>
-                <div class="footer-summary-block">
+                <div style="flex:1 1 0%;">
                     <div class="section-title-row">
                         <span class="icon" style="color:#475569;">🗒</span>
-                        <div class="section-header">假設、治療及總結</div>
+                        <div class="section-header">時間序</div>
                     </div>
-                    <div class="flex-row">
-                        <div>
-                            <textarea id="summary_notes" rows="8" class="mini-textarea" placeholder="假設 e.g. 上行/下行？"></textarea>
-                        </div>
-                        <div>
-                            <textarea id="summary_notes_2" rows="8" class="mini-textarea" placeholder="治療及總結&#10&#10不要一開始在主訴疼痛部位開始治療，從最久遠或最緻密的點開始&#10&#10每治療一個點叫對方做動作驗證"></textarea>
-                        </div>
+                    <textarea id="medication_timeline" rows="8" class="micro-textarea" placeholder="時間序"></textarea>
+                </div>
+                <div style="flex:1 1 0%;">
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#475569;">🗒</span>
+                        <div class="section-header">假設</div>
                     </div>
+                    <textarea id="summary_notes" rows="8" class="micro-textarea" placeholder="假設 e.g. 上行/下行？"></textarea>
+                </div>
+                <div style="flex:1 1 0%;">
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#475569;">🗒</span>
+                        <div class="section-header">治療及總結</div>
+                    </div>
+                    <textarea id="summary_notes_2" rows="8" class="micro-textarea" placeholder="治療及總結&#10&#10不要一開始在主訴疼痛部位開始治療，從最久遠或最緻密的點開始&#10&#10每治療一個點叫對方做動作驗證"></textarea>
                 </div>
             </div>
 
@@ -537,8 +551,9 @@
 
         var locationVal = (data && data.location) ? data.location : '';
         var startVal = (data && data.start_date) ? data.start_date : '';
-        var endVal = (data && data.end_date) ? data.end_date : '';
+        var endVal = (data && data.duration !== undefined) ? data.duration : ((data && data.end_date) ? data.end_date : '');
         var traumaVal = (data && data.trauma) ? data.trauma : '';
+        var descriptionVal = (data && data.description) ? data.description : '';
 
         var traumaHtml = '';
         if (includeTrauma) {
@@ -547,9 +562,10 @@
 
         var html = '';
         html += '<div class="past-row">';
-        html += '<div class="past-field"><input type="text" class="mini-input past-location" placeholder="位置與當時情況" value="' + locationVal + '"></div>';
+        html += '<div class="past-field"><input type="text" class="mini-input past-location" placeholder="位置" value="' + locationVal + '"></div>';
         html += '<div class="past-field"><input type="text" class="mini-input past-duration" placeholder="開始日期" value="' + startVal + '"></div>';
-        html += '<div class="past-field"><input type="text" class="mini-input past-when" placeholder="完結日期" value="' + endVal + '"></div>';
+        html += '<div class="past-field"><input type="text" class="mini-input past-when" placeholder="持續多久" value="' + endVal + '"></div>';
+        html += '<div class="past-field"><input type="text" class="mini-input past-description" placeholder="描述" value="' + descriptionVal + '"></div>';
         html += traumaHtml;
         html += '</div>';
         html += '<button type="button" onclick="removeHistoryRow(this)" class="past-remove-btn">✕</button>';
@@ -573,7 +589,8 @@
             var item = {
                 location: qVal(row, '.past-location'),
                 start_date: qVal(row, '.past-duration'),
-                end_date: qVal(row, '.past-when')
+                duration: qVal(row, '.past-when'),
+                description: qVal(row, '.past-description')
             };
             if (includeTrauma) { item.trauma = qVal(row, '.past-trauma'); }
             list.push(item);
@@ -604,7 +621,7 @@
 
     function collectFormData() {
         var data = {
-            version: "23.2-six-textarea-headers-styled",
+            version: "24.1-history-duration-and-medication-fields",
             export_date: new Date().toISOString(),
             record_date: fieldVal('record_date'),
             patient_name: fieldVal('patient_name'),
@@ -635,7 +652,8 @@
             surgery_history: collectHistoryList('surgery_history_container', true),
             injury_history: collectHistoryList('injury_history_container', false),
             fracture_history: collectHistoryList('fracture_history_container', false),
-            medication_disorder_overuse: fieldVal('surgery_trauma'),
+            medication_internal_disorder_overuse: fieldVal('medication_disorder_overuse'),
+            medication_timeline: fieldVal('medication_timeline'),
             observation_notes: fieldVal('summary_notes'),
             treatment_summary_notes: fieldVal('summary_notes_2'),
             motion_verification: fieldVal('motion_verification'),
@@ -749,7 +767,8 @@
         setFieldVal('main_vrs', '');
         setFieldVal('aggravating_factors', '');
         setFieldVal('relieving_factors', '');
-        setFieldVal('surgery_trauma', '');
+        setFieldVal('medication_disorder_overuse', '');
+        setFieldVal('medication_timeline', '');
         setFieldVal('summary_notes', '');
         setFieldVal('summary_notes_2', '');
         setFieldVal('motion_verification', '');
@@ -828,7 +847,12 @@
             }
         }
 
-        if (data.medication_disorder_overuse !== undefined) { setFieldVal('surgery_trauma', data.medication_disorder_overuse); }
+        if (data.medication_internal_disorder_overuse !== undefined) {
+            setFieldVal('medication_disorder_overuse', data.medication_internal_disorder_overuse);
+        } else if (data.medication_disorder_overuse !== undefined) {
+            setFieldVal('medication_disorder_overuse', data.medication_disorder_overuse);
+        }
+        if (data.medication_timeline !== undefined) { setFieldVal('medication_timeline', data.medication_timeline); }
         if (data.observation_notes !== undefined) { setFieldVal('summary_notes', data.observation_notes); }
         if (data.treatment_summary_notes !== undefined) { setFieldVal('summary_notes_2', data.treatment_summary_notes); }
         if (data.motion_verification !== undefined) { setFieldVal('motion_verification', data.motion_verification); }
