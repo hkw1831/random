@@ -206,6 +206,7 @@
     .description h3 { font-size: 1em; }
     .description ul, .description ol { margin: 0 0 .8em 1.25em; padding: 0; }
     .description a { color: inherit; }
+    .description mark { padding: .05em .12em; background: #fff3a3; color: inherit; }
 
     .slide.export-slide,
     .slide.export-slide .slide-title,
@@ -255,8 +256,8 @@
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="4">4</option>
-            <option value="6" selected>6</option>
-            <option value="8">8</option>
+            <option value="6">6</option>
+            <option value="8" selected>8</option>
             <option value="9">9</option>
           </select>
         </label>
@@ -266,8 +267,8 @@
         <label for="border-style">Border
           <select id="border-style">
             <option value="black">Black</option>
-            <option value="light" selected>Light</option>
-            <option value="none">None</option>
+            <option value="light">Light</option>
+            <option value="none" selected>None</option>
           </select>
         </label>
       </div>
@@ -352,6 +353,7 @@
       const blocks = escapeHtml(value).trim().split(/\n{2,}/).filter(Boolean);
       const inline = text => text
         .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/==(.+?)==/g, '<mark>$1</mark>')
         .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
         .replace(/\*([^*]+)\*/g, '<em>$1</em>')
         .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>');
