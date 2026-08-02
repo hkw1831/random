@@ -107,6 +107,17 @@
     .hint { margin: 4px 0 0; color: var(--muted); font: 12px/1.35 Arial, sans-serif; }
 
     .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 8px; }
+    .pdf-progress {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px;
+      align-items: center;
+      margin-top: 8px;
+      color: var(--muted);
+      font: 12px/1.2 Arial, sans-serif;
+    }
+    .pdf-progress[hidden] { display: none; }
+    .pdf-progress progress { width: 100%; height: 8px; accent-color: var(--accent); }
     button {
       min-height: 32px;
       border: 1px solid var(--accent);
@@ -301,6 +312,10 @@
         <button id="batch-import-button" class="secondary" type="button">Import Batch</button>
         <button id="batch-pdf-button" class="secondary" type="button">Export Batch PDF</button>
       </div>
+      <div id="pdf-progress" class="pdf-progress" hidden aria-live="polite">
+        <progress id="pdf-progress-bar" value="0" max="1"></progress>
+        <span id="pdf-progress-text">Preparing PDF</span>
+      </div>
     </section>
 
     <section class="preview-area" aria-label="Slide preview">
@@ -329,7 +344,11 @@
     const batchPreviewArea = document.getElementById('batch-preview-area');
     const batchPreviewHeading = document.getElementById('batch-preview-heading');
     const batchPreviewGrid = document.getElementById('batch-preview-grid');
+    const pdfProgress = document.getElementById('pdf-progress');
+    const pdfProgressBar = document.getElementById('pdf-progress-bar');
+    const pdfProgressText = document.getElementById('pdf-progress-text');
     let batchSlides = [];
+    let previewLoadQueue = null;
 
     for (let size = 6; size <= 50; size += 1) {
       const option = document.createElement('option');
@@ -400,12 +419,13 @@
       });
     }
 
-    function slideMarkup(data = slideData(), forExport = false) {
+    function slideMarkup(data = slideData(), forExport = false, deferImages = false) {
       const photo = number => {
         const url = parseImageUrl(data.photos?.[number] || '');
         const imageUrl = forExport && url ? exportImageUrl(url) : url;
         const corsAttribute = forExport ? ' crossorigin="anonymous"' : '';
-        return `<div class="photo-slot">${imageUrl ? `<img${corsAttribute} src="${escapeHtml(imageUrl)}" alt="Photo ${number}">` : ''}</div>`;
+        const sourceAttribute = forExport || deferImages ? 'data-deferred-src' : 'src';
+        return `<div class="photo-slot">${imageUrl ? `<img${corsAttribute} ${sourceAttribute}="${escapeHtml(imageUrl)}" alt="Photo ${number}">` : ''}</div>`;
       };
       return `
         <div class="slide-title">${escapeHtml(data.title || 'Title')}</div>
@@ -435,6 +455,17 @@
       const originalText = button.textContent;
       button.textContent = text;
       setTimeout(() => { button.textContent = originalText; }, 1400);
+    }
+
+    function showPdfProgress(value, maximum, text) {
+      pdfProgress.hidden = false;
+      pdfProgressBar.max = maximum;
+      pdfProgressBar.value = value;
+      pdfProgressText.textContent = text;
+    }
+
+    function hidePdfProgress() {
+      pdfProgress.hidden = true;
     }
 
     async function exportJson() {
@@ -485,27 +516,44 @@
       };
     }
 
-    function renderBatchPreviews() {
+    async function renderBatchPreviews() {
+      if (previewLoadQueue) previewLoadQueue.cancelled = true;
+      const queue = { cancelled: false, cancelWaiters: new Set() };
+      previewLoadQueue = queue;
       batchPreviewHeading.textContent = `Batch previews (${batchSlides.length})`;
       batchPreviewGrid.innerHTML = batchSlides.map(data => `
         <article class="batch-preview-card">
-          <div class="slide border-${data.borderStyle}">${slideMarkup(data)}</div>
+          <div class="slide border-${data.borderStyle}">${slideMarkup(data, false, true)}</div>
         </article>`).join('');
       batchPreviewArea.hidden = batchSlides.length === 0;
+      await loadDeferredImages(batchPreviewGrid, queue);
+    }
+
+    function cancelPreviewLoading() {
+      if (!previewLoadQueue) return;
+      previewLoadQueue.cancelled = true;
+      previewLoadQueue.cancelWaiters.forEach(cancel => cancel());
+      previewLoadQueue.cancelWaiters.clear();
+      batchPreviewGrid.querySelectorAll('img[src]').forEach(image => image.removeAttribute('src'));
     }
 
     async function importBatchJson() {
       const button = document.getElementById('batch-import-button');
+      button.disabled = true;
+      button.textContent = 'Loading previews...';
       try {
         const text = await navigator.clipboard.readText();
         const blocks = [...text.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi)];
         batchSlides = blocks.flatMap(block => {
           try { return [normalizedSlideData(JSON.parse(block[1]))]; } catch (_) { return []; }
         });
-        renderBatchPreviews();
-        flashButton(button, batchSlides.length ? `${batchSlides.length} loaded` : 'No JSON found');
+        await renderBatchPreviews();
+        button.textContent = batchSlides.length ? `${batchSlides.length} loaded` : 'No JSON found';
       } catch (_) {
-        flashButton(button, 'Clipboard unavailable');
+        button.textContent = 'Clipboard unavailable';
+      } finally {
+        button.disabled = false;
+        setTimeout(() => { button.textContent = 'Import Batch'; }, 1400);
       }
     }
 
@@ -528,20 +576,57 @@
       });
     }
 
+    function waitForImage(image, queue) {
+      return new Promise(resolve => {
+        const finish = loaded => {
+          image.removeEventListener('load', onLoad);
+          image.removeEventListener('error', onError);
+          queue?.cancelWaiters.delete(cancel);
+          resolve(loaded);
+        };
+        const onLoad = () => finish(true);
+        const onError = () => finish(false);
+        const cancel = () => finish(false);
+        image.addEventListener('load', onLoad, { once: true });
+        image.addEventListener('error', onError, { once: true });
+        queue?.cancelWaiters.add(cancel);
+      });
+    }
+
+    function wait(milliseconds) {
+      return new Promise(resolve => setTimeout(resolve, milliseconds));
+    }
+
+    async function loadDeferredImages(container, queue) {
+      const images = [...container.querySelectorAll('img[data-deferred-src]')];
+      for (const image of images) {
+        if (queue?.cancelled) return;
+        let loaded = false;
+        for (let attempt = 0; attempt < 3 && !loaded; attempt += 1) {
+          if (queue?.cancelled) return;
+          const result = waitForImage(image, queue);
+          image.src = `${image.dataset.deferredSrc}${image.dataset.deferredSrc.includes('?') ? '&' : '?'}slidepdf-retry=${Date.now()}`;
+          loaded = await result;
+          if (queue?.cancelled) return;
+          if (!loaded) await wait(2000 * (attempt + 1));
+        }
+        if (queue?.cancelled) return;
+        await wait(1000);
+      }
+    }
+
     async function exportPdf() {
       const button = document.getElementById('pdf-button');
       button.disabled = true;
       button.textContent = 'Preparing PDF...';
+      showPdfProgress(0, 1, 'Preparing PDF');
       const exportSlide = document.createElement('div');
       exportSlide.className = `slide export-slide border-${borderStyleInput.value}`;
       exportSlide.style.cssText = 'position:fixed;left:-9999px;top:0;transform:none;';
       exportSlide.innerHTML = slideMarkup(true);
       document.body.append(exportSlide);
       try {
-        await Promise.all([...exportSlide.querySelectorAll('img')].map(image => image.complete ? Promise.resolve() : new Promise(resolve => {
-          image.addEventListener('load', resolve, { once: true });
-          image.addEventListener('error', resolve, { once: true });
-        })));
+        await loadDeferredImages(exportSlide);
         fitExportImages(exportSlide);
         const canvas = await html2canvas(exportSlide, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
         const { jsPDF } = window.jspdf;
@@ -554,6 +639,7 @@
         const height = width * .75;
         const top = (pageHeight - height) / 2;
         pdf.addImage(image, 'JPEG', margin, top, width, height);
+        showPdfProgress(1, 1, 'Saving PDF');
         const filename = (titleInput.value.trim() || 'slide').replace(/[\\/:*?"<>|]+/g, '-');
         pdf.save(`${filename}.pdf`);
       } catch (error) {
@@ -562,6 +648,7 @@
         exportSlide.remove();
         button.disabled = false;
         button.textContent = 'Export PDF';
+        hidePdfProgress();
         fitPreview();
       }
     }
@@ -572,8 +659,10 @@
         flashButton(button, 'Import batch first');
         return;
       }
+      cancelPreviewLoading();
       button.disabled = true;
       button.textContent = 'Preparing PDF...';
+      showPdfProgress(0, batchSlides.length, `Preparing 0 of ${batchSlides.length}`);
       const exportSlide = document.createElement('div');
       exportSlide.style.cssText = 'position:fixed;left:-9999px;top:0;transform:none;';
       document.body.append(exportSlide);
@@ -589,15 +678,14 @@
         for (const [index, data] of batchSlides.entries()) {
           exportSlide.className = `slide export-slide border-${data.borderStyle}`;
           exportSlide.innerHTML = slideMarkup(data, true);
-          await Promise.all([...exportSlide.querySelectorAll('img')].map(image => image.complete ? Promise.resolve() : new Promise(resolve => {
-            image.addEventListener('load', resolve, { once: true });
-            image.addEventListener('error', resolve, { once: true });
-          })));
+          await loadDeferredImages(exportSlide);
           fitExportImages(exportSlide);
           const canvas = await html2canvas(exportSlide, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
           if (index) pdf.addPage();
           pdf.addImage(canvas.toDataURL('image/jpeg', .95), 'JPEG', margin, top, width, height);
+          showPdfProgress(index + 1, batchSlides.length, `Slide ${index + 1} of ${batchSlides.length}`);
         }
+        showPdfProgress(batchSlides.length, batchSlides.length, 'Saving PDF');
         pdf.save('slides.pdf');
       } catch (_) {
         alert('The PDF could not be created. Check that every image link allows access from this page.');
@@ -605,6 +693,7 @@
         exportSlide.remove();
         button.disabled = false;
         button.textContent = 'Export Batch PDF';
+        hidePdfProgress();
       }
     }
 
