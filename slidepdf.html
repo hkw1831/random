@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Slide PDF Maker</title>
+  <style>
+    :root {
+      --ink: #16201d;
+      --muted: #69736f;
+      --line: #cfd8d2;
+      --wash: #edf2ee;
+      --accent: #186f5b;
+      --accent-dark: #0e5444;
+      --paper: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #e6ece8;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .app {
+      width: min(1420px, calc(100% - 40px));
+      margin: 12px auto 24px;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .editor {
+      padding: 12px;
+      background: #f8faf8;
+      border: 1px solid #c8d2cb;
+      box-shadow: 0 12px 30px rgba(25, 47, 37, .12);
+    }
+
+    .eyebrow, label, .field-title {
+      display: block;
+      color: #53625b;
+      font-family: "Arial Narrow", Arial, sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .field { margin-top: 7px; }
+    label { margin-bottom: 3px; }
+    input, textarea, select {
+      display: block;
+      width: 100%;
+      border: 1px solid #bfcac3;
+      border-radius: 3px;
+      padding: 6px;
+      color: var(--ink);
+      background: var(--paper);
+      font: 14px/1.35 Arial, sans-serif;
+    }
+    input:focus, textarea:focus { outline: 3px solid rgba(24, 111, 91, .18); border-color: var(--accent); }
+    textarea { min-height: 280px; resize: vertical; }
+
+    .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .controls label { margin: 0; white-space: nowrap; }
+    .controls input, .controls select { margin-top: 3px; }
+    .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .photo-grid label { margin: 0; }
+    .photo-grid[data-count="1"] { grid-template-columns: 1fr; }
+    .photo-grid[data-count="1"] label[data-photo="1"] { grid-area: 1 / 1; }
+    .photo-grid[data-count="2"] { grid-template-columns: 1fr; }
+    .photo-grid[data-count="2"] label[data-photo="1"] { grid-area: 1 / 1; }
+    .photo-grid[data-count="2"] label[data-photo="2"] { grid-area: 2 / 1; }
+    .photo-grid[data-count="4"] label[data-photo="1"] { grid-area: 1 / 1; }
+    .photo-grid[data-count="4"] label[data-photo="2"] { grid-area: 1 / 2; }
+    .photo-grid[data-count="4"] label[data-photo="3"] { grid-area: 2 / 1; }
+    .photo-grid[data-count="4"] label[data-photo="4"] { grid-area: 2 / 2; }
+    .photo-grid[data-count="6"] label[data-photo="1"] { grid-area: 1 / 1; }
+    .photo-grid[data-count="6"] label[data-photo="4"] { grid-area: 1 / 2; }
+    .photo-grid[data-count="6"] label[data-photo="2"] { grid-area: 2 / 1; }
+    .photo-grid[data-count="6"] label[data-photo="5"] { grid-area: 2 / 2; }
+    .photo-grid[data-count="6"] label[data-photo="3"] { grid-area: 3 / 1; }
+    .photo-grid[data-count="6"] label[data-photo="6"] { grid-area: 3 / 2; }
+    .photo-grid[data-count="8"] label[data-photo="1"] { grid-area: 1 / 1; }
+    .photo-grid[data-count="8"] label[data-photo="5"] { grid-area: 1 / 2; }
+    .photo-grid[data-count="8"] label[data-photo="2"] { grid-area: 2 / 1; }
+    .photo-grid[data-count="8"] label[data-photo="6"] { grid-area: 2 / 2; }
+    .photo-grid[data-count="8"] label[data-photo="3"] { grid-area: 3 / 1; }
+    .photo-grid[data-count="8"] label[data-photo="7"] { grid-area: 3 / 2; }
+    .photo-grid[data-count="8"] label[data-photo="4"] { grid-area: 4 / 1; }
+    .photo-grid[data-count="8"] label[data-photo="8"] { grid-area: 4 / 2; }
+    .photo-grid[data-count="9"] { grid-template-columns: repeat(3, 1fr); }
+    .photo-grid[data-count="9"] label[data-photo="1"] { grid-area: 1 / 1; }
+    .photo-grid[data-count="9"] label[data-photo="4"] { grid-area: 1 / 2; }
+    .photo-grid[data-count="9"] label[data-photo="7"] { grid-area: 1 / 3; }
+    .photo-grid[data-count="9"] label[data-photo="2"] { grid-area: 2 / 1; }
+    .photo-grid[data-count="9"] label[data-photo="5"] { grid-area: 2 / 2; }
+    .photo-grid[data-count="9"] label[data-photo="8"] { grid-area: 2 / 3; }
+    .photo-grid[data-count="9"] label[data-photo="3"] { grid-area: 3 / 1; }
+    .photo-grid[data-count="9"] label[data-photo="6"] { grid-area: 3 / 2; }
+    .photo-grid[data-count="9"] label[data-photo="9"] { grid-area: 3 / 3; }
+    .photo-grid input { margin-top: 3px; padding: 6px; font-size: 12px; }
+    .photo-grid label.is-hidden { display: none; }
+    .hint { margin: 4px 0 0; color: var(--muted); font: 12px/1.35 Arial, sans-serif; }
+
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 8px; }
+    button {
+      min-height: 32px;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+      padding: 6px 8px;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      font: 700 13px/1 Arial, sans-serif;
+      letter-spacing: .02em;
+    }
+    button:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+    button.secondary { background: #fff; color: var(--accent-dark); }
+    button.secondary:hover { background: var(--wash); }
+
+    .preview-area { min-width: 0; }
+
+    .slide-wrap { width: 100%; padding: 10px; background: #d7e0da; overflow: hidden; }
+    .slide {
+      --edge: 3.1%;
+      --title-height: 8.3%;
+      --content-top: 12.5%;
+      --content-height: 83.1%;
+      --slide-border: #aeb9b1;
+      --slide-border-width: 1px;
+      width: 1200px;
+      height: 900px;
+      position: relative;
+      transform: scale(var(--preview-scale, 1));
+      transform-origin: top left;
+      overflow: hidden;
+      background: #fff;
+      border: var(--slide-border-width) solid var(--slide-border);
+      color: #171717;
+      font-family: "Comic Sans MS", "Marker Felt", cursive;
+    }
+    .slide.border-black { --slide-border: #171717; --slide-border-width: 1.5px; }
+    .slide.border-light { --slide-border: #aeb9b1; --slide-border-width: 1px; }
+    .slide.border-none { --slide-border: transparent; --slide-border-width: 0; }
+
+    .slide-title {
+      position: absolute;
+      top: 2.5%; left: var(--edge); right: var(--edge);
+      height: var(--title-height);
+      overflow: hidden;
+      padding: .45% 1.05%;
+      border: var(--slide-border-width) solid var(--slide-border);
+      border-radius: 14px;
+      font-size: 50px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: pre-wrap;
+    }
+
+    .photo-area {
+      position: absolute;
+      top: var(--content-top); left: var(--edge);
+      width: 62.5%;
+      height: var(--content-height);
+      display: grid;
+      gap: 1%;
+    }
+    .photo-area.count-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+    .photo-area.count-2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+    .photo-area.count-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+    .photo-area.count-6 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); }
+    .photo-area.count-8 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 1fr); }
+    .photo-area.count-9 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+    .photo-slot {
+      position: relative;
+      overflow: hidden;
+      border: var(--slide-border-width) solid var(--slide-border);
+      border-radius: 13px;
+      background: #fff;
+    }
+    .photo-slot img { display: block; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .description {
+      position: absolute;
+      top: var(--content-top); right: var(--edge);
+      width: 30.3%; height: var(--content-height);
+      overflow: hidden;
+      padding: 1% 1%;
+      border: var(--slide-border-width) solid var(--slide-border);
+      border-radius: 13px;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.32;
+      overflow-wrap: anywhere;
+    }
+    .description > :first-child { margin-top: 0; }
+    .description > :last-child { margin-bottom: 0; }
+    .description p { margin: 0 0 .8em; }
+    .description h1, .description h2, .description h3 { margin: 0 0 .45em; font: 700 1.15em/1.2 Arial, sans-serif; }
+    .description h2 { font-size: 1.08em; }
+    .description h3 { font-size: 1em; }
+    .description ul, .description ol { margin: 0 0 .8em 1.25em; padding: 0; }
+    .description a { color: inherit; }
+
+    #print-sheet { display: none; }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; width: min(720px, calc(100% - 28px)); margin-top: 14px; }
+      .slide-wrap { padding: 10px; }
+    }
+
+    @media print {
+      @page { size: A4 landscape; margin: 8mm; }
+      body { background: #fff; }
+      .app { display: none; }
+      #print-sheet { display: grid; width: 100%; height: 100%; gap: 6mm; }
+      #print-sheet.one { grid-template-columns: 1fr; }
+      #print-sheet.two { grid-template-columns: 1fr 1fr; }
+      .print-slide { width: 100%; align-self: center; }
+      .print-slide .slide { width: 100%; height: auto; aspect-ratio: 4 / 3; transform: none; }
+      #print-sheet.one .print-slide { width: min(100%, 340mm); margin: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="editor" aria-label="Slide details">
+      <span class="eyebrow">4:3 slide maker</span>
+
+      <div class="field">
+        <label for="title-input">Title</label>
+        <input id="title-input" type="text" placeholder="Slide title">
+      </div>
+
+      <div class="field controls">
+        <label for="photo-count">Photos
+          <select id="photo-count">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="4">4</option>
+            <option value="6" selected>6</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+          </select>
+        </label>
+        <label for="description-size">Description px
+          <select id="description-size"></select>
+        </label>
+        <label for="border-style">Border
+          <select id="border-style">
+            <option value="black">Black</option>
+            <option value="light" selected>Light</option>
+            <option value="none">None</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="field">
+        <div class="photo-grid" data-count="6">
+          <label data-photo="1">Photo 1<input class="photo-input" data-photo="1" type="url" placeholder="https://..."></label>
+          <label data-photo="4">Photo 4<input class="photo-input" data-photo="4" type="url" placeholder="https://..."></label>
+          <label data-photo="2">Photo 2<input class="photo-input" data-photo="2" type="url" placeholder="https://..."></label>
+          <label data-photo="5">Photo 5<input class="photo-input" data-photo="5" type="url" placeholder="https://..."></label>
+          <label data-photo="3">Photo 3<input class="photo-input" data-photo="3" type="url" placeholder="https://..."></label>
+          <label data-photo="6">Photo 6<input class="photo-input" data-photo="6" type="url" placeholder="https://..."></label>
+          <label data-photo="7">Photo 7<input class="photo-input" data-photo="7" type="url" placeholder="https://..."></label>
+          <label data-photo="8">Photo 8<input class="photo-input" data-photo="8" type="url" placeholder="https://..."></label>
+          <label data-photo="9">Photo 9<input class="photo-input" data-photo="9" type="url" placeholder="https://..."></label>
+        </div>
+        <p class="hint">Accepts a plain URL or Markdown image syntax.</p>
+      </div>
+
+      <div class="field">
+        <label for="description-input">Description</label>
+        <textarea id="description-input" placeholder="Description text"></textarea>
+      </div>
+
+      <div class="actions">
+        <button id="preview-button" type="button">Preview</button>
+        <button id="pdf-button" class="secondary" type="button">Export PDF</button>
+        <button id="import-button" class="secondary" type="button">Import JSON</button>
+        <button id="export-button" class="secondary" type="button">Export JSON</button>
+      </div>
+    </section>
+
+    <section class="preview-area" aria-label="Slide preview">
+      <div class="slide-wrap"><div class="slide" id="slide-preview"></div></div>
+    </section>
+  </main>
+
+  <section id="print-sheet" aria-hidden="true"></section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const titleInput = document.getElementById('title-input');
+    const descriptionInput = document.getElementById('description-input');
+    const photoCountInput = document.getElementById('photo-count');
+    const descriptionSizeInput = document.getElementById('description-size');
+    const borderStyleInput = document.getElementById('border-style');
+    const photoInputs = [...document.querySelectorAll('.photo-input')];
+    const photoGrid = document.querySelector('.photo-grid');
+    const preview = document.getElementById('slide-preview');
+
+    for (let size = 6; size <= 50; size += 1) {
+      const option = document.createElement('option');
+      option.value = size;
+      option.textContent = `${size}px`;
+      option.selected = size === 16;
+      descriptionSizeInput.append(option);
+    }
+
+    function parseImageUrl(value) {
+      const trimmed = value.trim();
+      const markdownMatch = trimmed.match(/^!\[[^\]]*\]\((?:<)?(.+?)(?:>)?\)$/);
+      return markdownMatch ? markdownMatch[1].trim() : trimmed;
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function renderMarkdown(value) {
+      const blocks = escapeHtml(value).trim().split(/\n{2,}/).filter(Boolean);
+      const inline = text => text
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>');
+      return blocks.map(block => {
+        const lines = block.split('\n');
+        if (lines.every(line => /^[-*+]\s+/.test(line))) {
+          return `<ul>${lines.map(line => `<li>${inline(line.replace(/^[-*+]\s+/, ''))}</li>`).join('')}</ul>`;
+        }
+        if (lines.every(line => /^\d+\.\s+/.test(line))) {
+          return `<ol>${lines.map(line => `<li>${inline(line.replace(/^\d+\.\s+/, ''))}</li>`).join('')}</ol>`;
+        }
+        const heading = block.match(/^(#{1,3})\s+(.+)$/);
+        if (heading) return `<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>`;
+        return `<p>${lines.map(inline).join('<br>')}</p>`;
+      }).join('');
+    }
+
+    function exportImageUrl(url) {
+      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&output=jpg`;
+    }
+
+    function activePhotoNumbers() {
+      return Array.from({ length: Number(photoCountInput.value) }, (_, index) => index + 1);
+    }
+
+    function layoutPhotoNumbers() {
+      const layouts = {
+        1: [1],
+        2: [1, 2],
+        4: [1, 2, 3, 4],
+        6: [1, 4, 2, 5, 3, 6],
+        8: [1, 5, 2, 6, 3, 7, 4, 8],
+        9: [1, 4, 7, 2, 5, 8, 3, 6, 9]
+      };
+      return layouts[photoCountInput.value];
+    }
+
+    function updatePhotoInputs() {
+      photoGrid.dataset.count = photoCountInput.value;
+      photoInputs.forEach(input => {
+        const number = Number(input.dataset.photo);
+        const label = input.closest('label');
+        label.classList.toggle('is-hidden', number > Number(photoCountInput.value));
+      });
+    }
+
+    function slideMarkup(forExport = false) {
+      const slots = new Map(photoInputs.map(input => [Number(input.dataset.photo), input]));
+      const photo = number => {
+        const input = slots.get(number);
+        const url = parseImageUrl(input.value);
+        const imageUrl = forExport && url ? exportImageUrl(url) : url;
+        const corsAttribute = forExport ? ' crossorigin="anonymous"' : '';
+        return `<div class="photo-slot">${imageUrl ? `<img${corsAttribute} src="${escapeHtml(imageUrl)}" alt="Photo ${number}">` : ''}</div>`;
+      };
+      return `
+        <div class="slide-title">${escapeHtml(titleInput.value || 'Title')}</div>
+        <div class="photo-area count-${photoCountInput.value}">${layoutPhotoNumbers().map(photo).join('')}</div>
+        <div class="description" style="font-size:${descriptionSizeInput.value}px">${renderMarkdown(descriptionInput.value)}</div>`;
+    }
+
+    function updatePreview() {
+      updatePhotoInputs();
+      preview.className = `slide border-${borderStyleInput.value}`;
+      preview.innerHTML = slideMarkup();
+      requestAnimationFrame(fitPreview);
+    }
+
+    function slideData() {
+      return {
+        title: titleInput.value,
+        description: descriptionInput.value,
+        descriptionSize: Number(descriptionSizeInput.value),
+        borderStyle: borderStyleInput.value,
+        photoCount: Number(photoCountInput.value),
+        photos: Object.fromEntries(photoInputs.map(input => [input.dataset.photo, input.value]))
+      };
+    }
+
+    function flashButton(button, text) {
+      const originalText = button.textContent;
+      button.textContent = text;
+      setTimeout(() => { button.textContent = originalText; }, 1400);
+    }
+
+    async function exportJson() {
+      const button = document.getElementById('export-button');
+      const text = JSON.stringify(slideData(), null, 2);
+      try {
+        await navigator.clipboard.writeText(text);
+        flashButton(button, 'Copied');
+      } catch (_) {
+        window.prompt('Copy this JSON', text);
+        flashButton(button, 'Ready to copy');
+      }
+    }
+
+    function applyImportedData(data) {
+        titleInput.value = data.title || '';
+        descriptionInput.value = data.description || '';
+        descriptionSizeInput.value = data.descriptionSize || 16;
+        borderStyleInput.value = ['black', 'light', 'none'].includes(data.borderStyle) ? data.borderStyle : 'light';
+        photoCountInput.value = [1, 2, 4, 6, 8, 9].includes(Number(data.photoCount)) ? data.photoCount : 6;
+        photoInputs.forEach(input => { input.value = data.photos?.[input.dataset.photo] || ''; });
+        updatePreview();
+    }
+
+    async function importJson() {
+      const button = document.getElementById('import-button');
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!text) {
+          flashButton(button, 'Clipboard empty');
+          return;
+        }
+        applyImportedData(JSON.parse(text));
+        flashButton(button, 'Imported');
+      } catch (_) {
+        flashButton(button, 'Invalid clipboard JSON');
+      }
+    }
+
+    function fitPreview() {
+      const wrapper = document.querySelector('.slide-wrap');
+      const scale = Math.min(1, (wrapper.clientWidth - 32) / 1200);
+      preview.style.setProperty('--preview-scale', scale);
+      wrapper.style.height = `${900 * scale + 32}px`;
+    }
+
+    async function exportPdf() {
+      const button = document.getElementById('pdf-button');
+      button.disabled = true;
+      button.textContent = 'Preparing PDF...';
+      const exportSlide = document.createElement('div');
+      exportSlide.className = `slide border-${borderStyleInput.value}`;
+      exportSlide.style.cssText = 'position:fixed;left:-9999px;top:0;transform:none;';
+      exportSlide.innerHTML = slideMarkup(true);
+      document.body.append(exportSlide);
+      try {
+        await Promise.all([...exportSlide.querySelectorAll('img')].map(image => image.complete ? Promise.resolve() : new Promise(resolve => {
+          image.addEventListener('load', resolve, { once: true });
+          image.addEventListener('error', resolve, { once: true });
+        })));
+        const canvas = await html2canvas(exportSlide, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const image = canvas.toDataURL('image/jpeg', .95);
+        const pageWidth = 297;
+        const pageHeight = 210;
+        const margin = 10;
+        const width = pageWidth - margin * 2;
+        const height = width * .75;
+        const top = (pageHeight - height) / 2;
+        pdf.addImage(image, 'JPEG', margin, top, width, height);
+        const filename = (titleInput.value.trim() || 'slide').replace(/[\\/:*?"<>|]+/g, '-');
+        pdf.save(`${filename}.pdf`);
+      } catch (error) {
+        alert('The PDF could not be created. Check that every image link allows access from this page.');
+      } finally {
+        exportSlide.remove();
+        button.disabled = false;
+        button.textContent = 'Export PDF';
+        fitPreview();
+      }
+    }
+
+    document.getElementById('preview-button').addEventListener('click', updatePreview);
+    document.getElementById('pdf-button').addEventListener('click', exportPdf);
+    document.getElementById('import-button').addEventListener('click', importJson);
+    document.getElementById('export-button').addEventListener('click', exportJson);
+    [titleInput, descriptionInput, descriptionSizeInput, borderStyleInput, photoCountInput, ...photoInputs].forEach(input => input.addEventListener('input', updatePreview));
+    photoCountInput.addEventListener('change', updatePreview);
+    borderStyleInput.addEventListener('change', updatePreview);
+    window.addEventListener('resize', fitPreview);
+    updatePreview();
+  </script>
+</body>
+</html>
