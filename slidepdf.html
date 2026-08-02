@@ -207,6 +207,18 @@
     .description ul, .description ol { margin: 0 0 .8em 1.25em; padding: 0; }
     .description a { color: inherit; }
 
+    .slide.export-slide,
+    .slide.export-slide .slide-title,
+    .slide.export-slide .photo-slot,
+    .slide.export-slide .description { border-radius: 0; }
+
+    .batch-preview-area { width: min(1420px, calc(100% - 40px)); margin: 0 auto 24px; }
+    .batch-preview-area[hidden] { display: none; }
+    .batch-preview-area h2 { margin: 0 0 8px; font: 700 18px/1.2 "Trebuchet MS", Arial, sans-serif; }
+    .batch-preview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(336px, 1fr)); gap: 12px; }
+    .batch-preview-card { overflow: hidden; height: 264px; padding: 8px; background: #d7e0da; border: 1px solid #c8d2cb; }
+    .batch-preview-card .slide { transform: scale(.27); transform-origin: top left; }
+
     #print-sheet { display: none; }
 
     @media (max-width: 900px) {
@@ -285,6 +297,8 @@
         <button id="pdf-button" class="secondary" type="button">Export PDF</button>
         <button id="import-button" class="secondary" type="button">Import JSON</button>
         <button id="export-button" class="secondary" type="button">Export JSON</button>
+        <button id="batch-import-button" class="secondary" type="button">Import Batch</button>
+        <button id="batch-pdf-button" class="secondary" type="button">Export Batch PDF</button>
       </div>
     </section>
 
@@ -292,6 +306,11 @@
       <div class="slide-wrap"><div class="slide" id="slide-preview"></div></div>
     </section>
   </main>
+
+  <section id="batch-preview-area" class="batch-preview-area" hidden aria-label="Batch slide previews">
+    <h2 id="batch-preview-heading">Batch previews</h2>
+    <div id="batch-preview-grid" class="batch-preview-grid"></div>
+  </section>
 
   <section id="print-sheet" aria-hidden="true"></section>
 
@@ -306,6 +325,10 @@
     const photoInputs = [...document.querySelectorAll('.photo-input')];
     const photoGrid = document.querySelector('.photo-grid');
     const preview = document.getElementById('slide-preview');
+    const batchPreviewArea = document.getElementById('batch-preview-area');
+    const batchPreviewHeading = document.getElementById('batch-preview-heading');
+    const batchPreviewGrid = document.getElementById('batch-preview-grid');
+    let batchSlides = [];
 
     for (let size = 6; size <= 50; size += 1) {
       const option = document.createElement('option');
@@ -354,7 +377,7 @@
       return Array.from({ length: Number(photoCountInput.value) }, (_, index) => index + 1);
     }
 
-    function layoutPhotoNumbers() {
+    function layoutPhotoNumbers(photoCount = photoCountInput.value) {
       const layouts = {
         1: [1],
         2: [1, 2],
@@ -363,7 +386,7 @@
         8: [1, 5, 2, 6, 3, 7, 4, 8],
         9: [1, 4, 7, 2, 5, 8, 3, 6, 9]
       };
-      return layouts[photoCountInput.value];
+      return layouts[photoCount];
     }
 
     function updatePhotoInputs() {
@@ -375,19 +398,17 @@
       });
     }
 
-    function slideMarkup(forExport = false) {
-      const slots = new Map(photoInputs.map(input => [Number(input.dataset.photo), input]));
+    function slideMarkup(data = slideData(), forExport = false) {
       const photo = number => {
-        const input = slots.get(number);
-        const url = parseImageUrl(input.value);
+        const url = parseImageUrl(data.photos?.[number] || '');
         const imageUrl = forExport && url ? exportImageUrl(url) : url;
         const corsAttribute = forExport ? ' crossorigin="anonymous"' : '';
         return `<div class="photo-slot">${imageUrl ? `<img${corsAttribute} src="${escapeHtml(imageUrl)}" alt="Photo ${number}">` : ''}</div>`;
       };
       return `
-        <div class="slide-title">${escapeHtml(titleInput.value || 'Title')}</div>
-        <div class="photo-area count-${photoCountInput.value}">${layoutPhotoNumbers().map(photo).join('')}</div>
-        <div class="description" style="font-size:${descriptionSizeInput.value}px">${renderMarkdown(descriptionInput.value)}</div>`;
+        <div class="slide-title">${escapeHtml(data.title || 'Title')}</div>
+        <div class="photo-area count-${data.photoCount}">${layoutPhotoNumbers(data.photoCount).map(photo).join('')}</div>
+        <div class="description" style="font-size:${data.descriptionSize || 16}px">${renderMarkdown(data.description || '')}</div>`;
     }
 
     function updatePreview() {
@@ -451,6 +472,41 @@
       }
     }
 
+    function normalizedSlideData(data) {
+      return {
+        title: data.title || '',
+        description: data.description || '',
+        descriptionSize: Number(data.descriptionSize) || 16,
+        borderStyle: ['black', 'light', 'none'].includes(data.borderStyle) ? data.borderStyle : 'light',
+        photoCount: [1, 2, 4, 6, 8, 9].includes(Number(data.photoCount)) ? Number(data.photoCount) : 6,
+        photos: data.photos || {}
+      };
+    }
+
+    function renderBatchPreviews() {
+      batchPreviewHeading.textContent = `Batch previews (${batchSlides.length})`;
+      batchPreviewGrid.innerHTML = batchSlides.map(data => `
+        <article class="batch-preview-card">
+          <div class="slide border-${data.borderStyle}">${slideMarkup(data)}</div>
+        </article>`).join('');
+      batchPreviewArea.hidden = batchSlides.length === 0;
+    }
+
+    async function importBatchJson() {
+      const button = document.getElementById('batch-import-button');
+      try {
+        const text = await navigator.clipboard.readText();
+        const blocks = [...text.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi)];
+        batchSlides = blocks.flatMap(block => {
+          try { return [normalizedSlideData(JSON.parse(block[1]))]; } catch (_) { return []; }
+        });
+        renderBatchPreviews();
+        flashButton(button, batchSlides.length ? `${batchSlides.length} loaded` : 'No JSON found');
+      } catch (_) {
+        flashButton(button, 'Clipboard unavailable');
+      }
+    }
+
     function fitPreview() {
       const wrapper = document.querySelector('.slide-wrap');
       const scale = Math.min(1, (wrapper.clientWidth - 32) / 1200);
@@ -458,12 +514,24 @@
       wrapper.style.height = `${900 * scale + 32}px`;
     }
 
+    function fitExportImages(exportSlide) {
+      exportSlide.querySelectorAll('.photo-slot img').forEach(image => {
+        if (!image.naturalWidth || !image.naturalHeight) return;
+        const slot = image.closest('.photo-slot');
+        const imageRatio = image.naturalWidth / image.naturalHeight;
+        const slotRatio = slot.clientWidth / slot.clientHeight;
+        image.style.width = imageRatio >= slotRatio ? '100%' : 'auto';
+        image.style.height = imageRatio >= slotRatio ? 'auto' : '100%';
+        image.style.margin = 'auto';
+      });
+    }
+
     async function exportPdf() {
       const button = document.getElementById('pdf-button');
       button.disabled = true;
       button.textContent = 'Preparing PDF...';
       const exportSlide = document.createElement('div');
-      exportSlide.className = `slide border-${borderStyleInput.value}`;
+      exportSlide.className = `slide export-slide border-${borderStyleInput.value}`;
       exportSlide.style.cssText = 'position:fixed;left:-9999px;top:0;transform:none;';
       exportSlide.innerHTML = slideMarkup(true);
       document.body.append(exportSlide);
@@ -472,6 +540,7 @@
           image.addEventListener('load', resolve, { once: true });
           image.addEventListener('error', resolve, { once: true });
         })));
+        fitExportImages(exportSlide);
         const canvas = await html2canvas(exportSlide, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -495,10 +564,54 @@
       }
     }
 
+    async function exportBatchPdf() {
+      const button = document.getElementById('batch-pdf-button');
+      if (!batchSlides.length) {
+        flashButton(button, 'Import batch first');
+        return;
+      }
+      button.disabled = true;
+      button.textContent = 'Preparing PDF...';
+      const exportSlide = document.createElement('div');
+      exportSlide.style.cssText = 'position:fixed;left:-9999px;top:0;transform:none;';
+      document.body.append(exportSlide);
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const pageWidth = 297;
+        const pageHeight = 210;
+        const margin = 10;
+        const width = pageWidth - margin * 2;
+        const height = width * .75;
+        const top = (pageHeight - height) / 2;
+        for (const [index, data] of batchSlides.entries()) {
+          exportSlide.className = `slide export-slide border-${data.borderStyle}`;
+          exportSlide.innerHTML = slideMarkup(data, true);
+          await Promise.all([...exportSlide.querySelectorAll('img')].map(image => image.complete ? Promise.resolve() : new Promise(resolve => {
+            image.addEventListener('load', resolve, { once: true });
+            image.addEventListener('error', resolve, { once: true });
+          })));
+          fitExportImages(exportSlide);
+          const canvas = await html2canvas(exportSlide, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
+          if (index) pdf.addPage();
+          pdf.addImage(canvas.toDataURL('image/jpeg', .95), 'JPEG', margin, top, width, height);
+        }
+        pdf.save('slides.pdf');
+      } catch (_) {
+        alert('The PDF could not be created. Check that every image link allows access from this page.');
+      } finally {
+        exportSlide.remove();
+        button.disabled = false;
+        button.textContent = 'Export Batch PDF';
+      }
+    }
+
     document.getElementById('preview-button').addEventListener('click', updatePreview);
     document.getElementById('pdf-button').addEventListener('click', exportPdf);
     document.getElementById('import-button').addEventListener('click', importJson);
     document.getElementById('export-button').addEventListener('click', exportJson);
+    document.getElementById('batch-import-button').addEventListener('click', importBatchJson);
+    document.getElementById('batch-pdf-button').addEventListener('click', exportBatchPdf);
     [titleInput, descriptionInput, descriptionSizeInput, borderStyleInput, photoCountInput, ...photoInputs].forEach(input => input.addEventListener('input', updatePreview));
     photoCountInput.addEventListener('change', updatePreview);
     borderStyleInput.addEventListener('change', updatePreview);
