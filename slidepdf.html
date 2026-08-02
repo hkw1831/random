@@ -623,7 +623,7 @@
       const exportSlide = document.createElement('div');
       exportSlide.className = `slide export-slide border-${borderStyleInput.value}`;
       exportSlide.style.cssText = 'position:fixed;left:-9999px;top:0;transform:none;';
-      exportSlide.innerHTML = slideMarkup(true);
+      exportSlide.innerHTML = slideMarkup(slideData(), true);
       document.body.append(exportSlide);
       try {
         await loadDeferredImages(exportSlide);
