@@ -509,18 +509,25 @@
         wrap.className = 'past-row-wrap';
 
         var locationVal = (data && data.location) ? data.location : '';
-        var startVal = (data && data.start_date) ? data.start_date : '';
-        var endVal = (data && data.duration !== undefined) ? data.duration : ((data && data.end_date) ? data.end_date : '');
+        var startVal = '';
+        var endVal = '';
         var traumaVal = (data && data.trauma) ? data.trauma : '';
         var descriptionVal = (data && data.description) ? data.description : '';
         var startDatePlaceholder = '開始日期';
         var endDatePlaceholder = '完結日期';
 
         if (containerId === 'surgery_history_container') {
+            startVal = (data && data.symptom_onset_date) ? data.symptom_onset_date : '';
+            endVal = (data && data.surgery_date) ? data.surgery_date : '';
             startDatePlaceholder = '症狀發生日期';
             endDatePlaceholder = '手術日期';
         } else if (containerId === 'injury_history_container' || containerId === 'fracture_history_container') {
+            startVal = (data && data.occurrence_date) ? data.occurrence_date : '';
+            endVal = (data && data.end_date) ? data.end_date : '';
             startDatePlaceholder = '發生日期';
+        } else {
+            startVal = (data && data.start_date) ? data.start_date : '';
+            endVal = (data && data.end_date) ? data.end_date : '';
         }
 
         var traumaHtml = '';
@@ -557,10 +564,18 @@
             var row = rows[i];
             var item = {
                 location: qVal(row, '.past-location'),
-                start_date: qVal(row, '.past-duration'),
-                duration: qVal(row, '.past-when'),
                 description: qVal(row, '.past-description')
             };
+            if (containerId === 'surgery_history_container') {
+                item.symptom_onset_date = qVal(row, '.past-duration');
+                item.surgery_date = qVal(row, '.past-when');
+            } else if (containerId === 'injury_history_container' || containerId === 'fracture_history_container') {
+                item.occurrence_date = qVal(row, '.past-duration');
+                item.end_date = qVal(row, '.past-when');
+            } else {
+                item.start_date = qVal(row, '.past-duration');
+                item.end_date = qVal(row, '.past-when');
+            }
             if (includeTrauma) { item.trauma = qVal(row, '.past-trauma'); }
             list.push(item);
         }
@@ -569,7 +584,7 @@
 
     function collectFormData() {
         var data = {
-            version: "25.3-aggravating-relieving-factors",
+            version: "26.0-history-date-fields",
             export_date: new Date().toISOString(),
             record_date: fieldVal('record_date'),
             patient_name: fieldVal('patient_name'),
