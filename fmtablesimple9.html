@@ -243,7 +243,7 @@
                     <div class="section-title-row" style="margin-bottom:0;">
                         <span class="icon" style="color:#0d9488;">🔗</span>
                         <div class="section-header">四肢末端</div>
-                        <span class="section-prompt-placeholder">頭（偏頭痛/感覺異常）/ 手（痛/麻/感覺異常/扳機指）/ 腳（痛/麻/感覺異常/錘狀趾）</span>
+                        <span class="section-prompt-placeholder">頭：偏頭痛/感覺異常 || 手：痛/麻/感覺異常/扳機指 || 腳：痛/麻/感覺異常/錘狀趾</span>
                     </div>
                     <button onclick="addExtremityRow(null)" class="mini-btn teal"><span>＋</span><span>新增</span></button>
                 </div>
@@ -513,6 +513,15 @@
         var endVal = (data && data.duration !== undefined) ? data.duration : ((data && data.end_date) ? data.end_date : '');
         var traumaVal = (data && data.trauma) ? data.trauma : '';
         var descriptionVal = (data && data.description) ? data.description : '';
+        var startDatePlaceholder = '開始日期';
+        var endDatePlaceholder = '完結日期';
+
+        if (containerId === 'surgery_history_container') {
+            startDatePlaceholder = '症狀發生日期';
+            endDatePlaceholder = '手術日期';
+        } else if (containerId === 'injury_history_container' || containerId === 'fracture_history_container') {
+            startDatePlaceholder = '發生日期';
+        }
 
         var traumaHtml = '';
         if (includeTrauma) {
@@ -522,8 +531,8 @@
         var html = '';
         html += '<div class="past-row">';
         html += '<div class="past-field fx-1"><input type="text" class="tiny-input past-location" placeholder="位置" value="' + locationVal + '"></div>';
-        html += '<div class="past-field fx-1"><input type="text" class="tiny-input past-duration" placeholder="開始日期" value="' + startVal + '"></div>';
-        html += '<div class="past-field fx-1"><input type="text" class="tiny-input past-when" placeholder="持續多久" value="' + endVal + '"></div>';
+        html += '<div class="past-field fx-1"><input type="text" class="tiny-input past-duration" placeholder="' + startDatePlaceholder + '" value="' + startVal + '"></div>';
+        html += '<div class="past-field fx-1"><input type="text" class="tiny-input past-when" placeholder="' + endDatePlaceholder + '" value="' + endVal + '"></div>';
         if (traumaBeforeDescription) { html += traumaHtml; }
         html += '<div class="past-field past-description-field"><input type="text" class="tiny-input past-description" placeholder="描述" value="' + descriptionVal + '"></div>';
         if (!traumaBeforeDescription) { html += traumaHtml; }
