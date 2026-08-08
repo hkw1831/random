@@ -74,6 +74,9 @@
         border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; color: #0f172a; background: #fff;
         resize: vertical;
     }
+    .timeline-textarea {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
     .tiny-input::placeholder, .mini-textarea::placeholder, .micro-textarea::placeholder { color: #94a3b8; }
 
     .tight-section { margin-bottom: 4px; }
@@ -310,8 +313,9 @@
                     <div class="section-title-row">
                         <span class="icon" style="color:#475569;">⏱️</span>
                         <div class="section-header">時間序</div>
+                        <button type="button" onclick="buildTimeline()" class="mini-btn slate" style="margin-left:auto;" title="由最早至最新排列">排序</button>
                     </div>
-                    <textarea id="medication_timeline" rows="10" class="micro-textarea" placeholder="時間序"></textarea>
+                    <textarea id="medication_timeline" rows="10" class="micro-textarea timeline-textarea" placeholder="時間序"></textarea>
                 </div>
                 <div style="flex:1 1 0%;">
                     <div class="section-title-row">
@@ -554,6 +558,71 @@
     function removeHistoryRow(btn) {
         var wrap = btn.closest('.past-row-wrap');
         if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+        saveToStorage();
+    }
+
+    function parseTimelineNotation(value) {
+        var text = (value || '').trim();
+        var match = /^(?:(\d+)y)?(?:(\d+)m)?(?:(\d+)d)?$/.exec(text);
+        if (!match || (!match[1] && !match[2] && !match[3])) { return null; }
+
+        return (parseInt(match[1] || '0', 10) * 365) +
+            (parseInt(match[2] || '0', 10) * 30) +
+            parseInt(match[3] || '0', 10);
+    }
+
+    function addTimelineEntry(entries, timeValue, location) {
+        var time = (timeValue || '').trim();
+        if (!time) { return; }
+
+        var elapsedDays = parseTimelineNotation(time);
+        entries.push({
+            time: time,
+            location: (location || '').trim(),
+            elapsedDays: elapsedDays,
+            valid: elapsedDays !== null
+        });
+    }
+
+    function buildTimeline() {
+        var entries = [];
+        addTimelineEntry(entries, fieldVal('main_duration'), fieldVal('main_location'));
+
+        var associatedRows = document.querySelectorAll('#associated_container .assoc-row');
+        for (var i = 0; i < associatedRows.length; i++) {
+            addTimelineEntry(entries, qVal(associatedRows[i], '.assoc-duration'), qVal(associatedRows[i], '.assoc-location'));
+        }
+
+        var extremityRows = document.querySelectorAll('#extremity_container .assoc-row');
+        for (var j = 0; j < extremityRows.length; j++) {
+            addTimelineEntry(entries, qVal(extremityRows[j], '.extremity-duration'), qVal(extremityRows[j], '.extremity-location'));
+        }
+
+        for (var k = 0; k < HISTORY_LISTS.length; k++) {
+            var historyRows = document.querySelectorAll('#' + HISTORY_LISTS[k].id + ' .past-row-wrap');
+            for (var m = 0; m < historyRows.length; m++) {
+                addTimelineEntry(entries, qVal(historyRows[m], '.past-duration'), qVal(historyRows[m], '.past-location'));
+            }
+        }
+
+        entries.sort(function (first, second) {
+            if (first.valid !== second.valid) { return first.valid ? -1 : 1; }
+            if (!first.valid) { return 0; }
+            return second.elapsedDays - first.elapsedDays;
+        });
+
+        var timeColumnWidth = 0;
+        for (var n = 0; n < entries.length; n++) {
+            timeColumnWidth = Math.max(timeColumnWidth, entries[n].time.length);
+        }
+
+        var lines = [];
+        for (var n = 0; n < entries.length; n++) {
+            var timeColumn = entries[n].time;
+            while (timeColumn.length < timeColumnWidth) { timeColumn += ' '; }
+            lines.push(timeColumn + (entries[n].location ? ' ' + entries[n].location : ''));
+        }
+        setFieldVal('medication_timeline', lines.join('\n'));
         saveToStorage();
     }
 
