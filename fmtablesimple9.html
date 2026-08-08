@@ -100,23 +100,6 @@
     .remove-btn:hover { color: #ef4444; }
     .pr-guard { padding-right: 14px; }
 
-    .limb-section { margin-bottom: 4px; }
-    .limb-row-wrap { margin-bottom: 2px; }
-    .limb-row-wrap:last-child { margin-bottom: 0; }
-    .limb-row {
-        display: flex;
-        gap: 2px;
-        align-items: center;
-    }
-    .limb-badge-inline {
-        flex: 0 0 16px;
-        width: 16px; height: 16px; border-radius: 50%;
-        background: #e0e7ff; color: #4338ca; font-size: 9px; font-weight: 700;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .limb-field { min-width: 0; }
-    .limb-row .tiny-input { padding: 1px 2px; font-size: 7px; }
-
     .past-section { margin-bottom: 4px; }
     .past-row-wrap { margin-bottom: 3px; position: relative; }
     .past-row-wrap:last-child { margin-bottom: 0; }
@@ -127,7 +110,7 @@
         padding-right: 15px;
     }
     .past-field { min-width: 0; }
-    .past-description-field { flex: 2 1 0%; }
+    .past-description-field { flex: 4 1 0%; }
     .past-row .tiny-input { padding: 1px 2px; font-size: 7px; }
     .past-remove-btn {
         position: absolute; top: 50%; right: 0; transform: translateY(-50%);
@@ -216,8 +199,8 @@
                     <span class="section-prompt-placeholder">讓對方用手指指出不適的地方</span>
                 </div>
                 <div class="flex-row">
-                    <div class="fx-5">
-                        <input type="text" id="main_location" class="tiny-input" placeholder="位置與感覺">
+                    <div class="fx-2">
+                        <input type="text" id="main_location" class="tiny-input" placeholder="位置">
                     </div>
                     <div class="fx-1">
                         <input type="text" id="main_duration" class="tiny-input" placeholder="首次發作時間？">
@@ -225,20 +208,20 @@
                     <div class="fx-1">
                         <input type="text" id="first_occurrence" class="tiny-input" placeholder="近期急性發作時間？">
                     </div>
-                    <div class="fx-2">
+                    <div class="fx-1">
                         <input type="text" id="main_frequency" class="tiny-input" placeholder="頻率">
                     </div>
                     <div class="fx-1">
                         <input type="text" id="main_trauma" class="tiny-input" placeholder="創傷 / 過度使用？">
                     </div>
-                    <div class="fx-2">
-                        <input type="text" id="aggravating_factors" class="tiny-input" placeholder="加重因素">
-                    </div>
-                    <div class="fx-2">
-                        <input type="text" id="relieving_factors" class="tiny-input" placeholder="緩解因素">
+                    <div class="fx-3">
+                        <input type="text" id="main_factors" class="tiny-input" placeholder="加重 / 緩解因素">
                     </div>
                     <div class="fx-1">
                         <input type="text" id="main_vrs" class="tiny-input" placeholder="VRS">
+                    </div>
+                    <div class="fx-3">
+                        <input type="text" id="main_description" class="tiny-input" placeholder="描述">
                     </div>
                 </div>
             </div>
@@ -255,42 +238,16 @@
                 <div id="associated_container"></div>
             </div>
 
-            <div class="limb-section">
-                <div class="limb-row-wrap">
-                    <div class="limb-row">
-                        <span class="limb-badge-inline">頭</span>
-                        <div class="limb-field fx-3"><input type="text" id="head_location" class="tiny-input" placeholder="位置與感覺"></div>
-                        <div class="limb-field fx-1"><input type="text" id="head_duration" class="tiny-input" placeholder="首次發作時間"></div>
-                        <div class="limb-field fx-1"><input type="text" id="head_first" class="tiny-input" placeholder="近期急性發作時間？"></div>
-                        <div class="limb-field fx-1"><input type="text" id="head_trauma" class="tiny-input" placeholder="創傷 / 過度使用？"></div>
-                        <div class="limb-field fx-1"><input type="text" id="head_frequency" class="tiny-input" placeholder="頻率"></div>
-                        <div class="limb-field fx-1"><input type="text" id="head_vrs" class="tiny-input" placeholder="VRS"></div>
+            <div class="tight-section">
+                <div class="section-header-with-btn">
+                    <div class="section-title-row" style="margin-bottom:0;">
+                        <span class="icon" style="color:#0d9488;">🔗</span>
+                        <div class="section-header">四肢末端</div>
+                        <span class="section-prompt-placeholder">「頭 / 手 / 腳」</span>
                     </div>
+                    <button onclick="addExtremityRow(null)" class="mini-btn teal"><span>＋</span><span>新增</span></button>
                 </div>
-
-                <div class="limb-row-wrap">
-                    <div class="limb-row">
-                        <span class="limb-badge-inline">手</span>
-                        <div class="limb-field fx-3"><input type="text" id="hand_location" class="tiny-input" placeholder="位置與感覺"></div>
-                        <div class="limb-field fx-1"><input type="text" id="hand_duration" class="tiny-input" placeholder="首次發作時間"></div>
-                        <div class="limb-field fx-1"><input type="text" id="hand_first" class="tiny-input" placeholder="近期急性發作時間？"></div>
-                        <div class="limb-field fx-1"><input type="text" id="hand_trauma" class="tiny-input" placeholder="創傷 / 過度使用？"></div>
-                        <div class="limb-field fx-1"><input type="text" id="hand_frequency" class="tiny-input" placeholder="頻率"></div>
-                        <div class="limb-field fx-1"><input type="text" id="hand_vrs" class="tiny-input" placeholder="VRS"></div>
-                    </div>
-                </div>
-
-                <div class="limb-row-wrap">
-                    <div class="limb-row">
-                        <span class="limb-badge-inline">腳</span>
-                        <div class="limb-field fx-3"><input type="text" id="foot_location" class="tiny-input" placeholder="位置與感覺"></div>
-                        <div class="limb-field fx-1"><input type="text" id="foot_duration" class="tiny-input" placeholder="首次發作時間"></div>
-                        <div class="limb-field fx-1"><input type="text" id="foot_first" class="tiny-input" placeholder="近期急性發作時間？"></div>
-                        <div class="limb-field fx-1"><input type="text" id="foot_trauma" class="tiny-input" placeholder="創傷 / 過度使用？"></div>
-                        <div class="limb-field fx-1"><input type="text" id="foot_frequency" class="tiny-input" placeholder="頻率"></div>
-                        <div class="limb-field fx-1"><input type="text" id="foot_vrs" class="tiny-input" placeholder="VRS"></div>
-                    </div>
-                </div>
+                <div id="extremity_container"></div>
             </div>
 
             <div class="past-section">
@@ -470,20 +427,20 @@
         var recentVal = (data && data.recent_onset) ? data.recent_onset : '';
         var freqVal = (data && data.frequency) ? data.frequency : '';
         var traumaVal = (data && data.trauma) ? data.trauma : '';
-        var aggravateVal = (data && data.aggravate) ? data.aggravate : '';
-        var relieveVal = (data && data.relieve) ? data.relieve : '';
+        var factorsVal = mergedFactorVal(data);
         var vrsVal = (data && data.vrs) ? data.vrs : '';
+        var descriptionVal = (data && data.description) ? data.description : '';
 
         var html = '';
         html += '<button type="button" onclick="removeAssocCard(this)" class="remove-btn">✕</button>';
-        html += '<div class="fx-5"><input type="text" class="tiny-input assoc-location" placeholder="位置與感覺" value="' + locationVal + '"></div>';
+        html += '<div class="fx-2"><input type="text" class="tiny-input assoc-location" placeholder="位置" value="' + locationVal + '"></div>';
         html += '<div class="fx-1"><input type="text" class="tiny-input assoc-duration" placeholder="首次發作時間？" value="' + onsetVal + '"></div>';
         html += '<div class="fx-1"><input type="text" class="tiny-input assoc-first" placeholder="近期急性發作時間？" value="' + recentVal + '"></div>';
-        html += '<div class="fx-2"><input type="text" class="tiny-input assoc-frequency" placeholder="頻率" value="' + freqVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input assoc-frequency" placeholder="頻率" value="' + freqVal + '"></div>';
         html += '<div class="fx-1"><input type="text" class="tiny-input assoc-trauma" placeholder="創傷 / 過度使用？" value="' + traumaVal + '"></div>';
-        html += '<div class="fx-2"><input type="text" class="tiny-input assoc-aggravate" placeholder="加重因素" value="' + aggravateVal + '"></div>';
-        html += '<div class="fx-2"><input type="text" class="tiny-input assoc-relieve" placeholder="緩解因素" value="' + relieveVal + '"></div>';
+        html += '<div class="fx-3"><input type="text" class="tiny-input assoc-factors" placeholder="加重 / 緩解因素" value="' + factorsVal + '"></div>';
         html += '<div class="fx-1"><input type="text" class="tiny-input assoc-vrs" placeholder="VRS" value="' + vrsVal + '"></div>';
+        html += '<div class="fx-3"><input type="text" class="tiny-input assoc-description" placeholder="描述" value="' + descriptionVal + '"></div>';
 
         card.innerHTML = html;
         container.appendChild(card);
@@ -494,6 +451,54 @@
         var card = btn.closest('.assoc-row');
         if (card && card.parentNode) card.parentNode.removeChild(card);
         saveToStorage();
+    }
+
+    function addExtremityRow(data) {
+        var container = document.getElementById('extremity_container');
+        var card = document.createElement('div');
+        card.className = 'flex-row pr-guard assoc-row';
+
+        var locationVal = (data && data.location) ? data.location : '';
+        var onsetVal = (data && data.onset_time) ? data.onset_time : '';
+        var recentVal = (data && data.recent_onset) ? data.recent_onset : '';
+        var freqVal = (data && data.frequency) ? data.frequency : '';
+        var traumaVal = (data && data.trauma) ? data.trauma : '';
+        var factorsVal = mergedFactorVal(data);
+        var vrsVal = (data && data.vrs) ? data.vrs : '';
+        var descriptionVal = (data && data.description) ? data.description : '';
+
+        var html = '';
+        html += '<button type="button" onclick="removeExtremityCard(this)" class="remove-btn">✕</button>';
+        html += '<div class="fx-2"><input type="text" class="tiny-input extremity-location" placeholder="位置" value="' + locationVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input extremity-duration" placeholder="首次發作時間？" value="' + onsetVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input extremity-first" placeholder="近期急性發作時間？" value="' + recentVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input extremity-frequency" placeholder="頻率" value="' + freqVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input extremity-trauma" placeholder="創傷 / 過度使用？" value="' + traumaVal + '"></div>';
+        html += '<div class="fx-3"><input type="text" class="tiny-input extremity-factors" placeholder="加重 / 緩解因素" value="' + factorsVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input extremity-vrs" placeholder="VRS" value="' + vrsVal + '"></div>';
+        html += '<div class="fx-3"><input type="text" class="tiny-input extremity-description" placeholder="描述" value="' + descriptionVal + '"></div>';
+
+        card.innerHTML = html;
+        container.appendChild(card);
+        saveToStorage();
+    }
+
+    function removeExtremityCard(btn) {
+        var card = btn.closest('.assoc-row');
+        if (card && card.parentNode) card.parentNode.removeChild(card);
+        saveToStorage();
+    }
+
+    function mergedFactorVal(data) {
+        if (!data) { return ''; }
+        if (data.aggravating_relieving_factors) { return data.aggravating_relieving_factors; }
+        if (data.factors) { return data.factors; }
+        var factors = [];
+        if (data.aggravate) { factors.push('加重：' + data.aggravate); }
+        if (data.relieve) { factors.push('緩解：' + data.relieve); }
+        if (data.aggravating_factors) { factors.push('加重：' + data.aggravating_factors); }
+        if (data.relieving_factors) { factors.push('緩解：' + data.relieving_factors); }
+        return factors.join('；');
     }
 
     function addHistoryRow(containerId, data, includeTrauma, traumaBeforeDescription) {
@@ -516,7 +521,7 @@
 
         var html = '';
         html += '<div class="past-row">';
-        html += '<div class="past-field fx-3"><input type="text" class="tiny-input past-location" placeholder="位置" value="' + locationVal + '"></div>';
+        html += '<div class="past-field fx-1"><input type="text" class="tiny-input past-location" placeholder="位置" value="' + locationVal + '"></div>';
         html += '<div class="past-field fx-1"><input type="text" class="tiny-input past-duration" placeholder="開始日期" value="' + startVal + '"></div>';
         html += '<div class="past-field fx-1"><input type="text" class="tiny-input past-when" placeholder="持續多久" value="' + endVal + '"></div>';
         if (traumaBeforeDescription) { html += traumaHtml; }
@@ -553,30 +558,9 @@
         return list;
     }
 
-    function getLimbData(prefix) {
-        return {
-            location: fieldVal(prefix + '_location'),
-            onset_time: fieldVal(prefix + '_duration'),
-            recent_onset: fieldVal(prefix + '_first'),
-            trauma: fieldVal(prefix + '_trauma'),
-            frequency: fieldVal(prefix + '_frequency'),
-            vrs: fieldVal(prefix + '_vrs')
-        };
-    }
-
-    function setLimbData(prefix, data) {
-        if (!data) { data = {}; }
-        setFieldVal(prefix + '_location', data.location);
-        setFieldVal(prefix + '_duration', data.onset_time);
-        setFieldVal(prefix + '_first', data.recent_onset);
-        setFieldVal(prefix + '_trauma', data.trauma);
-        setFieldVal(prefix + '_frequency', data.frequency);
-        setFieldVal(prefix + '_vrs', data.vrs);
-    }
-
     function collectFormData() {
         var data = {
-            version: "24.2-associated-and-injury-history-fields",
+            version: "25.3-aggravating-relieving-factors",
             export_date: new Date().toISOString(),
             record_date: fieldVal('record_date'),
             patient_name: fieldVal('patient_name'),
@@ -584,7 +568,8 @@
             occupation: fieldVal('occupation'),
             sport_frequency: fieldVal('sport_frequency'),
             main_problem: {
-                location_description: fieldVal('main_location'),
+                location: fieldVal('main_location'),
+                description: fieldVal('main_description'),
                 onset_time: fieldVal('main_duration'),
                 recent_onset: fieldVal('first_occurrence'),
                 frequency: fieldVal('main_frequency'),
@@ -594,15 +579,10 @@
                 vrs: fieldVal('main_vrs')
             },
             pain_pattern: {
-                aggravating_factors: fieldVal('aggravating_factors'),
-                relieving_factors: fieldVal('relieving_factors')
+                aggravating_relieving_factors: fieldVal('main_factors')
             },
             associated_symptoms: [],
-            limb_assessment: {
-                head: getLimbData('head'),
-                hand: getLimbData('hand'),
-                foot: getLimbData('foot')
-            },
+            extremity_symptoms: [],
             past_pain_history: collectHistoryList('past_pain_container', true),
             surgery_history: collectHistoryList('surgery_history_container', true),
             injury_history: collectHistoryList('injury_history_container', true),
@@ -628,9 +608,24 @@
                 recent_onset: qVal(card, '.assoc-first'),
                 frequency: qVal(card, '.assoc-frequency'),
                 trauma: qVal(card, '.assoc-trauma'),
-                aggravate: qVal(card, '.assoc-aggravate'),
-                relieve: qVal(card, '.assoc-relieve'),
-                vrs: qVal(card, '.assoc-vrs')
+                aggravating_relieving_factors: qVal(card, '.assoc-factors'),
+                vrs: qVal(card, '.assoc-vrs'),
+                description: qVal(card, '.assoc-description')
+            });
+        }
+
+        var extremityCards = document.querySelectorAll('#extremity_container .assoc-row');
+        for (var j = 0; j < extremityCards.length; j++) {
+            var extremityCard = extremityCards[j];
+            data.extremity_symptoms.push({
+                location: qVal(extremityCard, '.extremity-location'),
+                onset_time: qVal(extremityCard, '.extremity-duration'),
+                recent_onset: qVal(extremityCard, '.extremity-first'),
+                frequency: qVal(extremityCard, '.extremity-frequency'),
+                trauma: qVal(extremityCard, '.extremity-trauma'),
+                aggravating_relieving_factors: qVal(extremityCard, '.extremity-factors'),
+                vrs: qVal(extremityCard, '.extremity-vrs'),
+                description: qVal(extremityCard, '.extremity-description')
             });
         }
 
@@ -715,13 +710,13 @@
         setFieldVal('occupation', '');
         setFieldVal('sport_frequency', '');
         setFieldVal('main_location', '');
+        setFieldVal('main_description', '');
         setFieldVal('main_duration', '');
         setFieldVal('first_occurrence', '');
         setFieldVal('main_frequency', '');
         setFieldVal('main_trauma', '');
         setFieldVal('main_vrs', '');
-        setFieldVal('aggravating_factors', '');
-        setFieldVal('relieving_factors', '');
+        setFieldVal('main_factors', '');
         setFieldVal('medication_disorder_overuse', '');
         setFieldVal('medication_timeline', '');
         setFieldVal('summary_notes', '');
@@ -733,11 +728,8 @@
         setFieldVal('vertical_palpation', '');
         setFieldVal('trunk_balance', '');
 
-        setLimbData('head', {});
-        setLimbData('hand', {});
-        setLimbData('foot', {});
-
         document.getElementById('associated_container').innerHTML = '';
+        document.getElementById('extremity_container').innerHTML = '';
         for (var i = 0; i < HISTORY_LISTS.length; i++) {
             document.getElementById(HISTORY_LISTS[i].id).innerHTML = '';
         }
@@ -762,7 +754,8 @@
         if (data.sport_frequency !== undefined) { setFieldVal('sport_frequency', data.sport_frequency); }
 
         if (data.main_problem) {
-            setFieldVal('main_location', data.main_problem.location_description || '');
+            setFieldVal('main_location', data.main_problem.location || data.main_problem.location_description || '');
+            setFieldVal('main_description', data.main_problem.description || '');
             setFieldVal('main_duration', data.main_problem.onset_time || '');
             setFieldVal('first_occurrence', data.main_problem.recent_onset || '');
             setFieldVal('main_frequency', data.main_problem.frequency || '');
@@ -774,8 +767,7 @@
         }
 
         if (data.pain_pattern) {
-            setFieldVal('aggravating_factors', data.pain_pattern.aggravating_factors || '');
-            setFieldVal('relieving_factors', data.pain_pattern.relieving_factors || '');
+            setFieldVal('main_factors', mergedFactorVal(data.pain_pattern));
         }
 
         document.getElementById('associated_container').innerHTML = '';
@@ -785,10 +777,11 @@
             }
         }
 
-        if (data.limb_assessment) {
-            setLimbData('head', data.limb_assessment.head);
-            setLimbData('hand', data.limb_assessment.hand);
-            setLimbData('foot', data.limb_assessment.foot);
+        document.getElementById('extremity_container').innerHTML = '';
+        if (data.extremity_symptoms) {
+            for (var j = 0; j < data.extremity_symptoms.length; j++) {
+                addExtremityRow(data.extremity_symptoms[j]);
+            }
         }
 
         for (var h = 0; h < HISTORY_LISTS.length; h++) {

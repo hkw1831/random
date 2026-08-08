@@ -74,6 +74,10 @@
     .photo-grid[data-count="2"] { grid-template-columns: 1fr; }
     .photo-grid[data-count="2"] label[data-photo="1"] { grid-area: 1 / 1; }
     .photo-grid[data-count="2"] label[data-photo="2"] { grid-area: 2 / 1; }
+    .photo-grid[data-count="3"] { grid-template-columns: 1fr; }
+    .photo-grid[data-count="3"] label[data-photo="1"] { grid-area: 1 / 1; }
+    .photo-grid[data-count="3"] label[data-photo="2"] { grid-area: 2 / 1; }
+    .photo-grid[data-count="3"] label[data-photo="3"] { grid-area: 3 / 1; }
     .photo-grid[data-count="4"] label[data-photo="1"] { grid-area: 1 / 1; }
     .photo-grid[data-count="4"] label[data-photo="2"] { grid-area: 1 / 2; }
     .photo-grid[data-count="4"] label[data-photo="3"] { grid-area: 2 / 1; }
@@ -183,6 +187,7 @@
     }
     .photo-area.count-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
     .photo-area.count-2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+    .photo-area.count-3 { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
     .photo-area.count-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
     .photo-area.count-6 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); }
     .photo-area.count-8 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 1fr); }
@@ -266,6 +271,7 @@
           <select id="photo-count">
             <option value="1">1</option>
             <option value="2">2</option>
+            <option value="3">3</option>
             <option value="4">4</option>
             <option value="6">6</option>
             <option value="8" selected>8</option>
@@ -402,6 +408,7 @@
       const layouts = {
         1: [1],
         2: [1, 2],
+        3: [1, 2, 3],
         4: [1, 2, 3, 4],
         6: [1, 4, 2, 5, 3, 6],
         8: [1, 5, 2, 6, 3, 7, 4, 8],
@@ -428,7 +435,7 @@
         return `<div class="photo-slot">${imageUrl ? `<img${corsAttribute} ${sourceAttribute}="${escapeHtml(imageUrl)}" alt="Photo ${number}">` : ''}</div>`;
       };
       return `
-        <div class="slide-title">${escapeHtml(data.title || 'Title')}</div>
+        <div class="slide-title">${escapeHtml(data.title || '')}</div>
         <div class="photo-area count-${data.photoCount}">${layoutPhotoNumbers(data.photoCount).map(photo).join('')}</div>
         <div class="description" style="font-size:${data.descriptionSize || 16}px">${renderMarkdown(data.description || '')}</div>`;
     }
@@ -485,7 +492,7 @@
         descriptionInput.value = data.description || '';
         descriptionSizeInput.value = data.descriptionSize || 16;
         borderStyleInput.value = ['black', 'light', 'none'].includes(data.borderStyle) ? data.borderStyle : 'light';
-        photoCountInput.value = [1, 2, 4, 6, 8, 9].includes(Number(data.photoCount)) ? data.photoCount : 6;
+        photoCountInput.value = [1, 2, 3, 4, 6, 8, 9].includes(Number(data.photoCount)) ? data.photoCount : 6;
         photoInputs.forEach(input => { input.value = data.photos?.[input.dataset.photo] || ''; });
         updatePreview();
     }
@@ -511,7 +518,7 @@
         description: data.description || '',
         descriptionSize: Number(data.descriptionSize) || 16,
         borderStyle: ['black', 'light', 'none'].includes(data.borderStyle) ? data.borderStyle : 'light',
-        photoCount: [1, 2, 4, 6, 8, 9].includes(Number(data.photoCount)) ? Number(data.photoCount) : 6,
+        photoCount: [1, 2, 3, 4, 6, 8, 9].includes(Number(data.photoCount)) ? Number(data.photoCount) : 6,
         photos: data.photos || {}
       };
     }
@@ -546,7 +553,7 @@
         const blocks = [...text.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi)];
         batchSlides = blocks.flatMap(block => {
           try { return [normalizedSlideData(JSON.parse(block[1]))]; } catch (_) { return []; }
-        });
+        }).filter(data => typeof data.title === 'string' && data.title.trim());
         await renderBatchPreviews();
         button.textContent = batchSlides.length ? `${batchSlides.length} loaded` : 'No JSON found';
       } catch (_) {
