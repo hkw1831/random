@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dot Grid</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            background: #0d0d0d;
+        }
+
+        #wrapper {
+            display: flex;
+            width: 100%;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        #label-col {
+            width: 40px;
+            flex-shrink: 0;
+            height: 100%;
+            display: grid;
+            grid-template-rows: repeat(37, 1fr);
+            border-right: 1px solid #1e1e1e;
+        }
+
+        .label-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 2dvh;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            white-space: pre-line;
+            line-height: 1.15;
+            overflow: hidden;
+            writing-mode: horizontal-tb;
+        }
+
+        .label-segment.separator-bottom {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+        }
+
+        .label-segment.separator-bottom-accent {
+            border-bottom: 2px solid #f59e0b;
+        }
+
+        #dot-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            grid-template-rows: repeat(37, 1fr);
+            touch-action: manipulation;
+        }
+
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .cell.separator-bottom {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+        }
+
+        .cell.separator-bottom-accent {
+            border-bottom: 2px solid #f59e0b;
+        }
+
+        .dot {
+            width: 78%;
+            aspect-ratio: 1 / 1;
+            max-height: 82%;
+            border-radius: 50%;
+            background-color: #202020;
+            border: 1px solid #303030;
+            transition: background-color 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
+            pointer-events: none;
+        }
+
+        .cell.lit .dot {
+            background-color: #22c55e;
+            border-color: #16a34a;
+            box-shadow: 0 0 5px #22c55e88;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <div id="label-col"></div>
+        <div id="dot-grid"></div>
+    </div>
+
+    <script>
+        const labelCol = document.getElementById('label-col');
+        const dotGrid  = document.getElementById('dot-grid');
+
+        const COLS = 20;
+        const ROWS = 37;
+
+        const segments = [
+            { start: 1,  end: 7,  label: 'CC',            separator: 'normal' },
+            { start: 7,  end: 11, label: 'CF',            separator: 'accent' },
+            { start: 11, end: 16, label: 'T',             separator: 'normal' },
+            { start: 16, end: 20, label: 'LL',            separator: 'normal' },
+            { start: 20, end: 25, label: 'UL',            separator: 'normal' },
+            { start: 25, end: 29, label: '1P\n2D\n3\nR',  separator: 'accent' },
+            { start: 29, end: 31, label: 'LR',            separator: 'accent' },
+            { start: 31, end: 34, label: 'Mo',            separator: 'normal' },
+            { start: 34, end: 37, label: 'Pal',           separator: 'normal' },
+            { start: 37, end: 38, label: 'T?',            separator: false    },
+        ];
+
+        segments.forEach(seg => {
+            const div = document.createElement('div');
+            let cls = 'label-segment';
+            if (seg.separator === 'normal') cls += ' separator-bottom';
+            if (seg.separator === 'accent') cls += ' separator-bottom-accent';
+            div.className = cls;
+            div.style.gridRow = `${seg.start} / ${seg.end}`;
+            div.textContent = seg.label;
+            labelCol.appendChild(div);
+        });
+
+        const accentRows = new Set([9, 27, 29]);
+        const normalRows = new Set([5, 14, 18, 23, 32, 35]);
+
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.row = r;
+                cell.dataset.col = c;
+
+                if (accentRows.has(r))      cell.classList.add('separator-bottom-accent');
+                else if (normalRows.has(r)) cell.classList.add('separator-bottom');
+
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                cell.appendChild(dot);
+                dotGrid.appendChild(cell);
+
+                cell.addEventListener('click', () => {
+                    cell.classList.toggle('lit');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
