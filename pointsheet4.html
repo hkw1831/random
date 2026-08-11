@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pointsheet 4</title>
+    <style>
+        :root {
+            --label-width: 38px;
+            --header-height: 28px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #0d0d0d;
+        }
+
+        body {
+            color: #d4d4d4;
+            font-family: "Courier New", monospace;
+            overflow: hidden;
+        }
+
+        #sheet {
+            display: grid;
+            grid-template-columns: var(--label-width) repeat(21, minmax(0, 1fr));
+            grid-template-rows: var(--header-height) repeat(31, minmax(0, 1fr));
+            width: 100vw;
+            height: 100dvh;
+            padding: 4px;
+        }
+
+        .corner,
+        .column-label,
+        .row-label,
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .column-label {
+            color: #f3f4f6;
+            font-size: clamp(9px, 2.2vw, 12px);
+            font-weight: 700;
+            border-bottom: 1px solid #575757;
+        }
+
+        .row-label {
+            justify-content: flex-end;
+            padding-right: 3px;
+            color: #d4d4d4;
+            font-size: clamp(10px, 2.5vw, 13px);
+            font-weight: 700;
+            border-right: 1px solid #575757;
+        }
+
+        .cell {
+            position: relative;
+            border-right: 1px solid #202020;
+            border-bottom: 1px solid #202020;
+        }
+
+        .separator-right {
+            border-right: 2px solid #f59e0b;
+        }
+
+        .separator-bottom {
+            border-bottom: 2px solid #f59e0b;
+        }
+
+        .point {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: none;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .point::before {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 90%;
+            aspect-ratio: 1;
+            max-height: 90%;
+            border: 1px solid #3b3b3b;
+            border-radius: 50%;
+            background: #202020;
+            content: "";
+            transform: translate(-50%, -50%);
+            transition: background-color 100ms ease, border-color 100ms ease, box-shadow 100ms ease;
+        }
+
+        .point:focus-visible {
+            outline: 2px solid #facc15;
+            outline-offset: -2px;
+        }
+
+        .point.state-yellow::before {
+            background: #fde68a;
+            border-color: #facc15;
+            box-shadow: 0 0 6px #fde68a99;
+        }
+
+        .point.state-green::before {
+            background: #22c55e;
+            border-color: #16a34a;
+            box-shadow: 0 0 6px #22c55e99;
+        }
+
+        .point.state-red::before {
+            background: #ef4444;
+            border-color: #dc2626;
+            box-shadow: 0 0 6px #ef444499;
+        }
+
+        .point.crossed::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M24 24L76 76M76 24L24 76' fill='none' stroke='%23101010' stroke-width='15' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 72%;
+        }
+
+        .merged-me .point::before {
+            width: 45%;
+        }
+
+        .clear-button {
+            width: calc(100% - 4px);
+            height: calc(100% - 4px);
+            border: 1px solid #575757;
+            border-radius: 3px;
+            background: #272727;
+            color: #f3f4f6;
+            cursor: pointer;
+            font: 700 clamp(16px, 3.5vw, 22px) Arial, sans-serif;
+            line-height: 1;
+        }
+
+        .clear-button:active {
+            background: #404040;
+        }
+    </style>
+</head>
+<body>
+    <main id="sheet" aria-label="Pointsheet 4"></main>
+
+    <script>
+        const csv = `,AN,AN,RE,RE,ME,ME,ME,LA,LA,IR,IR,ER,ER,AL,AM,AM,AL,RL,RM,RM,RL
+    CP1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    CP2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    CP3,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    CL,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    TH1,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    TH2,,,,,,,,,,,,,,x,x,x,x,,x,x,
+    TH3,,,,,,,,,,,,,,,x,x,,,x,x,
+    LU1P,,,,,,,,,,x,x,x,x,x,x,x,x,,x,x,
+    LU2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    LU3D,,,,,,,,,,,,,,,x,x,,,,,
+    PV1P,,,,,,,,,,x,x,,,x,x,x,x,x,x,x,x
+    PV2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    PV3D,,,,,,,,,,,,x,x,,x,x,,,,,
+    CX,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    GE1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    GE2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+    GE3,,,,,,,,,,,,,,x,x,x,x,,,,,
+    TA1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    TA2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+    PE1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    PE2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+    PE3,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+    SC1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    SC2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+    HU,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    CU1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    CU2,,,,,,,,,,,,,,,,,,,x,x,
+    CA1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    CA2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+    DI1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+    DI2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x`;
+
+        const sheet = document.getElementById('sheet');
+        const [headerLine, ...dataLines] = csv.trim().split('\n');
+        const headers = headerLine.split(',').slice(1);
+        const rows = dataLines.map(line => line.trim().split(','));
+        const separatorAfterRows = new Set(['CL', 'PV3D', 'PE3']);
+        const separatorAfterColumns = new Set([3, 8, 12, 16]);
+        const mergedMeRows = new Set(['CP2', 'CP3', 'CL', 'TH1', 'TH2', 'TH3', 'LU1P', 'LU2', 'LU3D', 'PV1P', 'PV2', 'PV3D']);
+        const firstMeColumn = 4;
+        const pointStates = ['grey', 'yellow', 'green', 'red'];
+
+        function updatePointState(point, state) {
+            point.dataset.state = state;
+            point.classList.remove('state-yellow', 'state-green', 'state-red');
+            if (state !== 'grey') point.classList.add(`state-${state}`);
+            if (state === 'grey') point.classList.remove('crossed');
+        }
+
+        function toggleCross(point) {
+            if (point.dataset.state !== 'grey') point.classList.toggle('crossed');
+        }
+
+        function advancePointState(point) {
+            const currentIndex = pointStates.indexOf(point.dataset.state);
+            updatePointState(point, pointStates[(currentIndex + 1) % pointStates.length]);
+        }
+
+        const corner = document.createElement('div');
+        corner.className = 'corner';
+        const clearButton = document.createElement('button');
+        clearButton.type = 'button';
+        clearButton.className = 'clear-button';
+        clearButton.textContent = '×';
+        clearButton.setAttribute('aria-label', 'Clear all points');
+        clearButton.title = 'Clear all points';
+        clearButton.addEventListener('click', () => {
+            if (!confirm('Clear all point colors and crosses?')) return;
+            document.querySelectorAll('.point').forEach(point => updatePointState(point, 'grey'));
+        });
+        corner.appendChild(clearButton);
+        sheet.appendChild(corner);
+
+        headers.forEach((header, columnIndex) => {
+            const label = document.createElement('div');
+            label.className = 'column-label';
+            if (separatorAfterColumns.has(columnIndex)) label.classList.add('separator-right');
+            label.textContent = header;
+            sheet.appendChild(label);
+        });
+
+        rows.forEach(([rowName, ...points]) => {
+            const label = document.createElement('div');
+            label.className = 'row-label';
+            if (separatorAfterRows.has(rowName)) label.classList.add('separator-bottom');
+            label.textContent = rowName;
+            sheet.appendChild(label);
+
+            headers.forEach((header, columnIndex) => {
+                if (mergedMeRows.has(rowName) && columnIndex === firstMeColumn + 1) return;
+
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                if (separatorAfterColumns.has(columnIndex)) cell.classList.add('separator-right');
+                if (separatorAfterRows.has(rowName)) cell.classList.add('separator-bottom');
+
+                const isMergedMe = mergedMeRows.has(rowName) && columnIndex === firstMeColumn;
+                if (isMergedMe) {
+                    cell.classList.add('merged-me');
+                    cell.style.gridColumn = 'span 2';
+                }
+
+                const hasPoint = isMergedMe
+                    ? points.slice(firstMeColumn, firstMeColumn + 2).some(point => point?.trim().toLowerCase() === 'x')
+                    : points[columnIndex]?.trim().toLowerCase() === 'x';
+
+                if (hasPoint) {
+                    const point = document.createElement('button');
+                    point.type = 'button';
+                    point.className = 'point';
+                    point.dataset.state = 'grey';
+                    point.setAttribute('aria-label', `${rowName} ${header}`);
+                    let tapTimer;
+
+                    point.addEventListener('contextmenu', event => event.preventDefault());
+                    point.addEventListener('dblclick', event => event.preventDefault());
+                    point.addEventListener('click', event => {
+                        if (event.altKey) {
+                            clearTimeout(tapTimer);
+                            toggleCross(point);
+                            return;
+                        }
+                        if (tapTimer) {
+                            clearTimeout(tapTimer);
+                            tapTimer = undefined;
+                            toggleCross(point);
+                            return;
+                        }
+                        tapTimer = setTimeout(() => {
+                            tapTimer = undefined;
+                            advancePointState(point);
+                        }, 250);
+                    });
+                    cell.appendChild(point);
+                }
+
+                sheet.appendChild(cell);
+            });
+        });
+    </script>
+</body>
+</html>
