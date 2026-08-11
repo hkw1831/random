@@ -85,7 +85,7 @@
             border: 0;
             background: none;
             cursor: pointer;
-            touch-action: manipulation;
+            touch-action: none;
         }
 
         .point::before {
@@ -132,6 +132,16 @@
             background-repeat: no-repeat;
             background-size: 72%;
         }
+
+        .point.active::before {
+            outline: 2px dashed #e5e7eb;
+            outline-offset: 2px;
+        }
+
+        .point.preview-red::before { outline-color: #f87171; }
+        .point.preview-green::before { outline-color: #4ade80; }
+        .point.preview-yellow::before { outline-color: #facc15; }
+        .point.preview-grey::before { outline-color: #9ca3af; }
 
         .merged-me .point::before {
             width: 45%;
@@ -199,22 +209,20 @@
         const separatorAfterColumns = new Set([3, 8, 12, 16]);
         const mergedMeRows = new Set(['CP2', 'CP3', 'CL', 'TH1', 'TH2', 'TH3', 'LU1P', 'LU2', 'LU3D', 'PV1P', 'PV2', 'PV3D']);
         const firstMeColumn = 4;
-        const pointStates = ['grey', 'yellow', 'green', 'red'];
+
+        function applyPointVisualState(point, state, crossed = false) {
+            point.classList.remove('state-yellow', 'state-green', 'state-red');
+            if (state !== 'grey') point.classList.add(`state-${state}`);
+            point.classList.toggle('crossed', state !== 'grey' && crossed);
+        }
 
         function updatePointState(point, state) {
             point.dataset.state = state;
-            point.classList.remove('state-yellow', 'state-green', 'state-red');
-            if (state !== 'grey') point.classList.add(`state-${state}`);
-            if (state === 'grey') point.classList.remove('crossed');
+            applyPointVisualState(point, state, point.classList.contains('crossed'));
         }
 
         function toggleCross(point) {
             if (point.dataset.state !== 'grey') point.classList.toggle('crossed');
-        }
-
-        function advancePointState(point) {
-            const currentIndex = pointStates.indexOf(point.dataset.state);
-            updatePointState(point, pointStates[(currentIndex + 1) % pointStates.length]);
         }
 
         const corner = document.createElement('div');
@@ -271,26 +279,73 @@
                     point.className = 'point';
                     point.dataset.state = 'grey';
                     point.setAttribute('aria-label', `${rowName} ${header}`);
-                    let tapTimer;
+                    point.title = 'Swipe up: red. Swipe right: green. Swipe down: yellow. Swipe left: grey. Tap a colored point: toggle cross.';
+                    let startX;
+                    let startY;
+                    let previewState;
+                    let startCrossed;
+                    let activePointerId;
+                    let suppressClick = false;
+
+                    function getSwipeState(deltaX, deltaY) {
+                        const swipeThreshold = 12;
+                        if (Math.abs(deltaX) < swipeThreshold && Math.abs(deltaY) < swipeThreshold) return undefined;
+                        if (Math.abs(deltaX) >= Math.abs(deltaY)) return deltaX > 0 ? 'green' : 'grey';
+                        return deltaY < 0 ? 'red' : 'yellow';
+                    }
+
+                    function clearPreview() {
+                        previewState = undefined;
+                        activePointerId = undefined;
+                        point.classList.remove('active', 'preview-red', 'preview-green', 'preview-yellow', 'preview-grey');
+                        applyPointVisualState(point, point.dataset.state, startCrossed);
+                    }
 
                     point.addEventListener('contextmenu', event => event.preventDefault());
                     point.addEventListener('dblclick', event => event.preventDefault());
+                    point.addEventListener('pointerdown', event => {
+                        startX = event.clientX;
+                        startY = event.clientY;
+                        startCrossed = point.classList.contains('crossed');
+                        activePointerId = event.pointerId;
+                        point.classList.add('active');
+                        point.setPointerCapture(event.pointerId);
+                    });
+                    point.addEventListener('pointermove', event => {
+                        if (event.pointerId !== activePointerId) return;
+                        const nextPreviewState = getSwipeState(event.clientX - startX, event.clientY - startY);
+                        if (nextPreviewState === previewState) return;
+
+                        previewState = nextPreviewState;
+                        point.classList.remove('preview-red', 'preview-green', 'preview-yellow', 'preview-grey');
+                        if (previewState !== undefined) point.classList.add(`preview-${previewState}`);
+                        if (previewState !== undefined) applyPointVisualState(point, previewState, startCrossed);
+                        else applyPointVisualState(point, point.dataset.state, startCrossed);
+                    });
+                    point.addEventListener('pointerup', event => {
+                        if (event.pointerId !== activePointerId) return;
+                        const deltaX = event.clientX - startX;
+                        const deltaY = event.clientY - startY;
+                        const swipeState = getSwipeState(deltaX, deltaY);
+
+                        suppressClick = true;
+                        if (swipeState === undefined) {
+                            clearPreview();
+                            toggleCross(point);
+                        } else {
+                            updatePointState(point, swipeState);
+                            clearPreview();
+                        }
+                    });
+                    point.addEventListener('pointercancel', event => {
+                        if (event.pointerId === activePointerId) clearPreview();
+                    });
                     point.addEventListener('click', event => {
-                        if (event.altKey) {
-                            clearTimeout(tapTimer);
-                            toggleCross(point);
+                        if (suppressClick) {
+                            suppressClick = false;
                             return;
                         }
-                        if (tapTimer) {
-                            clearTimeout(tapTimer);
-                            tapTimer = undefined;
-                            toggleCross(point);
-                            return;
-                        }
-                        tapTimer = setTimeout(() => {
-                            tapTimer = undefined;
-                            advancePointState(point);
-                        }, 250);
+                        toggleCross(point);
                     });
                     cell.appendChild(point);
                 }
