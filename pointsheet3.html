@@ -82,8 +82,6 @@
 
         .point {
             position: relative;
-            display: grid;
-            place-items: center;
             width: 74%;
             aspect-ratio: 1;
             max-height: 74%;
@@ -91,6 +89,7 @@
             border-radius: 50%;
             background: #202020;
             cursor: pointer;
+            touch-action: manipulation;
             transition: background-color 100ms ease, border-color 100ms ease, box-shadow 100ms ease;
         }
 
@@ -117,13 +116,11 @@
             box-shadow: 0 0 6px #ef444499;
         }
 
-        .point.crossed::after {
-            content: "×";
-            color: #101010;
-            font-family: Arial, sans-serif;
-            font-size: clamp(16px, 3.4dvh, 26px);
-            font-weight: 700;
-            line-height: 1;
+        .point.crossed {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M24 24L76 76M76 24L24 76' fill='none' stroke='%23101010' stroke-width='15' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 72%;
         }
 
         .clear-button {
@@ -134,7 +131,8 @@
             background: #272727;
             color: #f3f4f6;
             cursor: pointer;
-            font: 700 clamp(8px, 2vw, 11px) "Courier New", monospace;
+            font: 700 clamp(16px, 3.5vw, 22px) Arial, sans-serif;
+            line-height: 1;
         }
 
         .clear-button:active {
@@ -211,12 +209,19 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
             if (point.dataset.state !== 'grey') point.classList.toggle('crossed');
         }
 
+        function advancePointState(point) {
+            const currentIndex = pointStates.indexOf(point.dataset.state);
+            updatePointState(point, pointStates[(currentIndex + 1) % pointStates.length]);
+        }
+
         const corner = document.createElement('div');
         corner.className = 'corner';
         const clearButton = document.createElement('button');
         clearButton.type = 'button';
         clearButton.className = 'clear-button';
-        clearButton.textContent = 'Clear';
+        clearButton.textContent = '×';
+        clearButton.setAttribute('aria-label', 'Clear all points');
+        clearButton.title = 'Clear all points';
         clearButton.addEventListener('click', () => {
             if (!confirm('Clear all point colors and crosses?')) return;
             document.querySelectorAll('.point').forEach(point => updatePointState(point, 'grey'));
@@ -263,29 +268,26 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
                     point.className = 'point';
                     point.dataset.state = 'grey';
                     point.setAttribute('aria-label', `${rowName} ${header}`);
-                    let longPressTimer;
-                    let wasLongPressed = false;
+                    let tapTimer;
 
-                    point.addEventListener('pointerdown', event => {
-                        wasLongPressed = false;
-                        longPressTimer = setTimeout(() => {
-                            wasLongPressed = true;
-                            toggleCross(point);
-                        }, 500);
-                        point.setPointerCapture(event.pointerId);
-                    });
-
-                    point.addEventListener('pointerup', () => clearTimeout(longPressTimer));
-                    point.addEventListener('pointercancel', () => clearTimeout(longPressTimer));
                     point.addEventListener('contextmenu', event => event.preventDefault());
+                    point.addEventListener('dblclick', event => event.preventDefault());
                     point.addEventListener('click', event => {
                         if (event.altKey) {
+                            clearTimeout(tapTimer);
                             toggleCross(point);
                             return;
                         }
-                        if (wasLongPressed) return;
-                        const currentIndex = pointStates.indexOf(point.dataset.state);
-                        updatePointState(point, pointStates[(currentIndex + 1) % pointStates.length]);
+                        if (tapTimer) {
+                            clearTimeout(tapTimer);
+                            tapTimer = undefined;
+                            toggleCross(point);
+                            return;
+                        }
+                        tapTimer = setTimeout(() => {
+                            tapTimer = undefined;
+                            advancePointState(point);
+                        }, 250);
                     });
                     cell.appendChild(point);
                 }
