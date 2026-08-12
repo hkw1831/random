@@ -88,6 +88,10 @@
             touch-action: none;
         }
 
+        .point.guided {
+            background: #155e75;
+        }
+
         .point::before {
             position: absolute;
             top: 50%;
@@ -211,6 +215,33 @@
             color: #fecaca;
         }
 
+        .guide-actions {
+            display: grid;
+            gap: 8px;
+        }
+
+        .guide-actions button {
+            min-height: 38px;
+            border: 1px solid #575757;
+            border-radius: 3px;
+            background: #303030;
+            color: inherit;
+            cursor: pointer;
+            font: 700 13px Arial, sans-serif;
+        }
+
+        .guide-actions button[aria-pressed="true"] {
+            border-color: #22d3ee;
+            background: #155e75;
+        }
+
+        .guide-actions button:hover,
+        .guide-actions button:focus-visible,
+        .guide-actions button.guide-target {
+            border-color: #a5f3fc;
+            background: #454545;
+        }
+
         .dialog-close {
             margin-top: 12px;
             color: #d4d4d4;
@@ -227,6 +258,10 @@
             <button id="export-json" type="button">Export to JSON</button>
             <button id="close-dialog" class="dialog-close" type="button">Close</button>
         </div>
+    </dialog>
+    <dialog id="guide-dialog" class="state-dialog" aria-labelledby="guide-dialog-title">
+        <h2 id="guide-dialog-title">Assistance: none</h2>
+        <div id="guide-actions" class="guide-actions"></div>
     </dialog>
 
     <script>
@@ -273,6 +308,17 @@
         const firstMeColumn = 4;
         const storageKey = 'pointsheet4-state';
         const stateDialog = document.getElementById('state-dialog');
+        const guideSets = [
+            { name: '180 腳背', keys: ['an-pe1-lt', 'an-pe1-rt', 'la-pe1-lt', 'la-pe1-rt', 'er-pe1-lt', 'er-pe1-rt'] },
+            { name: '180 胸前', keys: ['an-th1-lt', 'an-th1-rt', 'me-sc1-lt', 'me-sc1-rt', 'ir-th1-lt', 'ir-th1-rt'] },
+            { name: '180 後肩頸', keys: ['re-cl-lt', 're-cl-rt', 'la-sc1-lt', 'la-sc1-rt', 'er-sc1-lt', 'er-sc1-rt'] },
+            { name: '180 前頸', keys: ['an-cl-lt', 'an-cl-rt', 'la-cl-lt', 'la-cl-rt', 'ir-cl-lt', 'ir-cl-rt'] },
+            { name: '180 臀部', keys: ['re-cx-lt', 're-cx-rt', 'la-pv2-lt', 'la-pv2-rt', 'er-cx-lt', 'er-cx-rt'] }
+        ];
+        const guideDialog = document.getElementById('guide-dialog');
+        const guideDialogTitle = document.getElementById('guide-dialog-title');
+        const guideActions = document.getElementById('guide-actions');
+        let activeGuide;
 
         function getPointKey(rowName, header, columnIndex, isMergedMe) {
             const prefixAliases = {
@@ -299,7 +345,7 @@
             if (header === 'ME') {
                 if (isMergedMe) return `${prefix}-${row}-a`;
                 if (columnIndex === firstMeColumn + 2) return `${prefix}-${row}-r`;
-                return `${prefix}-${row}-${columnIndex === firstMeColumn ? 'lf' : 'rt'}`;
+                return `${prefix}-${row}-${columnIndex === firstMeColumn ? 'lt' : 'rt'}`;
             }
 
             const matchingColumns = headers.reduce((indexes, value, index) => {
@@ -307,7 +353,7 @@
                 return indexes;
             }, []);
             if (matchingColumns.length === 1) return `${prefix}-${row}`;
-            return `${prefix}-${row}-${matchingColumns.indexOf(columnIndex) === 0 ? 'lf' : 'rt'}`;
+            return `${prefix}-${row}-${matchingColumns.indexOf(columnIndex) === 0 ? 'lt' : 'rt'}`;
         }
 
         function serializeState() {
@@ -393,6 +439,53 @@
             saveState();
         }
 
+        function selectGuide(guide) {
+            activeGuide = guide;
+            const guideKeys = new Set(guide?.keys);
+            document.querySelectorAll('.point').forEach(point => {
+                point.classList.toggle('guided', guideKeys.has(point.dataset.key));
+            });
+            guideDialogTitle.textContent = `Assistance: ${guide?.name || 'none'}`;
+            guideActions.querySelectorAll('button[data-guide-name]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.guideName === guide?.name));
+            });
+        }
+
+        function getGuideActionAtPosition(clientX, clientY) {
+            return document.elementFromPoint(clientX, clientY)
+                ?.closest('button[data-guide-name], button[data-guide-action]');
+        }
+
+        function updateGuideDragTarget(clientX, clientY) {
+            const target = getGuideActionAtPosition(clientX, clientY);
+            guideActions.querySelectorAll('button').forEach(button => {
+                button.classList.toggle('guide-target', button === target);
+            });
+            return target;
+        }
+
+        guideSets.forEach(guide => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.guideName = guide.name;
+            button.textContent = guide.name;
+            button.setAttribute('aria-pressed', 'false');
+            button.addEventListener('click', () => {
+                selectGuide(guide);
+                guideDialog.close();
+            });
+            guideActions.appendChild(button);
+        });
+        const clearGuideButton = document.createElement('button');
+        clearGuideButton.type = 'button';
+        clearGuideButton.dataset.guideAction = 'clear';
+        clearGuideButton.textContent = 'Clear guide';
+        clearGuideButton.addEventListener('click', () => {
+            selectGuide();
+            guideDialog.close();
+        });
+        guideActions.appendChild(clearGuideButton);
+
         const corner = document.createElement('div');
         corner.className = 'corner';
         const clearButton = document.createElement('button');
@@ -400,12 +493,72 @@
         clearButton.className = 'clear-button';
         clearButton.textContent = '×';
         clearButton.setAttribute('aria-label', 'Open data options');
-        clearButton.title = 'Import, clear, or export point data';
+        clearButton.title = 'Tap for point data. Drag right for assistance.';
+        let crossStartX;
+        let crossStartY;
+        let crossPointerId;
+        let suppressCrossClick = false;
+        let crossGuideOpened = false;
+        clearButton.addEventListener('pointerdown', event => {
+            crossStartX = event.clientX;
+            crossStartY = event.clientY;
+            crossPointerId = event.pointerId;
+            crossGuideOpened = false;
+            clearButton.setPointerCapture(event.pointerId);
+        });
+        clearButton.addEventListener('pointermove', event => {
+            if (event.pointerId !== crossPointerId) return;
+            if (crossGuideOpened) {
+                updateGuideDragTarget(event.clientX, event.clientY);
+                return;
+            }
+            const deltaX = event.clientX - crossStartX;
+            const deltaY = event.clientY - crossStartY;
+            if (deltaX < 12 || Math.abs(deltaY) > deltaX) return;
+            crossGuideOpened = true;
+            suppressCrossClick = true;
+            guideDialog.showModal();
+            updateGuideDragTarget(event.clientX, event.clientY);
+        });
+        window.addEventListener('pointerup', event => {
+            if (event.pointerId !== crossPointerId) return;
+            crossPointerId = undefined;
+            if (crossGuideOpened) {
+                const target = updateGuideDragTarget(event.clientX, event.clientY);
+                const guideName = target?.dataset.guideName;
+                const guide = guideSets.find(candidate => candidate.name === guideName);
+                if (guide) {
+                    selectGuide(guide);
+                    guideDialog.close();
+                } else if (target?.dataset.guideAction === 'clear') {
+                    selectGuide();
+                    guideDialog.close();
+                }
+                guideActions.querySelectorAll('.guide-target').forEach(button => button.classList.remove('guide-target'));
+                return;
+            }
+            if (event.clientX - crossStartX < 12 || Math.abs(event.clientY - crossStartY) > event.clientX - crossStartX) return;
+            suppressCrossClick = true;
+            guideDialog.showModal();
+        });
+        window.addEventListener('pointercancel', () => {
+            crossPointerId = undefined;
+            crossGuideOpened = false;
+            guideActions.querySelectorAll('.guide-target').forEach(button => button.classList.remove('guide-target'));
+        });
         clearButton.addEventListener('click', () => {
+            if (suppressCrossClick) {
+                suppressCrossClick = false;
+                return;
+            }
             stateDialog.showModal();
         });
         corner.appendChild(clearButton);
         sheet.appendChild(corner);
+
+        guideDialog.addEventListener('click', event => {
+            if (event.target === guideDialog) guideDialog.close();
+        });
 
         headers.forEach((header, columnIndex) => {
             const label = document.createElement('div');
