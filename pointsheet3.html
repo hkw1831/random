@@ -505,7 +505,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
         clearButton.className = 'clear-button';
         clearButton.textContent = '×';
         clearButton.setAttribute('aria-label', 'Open data options');
-        clearButton.title = 'Tap for point data. Drag right for assistance.';
+        clearButton.title = 'Tap for point data. Drag down for assistance.';
         let crossStartX;
         let crossStartY;
         let crossPointerId;
@@ -526,7 +526,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
             }
             const deltaX = event.clientX - crossStartX;
             const deltaY = event.clientY - crossStartY;
-            if (deltaX < 12 || Math.abs(deltaY) > deltaX) return;
+            if (deltaY < 12 || Math.abs(deltaX) > deltaY) return;
             crossGuideOpened = true;
             suppressCrossClick = true;
             guideDialog.showModal();
@@ -549,7 +549,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
                 guideActions.querySelectorAll('.guide-target').forEach(button => button.classList.remove('guide-target'));
                 return;
             }
-            if (event.clientX - crossStartX < 12 || Math.abs(event.clientY - crossStartY) > event.clientX - crossStartX) return;
+            if (event.clientY - crossStartY < 12 || Math.abs(event.clientX - crossStartX) > event.clientY - crossStartY) return;
             suppressCrossClick = true;
             guideDialog.showModal();
         });
