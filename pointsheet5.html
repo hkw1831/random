@@ -38,11 +38,11 @@
         .state-dialog-actions button, .guide-actions button { min-height: 38px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 13px Arial, sans-serif; }
         .state-dialog-actions button:hover, .state-dialog-actions button:focus-visible, .guide-actions button:hover, .guide-actions button:focus-visible { background: #454545; }
         .state-dialog-actions .danger-button { color: #fecaca; }
-        .state-data-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-        .state-data-actions button { font-size: 11px; line-height: 1.15; }
+        .state-data-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .grey-point-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .guide-actions button[aria-pressed="true"] { border-color: #22d3ee; background: #155e75; }
         .guide-actions button.guide-target { border-color: #a5f3fc; background: #454545; }
+        .clear-guide-button { margin-bottom: 8px; }
         .guide-group { display: grid; gap: 8px; }
         .guide-group-title { color: #d4d4d4; font: 700 13px Arial, sans-serif; }
         .guide-grid { display: grid; gap: 8px; }
@@ -62,10 +62,12 @@
         <div class="state-dialog-actions">
             <div class="state-data-actions">
                 <button id="import-json" type="button">Import from JSON</button>
-                <button id="clear-current" class="danger-button" type="button">Clear current</button>
                 <button id="export-json" type="button">Export to JSON</button>
             </div>
-            <button id="toggle-point-keys" type="button" aria-pressed="false">Show JSON field names</button>
+            <div class="state-data-actions">
+                <button id="clear-current" class="danger-button" type="button">Clear current</button>
+                <button id="toggle-point-keys" type="button" aria-pressed="false">Show JSON field names</button>
+            </div>
             <div class="grey-point-actions">
                 <button id="import-grey-points" type="button">Import grey points</button>
                 <button id="export-grey-points" type="button">Export grey points</button>
@@ -194,7 +196,14 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
                 { name: '肺部痛', keys: ['an-me-th1-lt', 'an-me-th1-rt', 'an-me-th2-lt', 'an-me-th2-rt','an-la-th1-lt', 'an-la-th1-rt', 'an-la-th2-lt', 'an-la-th2-rt', 'ir-sc-lt', 'ir-sc-rt', 're-me-th1-lt', 're-me-th1-rt', 're-la-th-lt', 're-la-th-rt', 'er-sc-lt', 'er-sc-rt'] },
                 { name: '心臟痛', keys: ['an-me-th2-lt', 'an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 're-me-th2-lt', 're-me-sc1-lt', 're-me-sc2-lt', 're-me-hu-lt'] },
                 { name: '3', keys: [] },
-                { name: '4', keys: [] }
+                { name: '4', keys: [] },
+                { name: '5', keys: [] },
+                { name: '6', keys: [] },
+                { name: '7', keys: [] },
+                { name: '8', keys: [] },
+                { name: '9', keys: [] },
+                { name: '10', keys: [] },
+                { name: '11', keys: [] }
             ] }
         ];
         const guideSets = guideGroups.flatMap(group => group.guides);
@@ -221,16 +230,16 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             'an-ta-rt': { rule1: [], rule2: [], rule3: [] },
             'an-pe-lt': { rule1: [], rule2: [], rule3: [] },
             'an-pe-rt': { rule1: [], rule2: [], rule3: [] },
-            'an-sc-lt': { rule1: [], rule2: [], rule3: [] },
-            'an-sc-rt': { rule1: [], rule2: [], rule3: [] },
-            'an-hu-lt': { rule1: [], rule2: [], rule3: [] },
-            'an-hu-rt': { rule1: [], rule2: [], rule3: [] },
-            'an-cu-lt': { rule1: [], rule2: [], rule3: [] },
-            'an-cu-rt': { rule1: [], rule2: [], rule3: [] },
-            'an-ca-lt': { rule1: [], rule2: [], rule3: [] },
-            'an-ca-rt': { rule1: [], rule2: [], rule3: [] },
-            'an-di-lt': { rule1: [], rule2: [], rule3: [] },
-            'an-di-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-sc-lt': { rule1: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule2: ['re-sc-lt'], rule3: [] },
+            'an-sc-rt': { rule1: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule2: ['re-sc-rt'], rule3: [] },
+            'an-hu-lt': { rule1: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule2: ['re-hu-lt'], rule3: [] },
+            'an-hu-rt': { rule1: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule2: ['re-hu-rt'], rule3: [] },
+            'an-cu-lt': { rule1: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule2: ['re-cu-lt'], rule3: [] },
+            'an-cu-rt': { rule1: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule2: ['re-cu-rt'], rule3: [] },
+            'an-ca-lt': { rule1: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule2: ['re-ca-lt'], rule3: [] },
+            'an-ca-rt': { rule1: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule2: ['re-ca-rt'], rule3: [] },
+            'an-di-lt': { rule1: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule2: ['re-di-lt'], rule3: [] },
+            'an-di-rt': { rule1: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule2: ['re-di-rt'], rule3: [] },
             're-cp1-lt': { rule1: [], rule2: [], rule3: [] },
             're-cp1-rt': { rule1: [], rule2: [], rule3: [] },
             're-cp2-lt': { rule1: [], rule2: [], rule3: [] },
@@ -285,16 +294,16 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             'me-ta-rt': { rule1: [], rule2: [], rule3: [] },
             'me-pe-lt': { rule1: [], rule2: [], rule3: [] },
             'me-pe-rt': { rule1: [], rule2: [], rule3: [] },
-            'me-sc-lt': { rule1: [], rule2: [], rule3: [] },
-            'me-sc-rt': { rule1: [], rule2: [], rule3: [] },
-            'me-hu-lt': { rule1: [], rule2: [], rule3: [] },
-            'me-hu-rt': { rule1: [], rule2: [], rule3: [] },
-            'me-cu-lt': { rule1: [], rule2: [], rule3: [] },
-            'me-cu-rt': { rule1: [], rule2: [], rule3: [] },
-            'me-ca-lt': { rule1: [], rule2: [], rule3: [] },
-            'me-ca-rt': { rule1: [], rule2: [], rule3: [] },
-            'me-di-lt': { rule1: [], rule2: [], rule3: [] },
-            'me-di-rt': { rule1: [], rule2: [], rule3: [] },
+            'me-sc-lt': { rule1: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule2: ['la-sc-lt'], rule3: [] },
+            'me-sc-rt': { rule1: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule2: ['la-sc-rt'], rule3: [] },
+            'me-hu-lt': { rule1: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule2: ['la-hu-lt'], rule3: [] },
+            'me-hu-rt': { rule1: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule2: ['la-hu-rt'], rule3: [] },
+            'me-cu-lt': { rule1: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule2: ['la-cu-lt'], rule3: [] },
+            'me-cu-rt': { rule1: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule2: ['la-cu-rt'], rule3: [] },
+            'me-ca-lt': { rule1: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule2: ['la-ca-lt'], rule3: [] },
+            'me-ca-rt': { rule1: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule2: ['la-ca-rt'], rule3: [] },
+            'me-di-lt': { rule1: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule2: ['la-di-lt'], rule3: [] },
+            'me-di-rt': { rule1: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule2: ['la-di-rt'], rule3: [] },
             'la-cp1-lt': { rule1: [], rule2: [], rule3: [] },
             'la-cp1-rt': { rule1: [], rule2: [], rule3: [] },
             'la-cp2-lt': { rule1: [], rule2: [], rule3: [] },
@@ -317,16 +326,16 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             'la-ta-rt': { rule1: [], rule2: [], rule3: [] },
             'la-pe-lt': { rule1: [], rule2: [], rule3: [] },
             'la-pe-rt': { rule1: [], rule2: [], rule3: [] },
-            'la-sc-lt': { rule1: [], rule2: [], rule3: [] },
-            'la-sc-rt': { rule1: [], rule2: [], rule3: [] },
-            'la-hu-lt': { rule1: [], rule2: [], rule3: [] },
-            'la-hu-rt': { rule1: [], rule2: [], rule3: [] },
-            'la-cu-lt': { rule1: [], rule2: [], rule3: [] },
-            'la-cu-rt': { rule1: [], rule2: [], rule3: [] },
-            'la-ca-lt': { rule1: [], rule2: [], rule3: [] },
-            'la-ca-rt': { rule1: [], rule2: [], rule3: [] },
-            'la-di-lt': { rule1: [], rule2: [], rule3: [] },
-            'la-di-rt': { rule1: [], rule2: [], rule3: [] },
+            'la-sc-lt': { rule1: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule2: ['me-sc-lt'], rule3: [] },
+            'la-sc-rt': { rule1: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule2: ['me-sc-rt'], rule3: [] },
+            'la-hu-lt': { rule1: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule2: ['me-hu-lt'], rule3: [] },
+            'la-hu-rt': { rule1: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule2: ['me-hu-rt'], rule3: [] },
+            'la-cu-lt': { rule1: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule2: ['me-cu-lt'], rule3: [] },
+            'la-cu-rt': { rule1: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule2: ['me-cu-rt'], rule3: [] },
+            'la-ca-lt': { rule1: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule2: ['me-ca-lt'], rule3: [] },
+            'la-ca-rt': { rule1: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule2: ['me-ca-rt'], rule3: [] },
+            'la-di-lt': { rule1: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule2: ['me-di-lt'], rule3: [] },
+            'la-di-rt': { rule1: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule2: ['me-di-rt'], rule3: [] },
             'ir-cp1-lt': { rule1: [], rule2: [], rule3: [] },
             'ir-cp1-rt': { rule1: [], rule2: [], rule3: [] },
             'ir-cp2-lt': { rule1: [], rule2: [], rule3: [] },
@@ -726,7 +735,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             guideDialogTitle.textContent = `Assistance`;
             guideActions.querySelectorAll('button[data-guide-name]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.guideName === guide?.name)));
         }
-        function refreshGuide() { if (activeGuide?.rule) selectGuide(activeGuide); }
+        function refreshGuide() { if (activeGuide) selectGuide(activeGuide); }
         function renderPoint(cell, rowName, header, columnIndex, isMergedMe) {
             const point = document.createElement('button'); point.type = 'button'; point.className = 'point'; point.dataset.key = pointKey(rowName, header, columnIndex, isMergedMe); point.dataset.columnIndex = columnIndex; point.dataset.state = 'grey'; point.setAttribute('aria-label', `${rowName} ${header}`);
             let startX; let startY; let pointerId; let preview; let wasTreated;
@@ -748,26 +757,26 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             const updateGuideTarget = (x, y) => { const target = guideAt(x, y); guideDialog.querySelectorAll('button[data-guide-name], button[data-guide-action], button[data-layout]').forEach(action => action.classList.toggle('guide-target', action === target)); return target; };
             button.addEventListener('pointerdown', event => { crossStartX = event.clientX; crossStartY = event.clientY; crossPointerId = event.pointerId; guideOpened = false; button.setPointerCapture(event.pointerId); });
             button.addEventListener('pointermove', event => { if (event.pointerId !== crossPointerId) return; if (guideOpened) { updateGuideTarget(event.clientX, event.clientY); return; } const deltaX = event.clientX - crossStartX; const deltaY = event.clientY - crossStartY; if (deltaY < 12 || Math.abs(deltaX) > deltaY) return; guideOpened = true; suppressCrossClick = true; guideDialog.showModal(); updateGuideTarget(event.clientX, event.clientY); });
-            button.addEventListener('pointerup', event => { if (event.pointerId !== crossPointerId) return; crossPointerId = undefined; if (!guideOpened) return; const target = updateGuideTarget(event.clientX, event.clientY); const guide = guideSets.find(candidate => candidate.name === target?.dataset.guideName); if (target?.dataset.layout && target.dataset.layout !== layoutId) { saveState(); layoutId = target.dataset.layout; location.hash = layoutId; activeGuide = undefined; buildSheet(); guideDialog.close(); } else if (guide) { selectGuide(guide); guideDialog.close(); } else if (target?.dataset.guideAction === 'clear') { selectGuide(); guideDialog.close(); } guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
+            button.addEventListener('pointerup', event => { if (event.pointerId !== crossPointerId) return; crossPointerId = undefined; if (!guideOpened) return; const target = updateGuideTarget(event.clientX, event.clientY); const guide = guideSets.find(candidate => candidate.name === target?.dataset.guideName); if (target?.dataset.layout && target.dataset.layout !== layoutId) { saveState(); layoutId = target.dataset.layout; location.hash = layoutId; buildSheet(); guideDialog.close(); } else if (guide) { selectGuide(guide); guideDialog.close(); } else if (target?.dataset.guideAction === 'clear') { selectGuide(); guideDialog.close(); } guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
             button.addEventListener('pointercancel', () => { crossPointerId = undefined; guideOpened = false; guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
             button.addEventListener('click', () => { if (suppressCrossClick) { suppressCrossClick = false; return; } stateDialog.showModal(); }); corner.appendChild(button); sheet.appendChild(corner);
             headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); label.textContent = header.replaceAll('|', '\n'); sheet.appendChild(label); });
             rows.forEach(([rowName, ...marks]) => { const label = document.createElement('div'); label.className = 'row-label'; if (separatorAfterRows.has(rowName)) label.classList.add('separator-bottom'); label.textContent = rowName; sheet.appendChild(label); headers.forEach((header, index) => { if (mergedMeRows.has(rowName) && index === firstMeColumn + 1) return; const cell = document.createElement('div'); cell.className = 'cell'; if (layout.separatorColumns.includes(index)) cell.classList.add('separator-right'); if (separatorAfterRows.has(rowName)) cell.classList.add('separator-bottom'); const merged = mergedMeRows.has(rowName) && index === firstMeColumn; if (merged) { cell.classList.add('merged-me'); cell.style.gridColumn = 'span 2'; } const hasPoint = merged ? marks.slice(firstMeColumn, firstMeColumn + 2).some(mark => mark?.trim().toLowerCase() === 'x') : marks[index]?.trim().toLowerCase() === 'x'; if (hasPoint) renderPoint(cell, rowName, header, index, merged); sheet.appendChild(cell); }); });
             loadState(); document.querySelectorAll('[data-layout]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layout === layoutId)));
         }
+        const clearGuide = document.createElement('button'); clearGuide.type = 'button'; clearGuide.className = 'clear-guide-button'; clearGuide.dataset.guideAction = 'clear'; clearGuide.textContent = 'Clear guide'; clearGuide.addEventListener('click', () => { selectGuide(); guideDialog.close(); }); guideActions.appendChild(clearGuide);
         guideGroups.forEach(group => { const section = document.createElement('section'); section.className = 'guide-group'; if (group.title) { const title = document.createElement('div'); title.className = 'guide-group-title'; title.textContent = group.title; section.appendChild(title); } const grid = document.createElement('div'); grid.className = group.columns ? `guide-grid columns-${group.columns}` : 'guide-grid'; group.guides.forEach(guide => { const button = document.createElement('button'); button.type = 'button'; button.dataset.guideName = guide.name; button.textContent = guide.name; button.addEventListener('click', () => { selectGuide(guide); guideDialog.close(); }); grid.appendChild(button); }); section.appendChild(grid); guideActions.appendChild(section); });
-        const clearGuide = document.createElement('button'); clearGuide.type = 'button'; clearGuide.dataset.guideAction = 'clear'; clearGuide.textContent = 'Clear guide'; clearGuide.addEventListener('click', () => { selectGuide(); guideDialog.close(); }); guideActions.appendChild(clearGuide);
-        document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; activeGuide = undefined; buildSheet(); guideDialog.close(); }));
+        document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; buildSheet(); guideDialog.close(); }));
         document.getElementById('import-json').addEventListener('click', async () => { try { restoreState(JSON.parse(await navigator.clipboard.readText())); stateDialog.close(); } catch (error) { alert(`Unable to import JSON: ${error.message}`); } });
         document.getElementById('export-json').addEventListener('click', async () => { try { await navigator.clipboard.writeText(JSON.stringify(serializeState(), null, 2)); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export JSON: ${error.message}`); } });
-        document.getElementById('import-grey-points').addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedGreyPoints(JSON.parse(text.replace(/'/g, '"'))); } catch (error) { alert(`Unable to import grey points: ${error.message}`); } });
-        document.getElementById('export-grey-points').addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedGreyPointKeys().map(key => `'${key}'`).join(', ')}]`); saveState(); } catch (error) { alert(`Unable to export grey points: ${error.message}`); } });
+        document.getElementById('import-grey-points').addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedGreyPoints(JSON.parse(text.replace(/'/g, '"'))); stateDialog.close(); } catch (error) { alert(`Unable to import grey points: ${error.message}`); } });
+        document.getElementById('export-grey-points').addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedGreyPointKeys().map(key => `'${key}'`).join(', ')}]`); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export grey points: ${error.message}`); } });
         ['yellow', 'green', 'red'].forEach(state => {
-            document.getElementById(`import-${state}-points`).addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedColoredPoints(state, JSON.parse(text.replace(/'/g, '"'))); } catch (error) { alert(`Unable to import ${state} points: ${error.message}`); } });
-            document.getElementById(`export-${state}-points`).addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedPointKeys(state).map(key => `'${key}'`).join(', ')}]`); saveState(); } catch (error) { alert(`Unable to export ${state} points: ${error.message}`); } });
+            document.getElementById(`import-${state}-points`).addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedColoredPoints(state, JSON.parse(text.replace(/'/g, '"'))); stateDialog.close(); } catch (error) { alert(`Unable to import ${state} points: ${error.message}`); } });
+            document.getElementById(`export-${state}-points`).addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedPointKeys(state).map(key => `'${key}'`).join(', ')}]`); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export ${state} points: ${error.message}`); } });
         });
         document.getElementById('clear-current').addEventListener('click', () => { document.querySelectorAll('.point').forEach(point => { point.dataset.state = 'grey'; point.classList.remove('grey-filled'); applyVisual(point, 'grey'); }); selectGuide(); saveState(); stateDialog.close(); });
-        document.getElementById('toggle-point-keys').addEventListener('click', event => { const visible = sheet.classList.toggle('show-point-keys'); event.currentTarget.setAttribute('aria-pressed', String(visible)); });
+        document.getElementById('toggle-point-keys').addEventListener('click', event => { const visible = sheet.classList.toggle('show-point-keys'); event.currentTarget.setAttribute('aria-pressed', String(visible)); stateDialog.close(); });
         stateDialog.addEventListener('click', event => { if (event.target === stateDialog) stateDialog.close(); }); guideDialog.addEventListener('click', event => { if (event.target === guideDialog) guideDialog.close(); });
         window.addEventListener('pagehide', saveState); buildSheet();
     </script>
