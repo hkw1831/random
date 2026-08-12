@@ -51,6 +51,7 @@
             color: #f3f4f6;
             font-size: clamp(9px, 2.2vw, 12px);
             font-weight: 700;
+            white-space: pre-line;
             border-bottom: 1px solid #575757;
         }
 
@@ -105,6 +106,23 @@
             content: "";
             transform: translate(-50%, -50%);
             transition: background-color 100ms ease, border-color 100ms ease, box-shadow 100ms ease;
+        }
+
+        .point::after {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-content: center;
+            overflow-wrap: anywhere;
+            color: #ffffff;
+            content: attr(data-key);
+            font: 700 5px/1 "Courier New", monospace;
+            pointer-events: none;
+            text-shadow: 0 0 2px #000000, 0 0 2px #000000;
+        }
+
+        #sheet.show-point-keys .point::after {
+            display: block;
         }
 
         .point:focus-visible {
@@ -252,6 +270,7 @@
             <button id="import-json" type="button">Import from JSON</button>
             <button id="clear-current" class="danger-button" type="button">Clear current</button>
             <button id="export-json" type="button">Export to JSON</button>
+            <button id="toggle-point-keys" type="button" aria-pressed="false">Show JSON field names</button>
         </div>
     </dialog>
     <dialog id="guide-dialog" class="state-dialog" aria-labelledby="guide-dialog-title">
@@ -260,7 +279,7 @@
     </dialog>
 
     <script>
-        const csv = `,AL,AM,IR,AN,ME,ME,AN,IR,AM,AL,RL,RM,LA,ER,RE,ME,RE,ER,LA,RM,RL
+        const csv = `,R|AL,R|AM,R|IR,R|AN,R|ME,L|ME,L|AN,L|IR,L|AM,L|AL,L|RL,L|RM,L|LA,L|ER,L|RE,ME,R|RE,R|ER,R|LA,R|RM,R|RL
 CP1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x,x
 CP2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
 CP3,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
@@ -268,8 +287,8 @@ CL,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
 TH1,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
 TH2,x,x,,,,,,,x,x,,x,,,,,,,,x,
 TH3,,x,,,,,,,x,,,x,,,,,,,,x,
-LU1P,x,x,x,,,,,x,x,x,,x,,x,,,,x,,x,
-LU2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+LU1P,x,x,x,,,,,x,x,x,x,x,,x,,,,x,,x,x
+LU2,x,x,x,x,x,,x,x,x,x,,x,x,x,x,x,x,x,x,x,
 LU3D,,x,,,,,,,x,,,,,,,,,,,,
 PV1P,x,x,x,,,,,x,x,x,x,x,,,,,,,,x,x
 PV2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
@@ -308,31 +327,23 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
         const stateDialog = document.getElementById('state-dialog');
         const guideSets = [
             { name: 'CC CF Balance', rule: 'cc-cf-balance' },
-            { name: '180 腳背', keys: ['an-pe1-lt', 'an-pe1-rt', 'la-pe1-lt', 'la-pe1-rt', 'er-pe1-lt', 'er-pe1-rt'] },
-            { name: '180 胸前', keys: ['an-th1-lt', 'an-th1-rt', 'me-sc1-lt', 'me-sc1-rt', 'ir-th1-lt', 'ir-th1-rt'] },
-            { name: '180 後肩頸', keys: ['re-cl-lt', 're-cl-rt', 'la-sc1-lt', 'la-sc1-rt', 'er-sc1-lt', 'er-sc1-rt'] },
+            { name: '180 腳背', keys: ['an-pe-lt', 'an-pe-rt', 'la-pe-lt', 'la-pe-rt', 'er-pe-lt', 'er-pe-rt'] },
+            { name: '180 胸前', keys: ['an-th-lt', 'an-th-rt', 'me-sc-lt', 'me-sc-rt', 'ir-th-lt', 'ir-th-rt'] },
+            { name: '180 後肩頸', keys: ['re-cl-lt', 're-cl-rt', 'la-sc-lt', 'la-sc-rt', 'er-sc-lt', 'er-sc-rt'] },
             { name: '180 前頸', keys: ['an-cl-lt', 'an-cl-rt', 'la-cl-lt', 'la-cl-rt', 'ir-cl-lt', 'ir-cl-rt'] },
-            { name: '180 臀部', keys: ['re-cx-lt', 're-cx-rt', 'la-pv2-lt', 'la-pv2-rt', 'er-cx-lt', 'er-cx-rt'] }
+            { name: '180 臀部', keys: ['re-cx-lt', 're-cx-rt', 'la-pv-lt', 'la-pv-rt', 'er-cx-lt', 'er-cx-rt'] }
         ];
         const ccCfBalanceRules = {
-            'an-sc1-lt': ['re-sc1-lt'], 'an-sc1-rt': ['re-sc1-rt'],
-            're-sc1-lt': ['an-sc1-lt'], 're-sc1-rt': ['an-sc1-rt'],
-            'an-sc2-lt': ['re-sc2-lt'], 'an-sc2-rt': ['re-sc2-rt'],
-            're-sc2-lt': ['an-sc2-lt'], 're-sc2-rt': ['an-sc2-rt'],
+            'an-sc-lt': ['re-sc-lt'], 'an-sc-rt': ['re-sc-rt'],
+            're-sc-lt': ['an-sc-lt'], 're-sc-rt': ['an-sc-rt'],
             'an-hu-lt': ['re-hu-lt'], 'an-hu-rt': ['re-hu-rt'],
             're-hu-lt': ['an-hu-lt'], 're-hu-rt': ['an-hu-rt'],
-            'an-cu1-lt': ['re-cu1-lt'], 'an-cu1-rt': ['re-cu1-rt'],
-            're-cu1-lt': ['an-cu1-lt'], 're-cu1-rt': ['an-cu1-rt'],
-            'an-cu2-lt': ['re-cu2-lt'], 'an-cu2-rt': ['re-cu2-rt'],
-            're-cu2-lt': ['an-cu2-lt'], 're-cu2-rt': ['an-cu2-rt'],
-            'an-ca1-lt': ['re-ca1-lt'], 'an-ca1-rt': ['re-ca1-rt'],
-            're-ca1-lt': ['an-ca1-lt'], 're-ca1-rt': ['an-ca1-rt'],
-            'an-ca2-lt': ['re-ca2-lt'], 'an-ca2-rt': ['re-ca2-rt'],
-            're-ca2-lt': ['an-ca2-lt'], 're-ca2-rt': ['an-ca2-rt'],
-            'an-di1-lt': ['re-di1-lt'], 'an-di1-rt': ['re-di1-rt'],
-            're-di1-lt': ['an-di1-lt'], 're-di1-rt': ['an-di1-rt'],
-            'an-di2-lt': ['re-di2-lt'], 'an-di2-rt': ['re-di2-rt'],
-            're-di2-lt': ['an-di2-lt'], 're-di2-rt': ['an-di2-rt']
+            'an-cu-lt': ['re-cu-lt'], 'an-cu-rt': ['re-cu-rt'],
+            're-cu-lt': ['an-cu-lt'], 're-cu-rt': ['an-cu-rt'],
+            'an-ca-lt': ['re-ca-lt'], 'an-ca-rt': ['re-ca-rt'],
+            're-ca-lt': ['an-ca-lt'], 're-ca-rt': ['an-ca-rt'],
+            'an-di-lt': ['re-di-lt'], 'an-di-rt': ['re-di-rt'],
+            're-di-lt': ['an-di-lt'], 're-di-rt': ['an-di-rt']
         };
         const guideDialog = document.getElementById('guide-dialog');
         const guideDialogTitle = document.getElementById('guide-dialog-title');
@@ -354,6 +365,9 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
                 RL: 're-la',
                 RM: 're-me'
             };
+            const [side, pointName] = header.split('|').length === 2
+                ? header.split('|')
+                : [undefined, header];
             const rowAliases = {
                 LU1P: 'lu-p',
                 LU2: 'lu',
@@ -362,26 +376,35 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
                 PV2: 'pv',
                 PV3D: 'pv-d'
             };
-            const prefix = prefixAliases[header] || header.toLowerCase();
+            const prefix = prefixAliases[pointName] || pointName.toLowerCase();
             const treatmentRow = rowName.toLowerCase().replace(/^(lu|pv)(\d+)[pd]$/, '$1$2');
-            const row = ['AL', 'AM', 'RL', 'RM'].includes(header)
+            const row = ['AL', 'AM', 'RL', 'RM'].includes(pointName)
                 ? treatmentRow
-                : ['IR', 'ER'].includes(header) && rowAliases[rowName]
+                : ['IR', 'ER'].includes(pointName) && rowAliases[rowName]
                     ? rowAliases[rowName]
                     : rowName.toLowerCase();
+            const usesNumberlessRow = ['AN', 'RE', 'ME', 'LA', 'IR', 'ER'].includes(pointName)
+                && !/^cp[123]$/i.test(rowName);
+            const usesNumberlessCuAlias = ['AL', 'AM', 'RL'].includes(pointName)
+                && /^CU\d+$/i.test(rowName);
+            const usesNumberlessRlThOrLu = pointName === 'RL' && /^(TH|LU)/i.test(rowName);
+            const keyRow = usesNumberlessRow || usesNumberlessCuAlias || usesNumberlessRlThOrLu
+                ? row.replace(/\d+$/, '')
+                : row;
             const matchingColumns = headers.reduce((indexes, value, index) => {
-                if (value === header) indexes.push(index);
+                if (value.split('|').at(-1) === pointName) indexes.push(index);
                 return indexes;
             }, []);
 
-            if (header === 'ME') {
-                if (isMergedMe) return `${prefix}-${row}-a`;
-                if (columnIndex === matchingColumns.at(-1)) return `${prefix}-${row}-r`;
-                return `${prefix}-${row}-${matchingColumns.indexOf(columnIndex) === 0 ? 'lt' : 'rt'}`;
+            if (pointName === 'ME') {
+                if (isMergedMe) return `${prefix}-${keyRow}-a`;
+                if (columnIndex === matchingColumns.at(-1)) return `${prefix}-${keyRow}-r`;
+                return `${prefix}-${keyRow}-${side === 'L' ? 'lt' : 'rt'}`;
             }
 
-            if (matchingColumns.length === 1) return `${prefix}-${row}`;
-            return `${prefix}-${row}-${matchingColumns.indexOf(columnIndex) === 0 ? 'lt' : 'rt'}`;
+            if (side) return `${prefix}-${keyRow}-${side === 'L' ? 'lt' : 'rt'}`;
+            if (matchingColumns.length === 1) return `${prefix}-${keyRow}`;
+            return `${prefix}-${keyRow}-${matchingColumns.indexOf(columnIndex) === 0 ? 'lt' : 'rt'}`;
         }
 
         function serializeState() {
@@ -620,7 +643,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
             const label = document.createElement('div');
             label.className = 'column-label';
             if (columnIndex === separatorAfterColumn) label.classList.add('separator-right');
-            label.textContent = header;
+            label.textContent = header.replaceAll('|', '\n');
             sheet.appendChild(label);
         });
 
@@ -754,6 +777,11 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
             } catch (error) {
                 alert(`Unable to export JSON: ${error.message}`);
             }
+        });
+
+        document.getElementById('toggle-point-keys').addEventListener('click', event => {
+            const isVisible = sheet.classList.toggle('show-point-keys');
+            event.currentTarget.setAttribute('aria-pressed', String(isVisible));
         });
 
         window.addEventListener('pagehide', saveState);
