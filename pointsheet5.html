@@ -183,7 +183,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             'an-di-lt': ['re-di-lt'],
             'an-di-rt': ['re-di-rt'],
             're-di-lt': ['an-di-lt'],
-            're-di-rt': ['an-di-rt']
+            're-di-rt': ['re-di-lt']
         };
         const sheet = document.getElementById('sheet');
         const stateDialog = document.getElementById('state-dialog');
@@ -249,7 +249,6 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             if (guide?.rule !== 'cc-cf-balance') return guide?.keys || [];
             const points = [...document.querySelectorAll('.point')]; const keys = new Set();
             points.filter(point => point.classList.contains('treated')).forEach(point => {
-                points.filter(candidate => candidate.dataset.columnIndex === point.dataset.columnIndex).forEach(candidate => keys.add(candidate.dataset.key));
                 (balanceRules[point.dataset.key] || []).forEach(key => keys.add(key));
             });
             return [...keys];
