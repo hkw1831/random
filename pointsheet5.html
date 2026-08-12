@@ -38,6 +38,9 @@
         .state-dialog-actions button, .guide-actions button { min-height: 38px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 13px Arial, sans-serif; }
         .state-dialog-actions button:hover, .state-dialog-actions button:focus-visible, .guide-actions button:hover, .guide-actions button:focus-visible { background: #454545; }
         .state-dialog-actions .danger-button { color: #fecaca; }
+        .state-data-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+        .state-data-actions button { font-size: 11px; line-height: 1.15; }
+        .grey-point-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .guide-actions button[aria-pressed="true"] { border-color: #22d3ee; background: #155e75; }
         .guide-actions button.guide-target { border-color: #a5f3fc; background: #454545; }
         .guide-group { display: grid; gap: 8px; }
@@ -55,16 +58,34 @@
 <body>
     <main id="sheet" aria-label="Pointsheet"></main>
     <dialog id="state-dialog" class="state-dialog" aria-labelledby="state-dialog-title">
-        <h2 id="state-dialog-title">Pointsheet data</h2>
+        <h2 id="state-dialog-title">Admin</h2>
         <div class="state-dialog-actions">
-            <button id="import-json" type="button">Import from JSON</button>
-            <button id="clear-current" class="danger-button" type="button">Clear current</button>
-            <button id="export-json" type="button">Export to JSON</button>
+            <div class="state-data-actions">
+                <button id="import-json" type="button">Import from JSON</button>
+                <button id="clear-current" class="danger-button" type="button">Clear current</button>
+                <button id="export-json" type="button">Export to JSON</button>
+            </div>
             <button id="toggle-point-keys" type="button" aria-pressed="false">Show JSON field names</button>
+            <div class="grey-point-actions">
+                <button id="import-grey-points" type="button">Import grey points</button>
+                <button id="export-grey-points" type="button">Export grey points</button>
+            </div>
+            <div class="grey-point-actions">
+                <button id="import-yellow-points" type="button">Import yellow points</button>
+                <button id="export-yellow-points" type="button">Export yellow points</button>
+            </div>
+            <div class="grey-point-actions">
+                <button id="import-green-points" type="button">Import green points</button>
+                <button id="export-green-points" type="button">Export green points</button>
+            </div>
+            <div class="grey-point-actions">
+                <button id="import-red-points" type="button">Import red points</button>
+                <button id="export-red-points" type="button">Export red points</button>
+            </div>
         </div>
     </dialog>
     <dialog id="guide-dialog" class="state-dialog" aria-labelledby="guide-dialog-title">
-        <h2 id="guide-dialog-title">Assistance: none</h2>
+        <h2 id="guide-dialog-title">Assistance</h2>
         <div class="layout-switch" aria-label="Layout">
             <button type="button" data-layout="fmmd" aria-pressed="true">FMMD</button>
             <button type="button" data-layout="fmid" aria-pressed="false">FMID</button>
@@ -642,6 +663,40 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             return { version: 1, points: Object.fromEntries([...document.querySelectorAll('.point')].filter(point => point.dataset.state !== 'grey' || point.classList.contains('state-grey')).map(point => [point.dataset.key, { level: levels[point.dataset.state], treated: point.classList.contains('treated') }])) };
         }
         function saveState() { localStorage.setItem(getStorageKey(), JSON.stringify(serializeState())); }
+        function selectedGreyPointKeys() {
+            return [...document.querySelectorAll('.point.grey-filled')].map(point => point.dataset.key);
+        }
+        function restoreSelectedGreyPoints(keys) {
+            if (!Array.isArray(keys) || !keys.every(key => typeof key === 'string')) throw new Error('Expected an array of point names.');
+            const selectedKeys = new Set(keys);
+            document.querySelectorAll('.point').forEach(point => {
+                if (point.dataset.state !== 'grey') return;
+                point.classList.toggle('grey-filled', selectedKeys.has(point.dataset.key));
+                applyVisual(point, 'grey');
+            });
+            saveState();
+        }
+        function selectedPointKeys(state) {
+            return [...document.querySelectorAll('.point')].filter(point => point.dataset.state === state).map(point => point.dataset.key);
+        }
+        function restoreSelectedColoredPoints(state, keys) {
+            if (!['yellow', 'green', 'red'].includes(state)) throw new Error('Expected a colored point state.');
+            if (!Array.isArray(keys) || !keys.every(key => typeof key === 'string')) throw new Error('Expected an array of point names.');
+            const selectedKeys = new Set(keys);
+            document.querySelectorAll('.point').forEach(point => {
+                if (point.dataset.state === state) {
+                    point.dataset.state = 'grey';
+                    point.classList.remove('grey-filled');
+                    applyVisual(point, 'grey');
+                }
+                if (selectedKeys.has(point.dataset.key)) {
+                    point.dataset.state = state;
+                    point.classList.remove('grey-filled');
+                    applyVisual(point, state);
+                }
+            });
+            refreshGuide(); saveState();
+        }
         function restoreState(saved) {
             if (!saved?.points || typeof saved.points !== 'object') throw new Error('Expected a JSON object with a points property.');
             document.querySelectorAll('.point').forEach(point => {
@@ -668,7 +723,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         function selectGuide(guide) {
             activeGuide = guide; const keys = new Set(guideKeys(guide));
             document.querySelectorAll('.point').forEach(point => point.classList.toggle('guided', keys.has(point.dataset.key)));
-            guideDialogTitle.textContent = `Assistance: ${guide?.name || 'none'}`;
+            guideDialogTitle.textContent = `Assistance`;
             guideActions.querySelectorAll('button[data-guide-name]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.guideName === guide?.name)));
         }
         function refreshGuide() { if (activeGuide?.rule) selectGuide(activeGuide); }
@@ -705,6 +760,12 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; activeGuide = undefined; buildSheet(); guideDialog.close(); }));
         document.getElementById('import-json').addEventListener('click', async () => { try { restoreState(JSON.parse(await navigator.clipboard.readText())); stateDialog.close(); } catch (error) { alert(`Unable to import JSON: ${error.message}`); } });
         document.getElementById('export-json').addEventListener('click', async () => { try { await navigator.clipboard.writeText(JSON.stringify(serializeState(), null, 2)); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export JSON: ${error.message}`); } });
+        document.getElementById('import-grey-points').addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedGreyPoints(JSON.parse(text.replace(/'/g, '"'))); } catch (error) { alert(`Unable to import grey points: ${error.message}`); } });
+        document.getElementById('export-grey-points').addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedGreyPointKeys().map(key => `'${key}'`).join(', ')}]`); saveState(); } catch (error) { alert(`Unable to export grey points: ${error.message}`); } });
+        ['yellow', 'green', 'red'].forEach(state => {
+            document.getElementById(`import-${state}-points`).addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedColoredPoints(state, JSON.parse(text.replace(/'/g, '"'))); } catch (error) { alert(`Unable to import ${state} points: ${error.message}`); } });
+            document.getElementById(`export-${state}-points`).addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedPointKeys(state).map(key => `'${key}'`).join(', ')}]`); saveState(); } catch (error) { alert(`Unable to export ${state} points: ${error.message}`); } });
+        });
         document.getElementById('clear-current').addEventListener('click', () => { document.querySelectorAll('.point').forEach(point => { point.dataset.state = 'grey'; point.classList.remove('grey-filled'); applyVisual(point, 'grey'); }); selectGuide(); saveState(); stateDialog.close(); });
         document.getElementById('toggle-point-keys').addEventListener('click', event => { const visible = sheet.classList.toggle('show-point-keys'); event.currentTarget.setAttribute('aria-pressed', String(visible)); });
         stateDialog.addEventListener('click', event => { if (event.target === stateDialog) stateDialog.close(); }); guideDialog.addEventListener('click', event => { if (event.target === guideDialog) guideDialog.close(); });
