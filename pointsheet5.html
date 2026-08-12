@@ -40,6 +40,11 @@
         .state-dialog-actions .danger-button { color: #fecaca; }
         .guide-actions button[aria-pressed="true"] { border-color: #22d3ee; background: #155e75; }
         .guide-actions button.guide-target { border-color: #a5f3fc; background: #454545; }
+        .guide-group { display: grid; gap: 8px; }
+        .guide-group-title { color: #d4d4d4; font: 700 13px Arial, sans-serif; }
+        .guide-grid { display: grid; gap: 8px; }
+        .guide-grid.columns-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .guide-grid.columns-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .layout-switch { display: grid; grid-template-columns: 1fr 1fr; min-height: 38px; border: 1px solid #575757; border-radius: 3px; overflow: hidden; }
         .layout-switch button { border: 0; border-radius: 0; background: #272727; color: inherit; cursor: pointer; font: 700 13px Arial, sans-serif; }
         .layout-switch button + button { border-left: 1px solid #575757; }
@@ -143,20 +148,41 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
                 moveRightMeToRe: true
             }
         };
-        const guideSets = [
-            { name: 'CC CF Balance', rule: 'cc-cf-balance' },
-            { name: '180 腳背', keys: ['an-pe-lt', 'an-pe-rt', 'la-pe-lt', 'la-pe-rt', 'er-pe-lt', 'er-pe-rt'] },
-            { name: '180 胸前', keys: ['an-th-lt', 'an-th-rt', 'me-sc-lt', 'me-sc-rt', 'ir-th-lt', 'ir-th-rt'] },
-            { name: '180 後肩頸', keys: ['re-cl-lt', 're-cl-rt', 'la-sc-lt', 'la-sc-rt', 'er-sc-lt', 'er-sc-rt'] },
-            { name: '180 前頸', keys: ['an-cl-lt', 'an-cl-rt', 'la-cl-lt', 'la-cl-rt', 'ir-cl-lt', 'ir-cl-rt'] },
-            { name: '180 臀部', keys: ['re-cx-lt', 're-cx-rt', 'la-pv-lt', 'la-pv-rt', 'er-cx-lt', 'er-cx-rt'] }
+        const guideGroups = [
+            { guides: [{ name: 'CC CF Balance', rule: 'cc-cf-balance' }] },
+            { title: '橫向觸診', columns: 3, guides: [
+                { name: '180 腳背', keys: ['an-pe-lt', 'an-pe-rt', 'la-pe-lt', 'la-pe-rt', 'er-pe-lt', 'er-pe-rt'] },
+                { name: '180 胸前', keys: ['an-th-lt', 'an-th-rt', 'me-sc-lt', 'me-sc-rt', 'ir-th-lt', 'ir-th-rt'] },
+                { name: '180 後肩頸', keys: ['re-cl-lt', 're-cl-rt', 'la-sc-lt', 'la-sc-rt', 'er-sc-lt', 'er-sc-rt'] },
+                { name: '180 前頸', keys: ['an-cl-lt', 'an-cl-rt', 'la-cl-lt', 'la-cl-rt', 'ir-cl-lt', 'ir-cl-rt'] },
+                { name: '180 臀部', keys: ['re-cx-lt', 're-cx-rt', 'la-pv-lt', 'la-pv-rt', 'er-cx-lt', 'er-cx-rt'] }
+            ] },
+            { title: '張拉結構', columns: 4, guides: [{ name: 'TCL', keys: [] }, { name: 'TTH', keys: [] }, { name: 'TLU', keys: [] }, { name: 'TPV', keys: [] }] },
+            { title: 'Caterenies', columns: 3, guides: [{ name: 'AP', keys: [] }, { name: 'LL', keys: [] }, { name: 'OB', keys: [] }] },
+            { title: 'MFID', columns: 3, guides: [{ name: '1', keys: [] }, { name: '2', keys: [] }, { name: '3', keys: [] }, { name: '4', keys: [] }] }
         ];
+        const guideSets = guideGroups.flatMap(group => group.guides);
         const balanceRules = {
-            'an-sc-lt': ['re-sc-lt'], 'an-sc-rt': ['re-sc-rt'], 're-sc-lt': ['an-sc-lt'], 're-sc-rt': ['an-sc-rt'],
-            'an-hu-lt': ['re-hu-lt'], 'an-hu-rt': ['re-hu-rt'], 're-hu-lt': ['an-hu-lt'], 're-hu-rt': ['an-hu-rt'],
-            'an-cu-lt': ['re-cu-lt'], 'an-cu-rt': ['re-cu-rt'], 're-cu-lt': ['an-cu-lt'], 're-cu-rt': ['an-cu-rt'],
-            'an-ca-lt': ['re-ca-lt'], 'an-ca-rt': ['re-ca-rt'], 're-ca-lt': ['an-ca-lt'], 're-ca-rt': ['an-ca-rt'],
-            'an-di-lt': ['re-di-lt'], 'an-di-rt': ['re-di-rt'], 're-di-lt': ['an-di-lt'], 're-di-rt': ['an-di-rt']
+            'an-sc-lt': ['re-sc-lt'], 
+            'an-sc-rt': ['re-sc-rt'],
+            're-sc-lt': ['an-sc-lt'],
+            're-sc-rt': ['an-sc-rt'],
+            'an-hu-lt': ['re-hu-lt'],
+            'an-hu-rt': ['re-hu-rt'],
+            're-hu-lt': ['an-hu-lt'],
+            're-hu-rt': ['an-hu-rt'],
+            'an-cu-lt': ['re-cu-lt'],
+            'an-cu-rt': ['re-cu-rt'],
+            're-cu-lt': ['an-cu-lt'],
+            're-cu-rt': ['an-cu-rt'],
+            'an-ca-lt': ['re-ca-lt'],
+            'an-ca-rt': ['re-ca-rt'],
+            're-ca-lt': ['an-ca-lt'],
+            're-ca-rt': ['an-ca-rt'],
+            'an-di-lt': ['re-di-lt'],
+            'an-di-rt': ['re-di-rt'],
+            're-di-lt': ['an-di-lt'],
+            're-di-rt': ['an-di-rt']
         };
         const sheet = document.getElementById('sheet');
         const stateDialog = document.getElementById('state-dialog');
@@ -262,7 +288,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             rows.forEach(([rowName, ...marks]) => { const label = document.createElement('div'); label.className = 'row-label'; if (separatorAfterRows.has(rowName)) label.classList.add('separator-bottom'); label.textContent = rowName; sheet.appendChild(label); headers.forEach((header, index) => { if (mergedMeRows.has(rowName) && index === firstMeColumn + 1) return; const cell = document.createElement('div'); cell.className = 'cell'; if (layout.separatorColumns.includes(index)) cell.classList.add('separator-right'); if (separatorAfterRows.has(rowName)) cell.classList.add('separator-bottom'); const merged = mergedMeRows.has(rowName) && index === firstMeColumn; if (merged) { cell.classList.add('merged-me'); cell.style.gridColumn = 'span 2'; } const hasPoint = merged ? marks.slice(firstMeColumn, firstMeColumn + 2).some(mark => mark?.trim().toLowerCase() === 'x') : marks[index]?.trim().toLowerCase() === 'x'; if (hasPoint) renderPoint(cell, rowName, header, index, merged); sheet.appendChild(cell); }); });
             loadState(); document.querySelectorAll('[data-layout]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layout === layoutId)));
         }
-        guideSets.forEach(guide => { const button = document.createElement('button'); button.type = 'button'; button.dataset.guideName = guide.name; button.textContent = guide.name; button.addEventListener('click', () => { selectGuide(guide); guideDialog.close(); }); guideActions.appendChild(button); });
+        guideGroups.forEach(group => { const section = document.createElement('section'); section.className = 'guide-group'; if (group.title) { const title = document.createElement('div'); title.className = 'guide-group-title'; title.textContent = group.title; section.appendChild(title); } const grid = document.createElement('div'); grid.className = group.columns ? `guide-grid columns-${group.columns}` : 'guide-grid'; group.guides.forEach(guide => { const button = document.createElement('button'); button.type = 'button'; button.dataset.guideName = guide.name; button.textContent = guide.name; button.addEventListener('click', () => { selectGuide(guide); guideDialog.close(); }); grid.appendChild(button); }); section.appendChild(grid); guideActions.appendChild(section); });
         const clearGuide = document.createElement('button'); clearGuide.type = 'button'; clearGuide.dataset.guideAction = 'clear'; clearGuide.textContent = 'Clear guide'; clearGuide.addEventListener('click', () => { selectGuide(); guideDialog.close(); }); guideActions.appendChild(clearGuide);
         document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; activeGuide = undefined; buildSheet(); stateDialog.close(); }));
         document.getElementById('import-json').addEventListener('click', async () => { try { restoreState(JSON.parse(await navigator.clipboard.readText())); stateDialog.close(); } catch (error) { alert(`Unable to import JSON: ${error.message}`); } });
