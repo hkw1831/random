@@ -242,10 +242,6 @@
             background: #454545;
         }
 
-        .dialog-close {
-            margin-top: 12px;
-            color: #d4d4d4;
-        }
     </style>
 </head>
 <body>
@@ -256,7 +252,6 @@
             <button id="import-json" type="button">Import from JSON</button>
             <button id="clear-current" class="danger-button" type="button">Clear current</button>
             <button id="export-json" type="button">Export to JSON</button>
-            <button id="close-dialog" class="dialog-close" type="button">Close</button>
         </div>
     </dialog>
     <dialog id="guide-dialog" class="state-dialog" aria-labelledby="guide-dialog-title">
@@ -448,6 +443,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
                 point.classList.remove('grey-filled');
                 applyPointVisualState(point, 'grey');
             });
+            selectGuide();
             saveState();
         }
 
@@ -570,6 +566,9 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
 
         guideDialog.addEventListener('click', event => {
             if (event.target === guideDialog) guideDialog.close();
+        });
+        stateDialog.addEventListener('click', event => {
+            if (event.target === stateDialog) stateDialog.close();
         });
 
         headers.forEach((header, columnIndex) => {
@@ -711,7 +710,6 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`;
             }
         });
 
-        document.getElementById('close-dialog').addEventListener('click', () => stateDialog.close());
         window.addEventListener('pagehide', saveState);
         loadSavedState();
     </script>
