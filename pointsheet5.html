@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pointsheet</title>
+    <style>
+        :root { --label-width: 38px; --header-height: 28px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { width: 100%; height: 100%; background: #0d0d0d; }
+        body { color: #d4d4d4; font-family: "Courier New", monospace; overflow: hidden; }
+        #sheet { display: grid; grid-template-columns: var(--label-width) repeat(21, minmax(0, 1fr)); grid-template-rows: var(--header-height) repeat(31, minmax(0, 1fr)); width: 100vw; height: 100dvh; padding: 4px; }
+        .corner, .column-label, .row-label, .cell { display: flex; align-items: center; justify-content: center; }
+        .column-label { color: #f3f4f6; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; white-space: pre-line; border-bottom: 1px solid #575757; }
+        .row-label { justify-content: flex-end; padding-right: 3px; color: #d4d4d4; font-size: clamp(10px, 2.5vw, 13px); font-weight: 700; border-right: 1px solid #575757; }
+        .cell { position: relative; border-right: 1px solid #202020; border-bottom: 1px solid #202020; }
+        .separator-right { border-right: 2px solid #f59e0b; }
+        .separator-bottom { border-bottom: 2px solid #f59e0b; }
+        .point { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: none; cursor: pointer; touch-action: none; }
+        .point.guided { background: #155e75; }
+        .point::before { position: absolute; top: 50%; left: 50%; width: 90%; aspect-ratio: 1; max-height: 90%; border: 1px solid #3b3b3b; border-radius: 50%; background: #202020; content: ""; transform: translate(-50%, -50%); transition: background-color 100ms ease, border-color 100ms ease, box-shadow 100ms ease; }
+        .point::after { position: absolute; inset: 0; display: none; align-content: center; overflow-wrap: anywhere; color: #fff; content: attr(data-key); font: 700 5px/1 "Courier New", monospace; pointer-events: none; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+        #sheet.show-point-keys .point::after { display: block; }
+        .point:focus-visible { outline: 2px solid #facc15; outline-offset: -2px; }
+        .point.state-yellow::before { background: #fde68a; border-color: #facc15; box-shadow: 0 0 6px #fde68a99; }
+        .point.state-grey::before { background: #6b7280; border-color: #9ca3af; box-shadow: 0 0 6px #9ca3af66; }
+        .point.state-green::before { background: #22c55e; border-color: #16a34a; box-shadow: 0 0 6px #22c55e99; }
+        .point.state-red::before { background: #ef4444; border-color: #dc2626; box-shadow: 0 0 6px #ef444499; }
+        .point.treated::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M24 24L76 76M76 24L24 76' fill='none' stroke='%23101010' stroke-width='15' stroke-linecap='round'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 72%; }
+        .point.active::before { outline: 2px dashed #e5e7eb; outline-offset: 2px; }
+        .point.preview-red::before { outline-color: #f87171; } .point.preview-green::before { outline-color: #4ade80; } .point.preview-yellow::before { outline-color: #facc15; } .point.preview-grey::before { outline-color: #9ca3af; }
+        .merged-me .point::before { width: 45%; }
+        .clear-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(16px, 3.5vw, 22px) Arial, sans-serif; line-height: 1; }
+        .state-dialog { width: min(320px, calc(100vw - 32px)); border: 1px solid #737373; border-radius: 5px; background: #1c1c1c; color: #f3f4f6; padding: 18px; }
+        .state-dialog::backdrop { background: #00000099; }
+        .state-dialog h2 { margin-bottom: 14px; font: 700 16px Arial, sans-serif; }
+        .state-dialog-actions, .guide-actions { display: grid; gap: 8px; }
+        .state-dialog-actions button, .guide-actions button { min-height: 38px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 13px Arial, sans-serif; }
+        .state-dialog-actions button:hover, .state-dialog-actions button:focus-visible, .guide-actions button:hover, .guide-actions button:focus-visible { background: #454545; }
+        .state-dialog-actions .danger-button { color: #fecaca; }
+        .guide-actions button[aria-pressed="true"] { border-color: #22d3ee; background: #155e75; }
+        .guide-actions button.guide-target { border-color: #a5f3fc; background: #454545; }
+        .layout-switch { display: grid; grid-template-columns: 1fr 1fr; min-height: 38px; border: 1px solid #575757; border-radius: 3px; overflow: hidden; }
+        .layout-switch button { border: 0; border-radius: 0; background: #272727; color: inherit; cursor: pointer; font: 700 13px Arial, sans-serif; }
+        .layout-switch button + button { border-left: 1px solid #575757; }
+        .layout-switch button[aria-pressed="true"] { background: #155e75; color: #ecfeff; }
+    </style>
+</head>
+<body>
+    <main id="sheet" aria-label="Pointsheet"></main>
+    <dialog id="state-dialog" class="state-dialog" aria-labelledby="state-dialog-title">
+        <h2 id="state-dialog-title">Pointsheet data</h2>
+        <div class="state-dialog-actions">
+            <div class="layout-switch" aria-label="Layout">
+                <button type="button" data-layout="fmmd" aria-pressed="true">FMMD</button>
+                <button type="button" data-layout="fmid" aria-pressed="false">FMID</button>
+            </div>
+            <button id="import-json" type="button">Import from JSON</button>
+            <button id="clear-current" class="danger-button" type="button">Clear current</button>
+            <button id="export-json" type="button">Export to JSON</button>
+            <button id="toggle-point-keys" type="button" aria-pressed="false">Show JSON field names</button>
+        </div>
+    </dialog>
+    <dialog id="guide-dialog" class="state-dialog" aria-labelledby="guide-dialog-title">
+        <h2 id="guide-dialog-title">Assistance: none</h2>
+        <div id="guide-actions" class="guide-actions"></div>
+    </dialog>
+    <script>
+        const layouts = {
+            fmmd: {
+                name: 'FMMD',
+                csv: `,L|AN,R|AN,L|RE,R|RE,L|ME,R|ME,ME,L|LA,R|LA,L|IR,R|IR,L|ER,R|ER,L|AL,L|AM,R|AM,R|AL,L|RL,L|RM,R|RM,R|RL
+CP1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CP2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CP3,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CL,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+TH1,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+TH2,,,,,,,,,,,,,,x,x,x,x,,x,x,
+TH3,,,,,,,,,,,,,,,x,x,,,x,x,
+LU1P,,,,,,,,,,x,x,x,x,x,x,x,x,x,x,x,x
+LU2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,,x,x,,x
+LU3D,,,,,,,,,,,,,,,x,x,,,,,
+PV1P,,,,,,,,,,x,x,,,x,x,x,x,x,x,x,x
+PV2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+PV3D,,,,,,,,,,,,x,x,,x,x,,,,,
+CX,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+GE1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+GE2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+GE3,,,,,,,,,,,,,,x,x,x,x,,,,,
+TA1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+TA2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+PE1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+PE2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+PE3,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+SC1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+SC2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+HU,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CU1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CU2,,,,,,,,,,,,,,,,,,,x,x,
+CA1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CA2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+DI1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+DI2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x`,
+                separatorColumns: [3, 8, 12, 16],
+                rightMeColumn: 6
+            },
+            fmid: {
+                name: 'FMID',
+                csv: `,R|AL,R|AM,R|IR,R|AN,R|ME,L|ME,L|AN,L|IR,L|AM,L|AL,L|RL,L|RM,L|LA,L|ER,L|RE,ME,R|RE,R|ER,R|LA,R|RM,R|RL
+CP1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x,x
+CP2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CP3,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CL,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+TH1,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+TH2,x,x,,,,,,,x,x,,x,,,,,,,,x,
+TH3,,x,,,,,,,x,,,x,,,,,,,,x,
+LU1P,x,x,x,,,,,x,x,x,x,x,,x,,,,x,,x,x
+LU2,x,x,x,x,x,,x,x,x,x,,x,x,x,x,x,x,x,x,x,
+LU3D,,x,,,,,,,x,,,,,,,,,,,,
+PV1P,x,x,x,,,,,x,x,x,x,x,,,,,,,,x,x
+PV2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+PV3D,,x,,,,,,,x,,,,,x,,,,x,,,
+CX,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+GE1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+GE2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+GE3,x,x,,,,,,,x,x,,,,,,,,,,,
+TA1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+TA2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+PE1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+PE2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+PE3,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+SC1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+SC2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+HU,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+CU1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+CU2,,,,,,,,,,,,x,,,,,,,,x,
+CA1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+CA2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+DI1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
+                separatorColumns: [9],
+                rightMeColumn: 15,
+                moveRightMeToRe: true
+            }
+        };
+        const guideSets = [
+            { name: 'CC CF Balance', rule: 'cc-cf-balance' },
+            { name: '180 腳背', keys: ['an-pe-lt', 'an-pe-rt', 'la-pe-lt', 'la-pe-rt', 'er-pe-lt', 'er-pe-rt'] },
+            { name: '180 胸前', keys: ['an-th-lt', 'an-th-rt', 'me-sc-lt', 'me-sc-rt', 'ir-th-lt', 'ir-th-rt'] },
+            { name: '180 後肩頸', keys: ['re-cl-lt', 're-cl-rt', 'la-sc-lt', 'la-sc-rt', 'er-sc-lt', 'er-sc-rt'] },
+            { name: '180 前頸', keys: ['an-cl-lt', 'an-cl-rt', 'la-cl-lt', 'la-cl-rt', 'ir-cl-lt', 'ir-cl-rt'] },
+            { name: '180 臀部', keys: ['re-cx-lt', 're-cx-rt', 'la-pv-lt', 'la-pv-rt', 'er-cx-lt', 'er-cx-rt'] }
+        ];
+        const balanceRules = {
+            'an-sc-lt': ['re-sc-lt'], 'an-sc-rt': ['re-sc-rt'], 're-sc-lt': ['an-sc-lt'], 're-sc-rt': ['an-sc-rt'],
+            'an-hu-lt': ['re-hu-lt'], 'an-hu-rt': ['re-hu-rt'], 're-hu-lt': ['an-hu-lt'], 're-hu-rt': ['an-hu-rt'],
+            'an-cu-lt': ['re-cu-lt'], 'an-cu-rt': ['re-cu-rt'], 're-cu-lt': ['an-cu-lt'], 're-cu-rt': ['an-cu-rt'],
+            'an-ca-lt': ['re-ca-lt'], 'an-ca-rt': ['re-ca-rt'], 're-ca-lt': ['an-ca-lt'], 're-ca-rt': ['an-ca-rt'],
+            'an-di-lt': ['re-di-lt'], 'an-di-rt': ['re-di-rt'], 're-di-lt': ['an-di-lt'], 're-di-rt': ['an-di-rt']
+        };
+        const sheet = document.getElementById('sheet');
+        const stateDialog = document.getElementById('state-dialog');
+        const guideDialog = document.getElementById('guide-dialog');
+        const guideActions = document.getElementById('guide-actions');
+        const guideDialogTitle = document.getElementById('guide-dialog-title');
+        const separatorAfterRows = new Set(['CL', 'PV3D', 'PE3']);
+        const mergedMeRows = new Set(['CP2', 'CP3', 'CL', 'TH1', 'TH2', 'TH3', 'LU1P', 'LU2', 'LU3D', 'PV1P', 'PV2', 'PV3D']);
+        const firstMeColumn = 4;
+        let layoutId = location.hash === '#fmid' ? 'fmid' : 'fmmd';
+        let layout;
+        let headers;
+        let rows;
+        let activeGuide;
+
+        function getStorageKey() { return 'pointsheet5-state'; }
+        function pointKey(rowName, header, columnIndex, isMergedMe) {
+            const aliases = { AL: 'an-la', AM: 'an-me', RL: 're-la', RM: 're-me' };
+            const [side, pointName] = header.includes('|') ? header.split('|') : [undefined, header];
+            const prefix = aliases[pointName] || pointName.toLowerCase();
+            const treatmentRow = rowName.toLowerCase().replace(/^(lu|pv)(\d+)[pd]$/, '$1$2');
+            const rowAliases = { LU1P: 'lu-p', LU2: 'lu', LU3D: 'lu-d', PV1P: 'pv-p', PV2: 'pv', PV3D: 'pv-d' };
+            const row = ['AL', 'AM', 'RL', 'RM'].includes(pointName) ? treatmentRow : ['IR', 'ER'].includes(pointName) && rowAliases[rowName] ? rowAliases[rowName] : rowName.toLowerCase();
+            const numberless = ['AN', 'RE', 'ME', 'LA', 'IR', 'ER'].includes(pointName) && !/^cp[123]$/i.test(rowName);
+            const cuAlias = ['AL', 'AM', 'RL'].includes(pointName) && /^CU\d+$/i.test(rowName);
+            const rlThOrLu = pointName === 'RL' && /^(TH|LU)/i.test(rowName);
+            const keyRow = numberless || cuAlias || rlThOrLu ? row.replace(/\d+$/, '') : row;
+            if (pointName === 'ME') {
+                if (isMergedMe) return `${prefix}-${keyRow}-a`;
+                if (columnIndex === layout.rightMeColumn) return `${prefix}-${keyRow}-r`;
+                return `${prefix}-${keyRow}-${side === 'L' ? 'lt' : 'rt'}`;
+            }
+            if (side) return `${prefix}-${keyRow}-${side === 'L' ? 'lt' : 'rt'}`;
+            const matching = headers.map((value, index) => value.split('|').at(-1) === pointName ? index : -1).filter(index => index >= 0);
+            return matching.length === 1 ? `${prefix}-${keyRow}` : `${prefix}-${keyRow}-${matching.indexOf(columnIndex) === 0 ? 'lt' : 'rt'}`;
+        }
+        function applyVisual(point, state, treated = false) {
+            point.classList.remove('state-grey', 'state-yellow', 'state-green', 'state-red');
+            if (state !== 'grey' || point.classList.contains('grey-filled')) point.classList.add(`state-${state}`);
+            point.classList.toggle('treated', state !== 'grey' && treated);
+        }
+        function serializeState() {
+            const levels = { grey: 0, yellow: 1, green: 2, red: 3 };
+            return { version: 1, points: Object.fromEntries([...document.querySelectorAll('.point')].filter(point => point.dataset.state !== 'grey' || point.classList.contains('state-grey')).map(point => [point.dataset.key, { level: levels[point.dataset.state], treated: point.classList.contains('treated') }])) };
+        }
+        function saveState() { localStorage.setItem(getStorageKey(), JSON.stringify(serializeState())); }
+        function restoreState(saved) {
+            if (!saved?.points || typeof saved.points !== 'object') throw new Error('Expected a JSON object with a points property.');
+            document.querySelectorAll('.point').forEach(point => {
+                point.dataset.state = 'grey'; point.classList.remove('grey-filled');
+                const value = saved.points[point.dataset.key];
+                if (value && Number.isInteger(value.level) && ['grey', 'yellow', 'green', 'red'][value.level]) {
+                    point.dataset.state = ['grey', 'yellow', 'green', 'red'][value.level];
+                    point.classList.toggle('grey-filled', point.dataset.state === 'grey');
+                    applyVisual(point, point.dataset.state, Boolean(value.treated));
+                } else applyVisual(point, 'grey');
+            });
+            refreshGuide(); saveState();
+        }
+        function loadState() { try { const saved = localStorage.getItem(getStorageKey()); if (saved) restoreState(JSON.parse(saved)); } catch { localStorage.removeItem(getStorageKey()); } }
+        function updatePoint(point, state) { point.dataset.state = state; point.classList.remove('grey-filled'); applyVisual(point, state, point.classList.contains('treated')); saveState(); refreshGuide(); }
+        function guideKeys(guide) {
+            if (guide?.rule !== 'cc-cf-balance') return guide?.keys || [];
+            const points = [...document.querySelectorAll('.point')]; const keys = new Set();
+            points.filter(point => point.classList.contains('treated')).forEach(point => {
+                points.filter(candidate => candidate.dataset.columnIndex === point.dataset.columnIndex).forEach(candidate => keys.add(candidate.dataset.key));
+                (balanceRules[point.dataset.key] || []).forEach(key => keys.add(key));
+            });
+            return [...keys];
+        }
+        function selectGuide(guide) {
+            activeGuide = guide; const keys = new Set(guideKeys(guide));
+            document.querySelectorAll('.point').forEach(point => point.classList.toggle('guided', keys.has(point.dataset.key)));
+            guideDialogTitle.textContent = `Assistance: ${guide?.name || 'none'}`;
+            guideActions.querySelectorAll('button[data-guide-name]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.guideName === guide?.name)));
+        }
+        function refreshGuide() { if (activeGuide?.rule) selectGuide(activeGuide); }
+        function renderPoint(cell, rowName, header, columnIndex, isMergedMe) {
+            const point = document.createElement('button'); point.type = 'button'; point.className = 'point'; point.dataset.key = pointKey(rowName, header, columnIndex, isMergedMe); point.dataset.columnIndex = columnIndex; point.dataset.state = 'grey'; point.setAttribute('aria-label', `${rowName} ${header}`);
+            let startX; let startY; let pointerId; let preview; let wasTreated;
+            const clearPreview = () => { preview = undefined; pointerId = undefined; point.classList.remove('active', 'preview-red', 'preview-green', 'preview-yellow', 'preview-grey'); applyVisual(point, point.dataset.state, wasTreated); };
+            const swipe = (x, y) => Math.abs(x) < 12 && Math.abs(y) < 12 ? undefined : Math.abs(x) >= Math.abs(y) ? x > 0 ? 'green' : 'grey' : y < 0 ? 'red' : 'yellow';
+            point.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; wasTreated = point.classList.contains('treated'); point.classList.add('active'); point.setPointerCapture(pointerId); });
+            point.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; const state = swipe(event.clientX - startX, event.clientY - startY); if (state === preview) return; preview = state; point.classList.remove('preview-red', 'preview-green', 'preview-yellow', 'preview-grey'); if (state) { point.classList.add(`preview-${state}`); applyVisual(point, state, wasTreated); } else applyVisual(point, point.dataset.state, wasTreated); });
+            point.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; const state = swipe(event.clientX - startX, event.clientY - startY); if (state) updatePoint(point, state); else if (point.dataset.state === 'grey') { point.classList.toggle('grey-filled'); applyVisual(point, 'grey'); saveState(); } else { point.classList.toggle('treated'); saveState(); refreshGuide(); } clearPreview(); });
+            point.addEventListener('pointercancel', clearPreview); point.addEventListener('contextmenu', event => event.preventDefault());
+            cell.appendChild(point);
+        }
+        function buildSheet() {
+            layout = layouts[layoutId]; document.title = `Pointsheet ${layout.name}`; sheet.replaceChildren(); sheet.classList.remove('show-point-keys');
+            const [headerLine, ...dataLines] = layout.csv.trim().split('\n'); headers = headerLine.split(',').slice(1); rows = dataLines.map(line => line.trim().split(','));
+            if (layout.moveRightMeToRe) { const move = new Set(['GE1', 'TA1', 'PE1', 'SC1', 'HU', 'CU1', 'CA1', 'DI1']); rows.forEach(row => { if (move.has(row[0])) { row[layout.rightMeColumn + 1] = ''; row[layout.rightMeColumn + 2] = 'x'; } }); rows.find(row => row[0] === 'CX')[layout.rightMeColumn + 1] = ''; }
+            const corner = document.createElement('div'); corner.className = 'corner'; const button = document.createElement('button'); button.type = 'button'; button.className = 'clear-button'; button.textContent = '×'; button.title = 'Tap for point data. Drag down for assistance.';
+            let crossStartX; let crossStartY; let crossPointerId; let guideOpened = false; let suppressCrossClick = false;
+            const guideAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-guide-name], button[data-guide-action]');
+            const updateGuideTarget = (x, y) => { const target = guideAt(x, y); guideActions.querySelectorAll('button').forEach(action => action.classList.toggle('guide-target', action === target)); return target; };
+            button.addEventListener('pointerdown', event => { crossStartX = event.clientX; crossStartY = event.clientY; crossPointerId = event.pointerId; guideOpened = false; button.setPointerCapture(event.pointerId); });
+            button.addEventListener('pointermove', event => { if (event.pointerId !== crossPointerId) return; if (guideOpened) { updateGuideTarget(event.clientX, event.clientY); return; } const deltaX = event.clientX - crossStartX; const deltaY = event.clientY - crossStartY; if (deltaY < 12 || Math.abs(deltaX) > deltaY) return; guideOpened = true; suppressCrossClick = true; guideDialog.showModal(); updateGuideTarget(event.clientX, event.clientY); });
+            button.addEventListener('pointerup', event => { if (event.pointerId !== crossPointerId) return; crossPointerId = undefined; if (!guideOpened) return; const target = updateGuideTarget(event.clientX, event.clientY); const guide = guideSets.find(candidate => candidate.name === target?.dataset.guideName); if (guide) { selectGuide(guide); guideDialog.close(); } else if (target?.dataset.guideAction === 'clear') { selectGuide(); guideDialog.close(); } guideActions.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
+            button.addEventListener('pointercancel', () => { crossPointerId = undefined; guideOpened = false; guideActions.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
+            button.addEventListener('click', () => { if (suppressCrossClick) { suppressCrossClick = false; return; } stateDialog.showModal(); }); corner.appendChild(button); sheet.appendChild(corner);
+            headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); label.textContent = header.replaceAll('|', '\n'); sheet.appendChild(label); });
+            rows.forEach(([rowName, ...marks]) => { const label = document.createElement('div'); label.className = 'row-label'; if (separatorAfterRows.has(rowName)) label.classList.add('separator-bottom'); label.textContent = rowName; sheet.appendChild(label); headers.forEach((header, index) => { if (mergedMeRows.has(rowName) && index === firstMeColumn + 1) return; const cell = document.createElement('div'); cell.className = 'cell'; if (layout.separatorColumns.includes(index)) cell.classList.add('separator-right'); if (separatorAfterRows.has(rowName)) cell.classList.add('separator-bottom'); const merged = mergedMeRows.has(rowName) && index === firstMeColumn; if (merged) { cell.classList.add('merged-me'); cell.style.gridColumn = 'span 2'; } const hasPoint = merged ? marks.slice(firstMeColumn, firstMeColumn + 2).some(mark => mark?.trim().toLowerCase() === 'x') : marks[index]?.trim().toLowerCase() === 'x'; if (hasPoint) renderPoint(cell, rowName, header, index, merged); sheet.appendChild(cell); }); });
+            loadState(); document.querySelectorAll('[data-layout]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layout === layoutId)));
+        }
+        guideSets.forEach(guide => { const button = document.createElement('button'); button.type = 'button'; button.dataset.guideName = guide.name; button.textContent = guide.name; button.addEventListener('click', () => { selectGuide(guide); guideDialog.close(); }); guideActions.appendChild(button); });
+        const clearGuide = document.createElement('button'); clearGuide.type = 'button'; clearGuide.dataset.guideAction = 'clear'; clearGuide.textContent = 'Clear guide'; clearGuide.addEventListener('click', () => { selectGuide(); guideDialog.close(); }); guideActions.appendChild(clearGuide);
+        document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; activeGuide = undefined; buildSheet(); stateDialog.close(); }));
+        document.getElementById('import-json').addEventListener('click', async () => { try { restoreState(JSON.parse(await navigator.clipboard.readText())); stateDialog.close(); } catch (error) { alert(`Unable to import JSON: ${error.message}`); } });
+        document.getElementById('export-json').addEventListener('click', async () => { try { await navigator.clipboard.writeText(JSON.stringify(serializeState(), null, 2)); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export JSON: ${error.message}`); } });
+        document.getElementById('clear-current').addEventListener('click', () => { document.querySelectorAll('.point').forEach(point => { point.dataset.state = 'grey'; point.classList.remove('grey-filled'); applyVisual(point, 'grey'); }); selectGuide(); saveState(); stateDialog.close(); });
+        document.getElementById('toggle-point-keys').addEventListener('click', event => { const visible = sheet.classList.toggle('show-point-keys'); event.currentTarget.setAttribute('aria-pressed', String(visible)); });
+        stateDialog.addEventListener('click', event => { if (event.target === stateDialog) stateDialog.close(); }); guideDialog.addEventListener('click', event => { if (event.target === guideDialog) guideDialog.close(); });
+        window.addEventListener('pagehide', saveState); buildSheet();
+    </script>
+</body>
+</html>
