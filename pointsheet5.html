@@ -45,10 +45,11 @@
         .guide-grid { display: grid; gap: 8px; }
         .guide-grid.columns-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         .guide-grid.columns-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        .layout-switch { display: grid; grid-template-columns: 1fr 1fr; min-height: 38px; border: 1px solid #575757; border-radius: 3px; overflow: hidden; }
+        .layout-switch { display: grid; grid-template-columns: 1fr 1fr; min-height: 38px; margin-bottom: 8px; border: 1px solid #575757; border-radius: 3px; overflow: hidden; }
         .layout-switch button { border: 0; border-radius: 0; background: #272727; color: inherit; cursor: pointer; font: 700 13px Arial, sans-serif; }
         .layout-switch button + button { border-left: 1px solid #575757; }
         .layout-switch button[aria-pressed="true"] { background: #155e75; color: #ecfeff; }
+        .layout-switch button.guide-target { border-color: #a5f3fc; background: #454545; }
     </style>
 </head>
 <body>
@@ -56,10 +57,6 @@
     <dialog id="state-dialog" class="state-dialog" aria-labelledby="state-dialog-title">
         <h2 id="state-dialog-title">Pointsheet data</h2>
         <div class="state-dialog-actions">
-            <div class="layout-switch" aria-label="Layout">
-                <button type="button" data-layout="fmmd" aria-pressed="true">FMMD</button>
-                <button type="button" data-layout="fmid" aria-pressed="false">FMID</button>
-            </div>
             <button id="import-json" type="button">Import from JSON</button>
             <button id="clear-current" class="danger-button" type="button">Clear current</button>
             <button id="export-json" type="button">Export to JSON</button>
@@ -68,6 +65,10 @@
     </dialog>
     <dialog id="guide-dialog" class="state-dialog" aria-labelledby="guide-dialog-title">
         <h2 id="guide-dialog-title">Assistance: none</h2>
+        <div class="layout-switch" aria-label="Layout">
+            <button type="button" data-layout="fmmd" aria-pressed="true">FMMD</button>
+            <button type="button" data-layout="fmid" aria-pressed="false">FMID</button>
+        </div>
         <div id="guide-actions" class="guide-actions"></div>
     </dialog>
     <script>
@@ -267,7 +268,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             const swipe = (x, y) => Math.abs(x) < 12 && Math.abs(y) < 12 ? undefined : Math.abs(x) >= Math.abs(y) ? x > 0 ? 'green' : 'grey' : y < 0 ? 'red' : 'yellow';
             point.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; wasTreated = point.classList.contains('treated'); point.classList.add('active'); point.setPointerCapture(pointerId); });
             point.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; const state = swipe(event.clientX - startX, event.clientY - startY); if (state === preview) return; preview = state; point.classList.remove('preview-red', 'preview-green', 'preview-yellow', 'preview-grey'); if (state) { point.classList.add(`preview-${state}`); applyVisual(point, state, wasTreated); } else applyVisual(point, point.dataset.state, wasTreated); });
-            point.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; const state = swipe(event.clientX - startX, event.clientY - startY); if (state) updatePoint(point, state); else if (point.dataset.state === 'grey') { point.classList.toggle('grey-filled'); applyVisual(point, 'grey'); saveState(); } else { point.classList.toggle('treated'); saveState(); refreshGuide(); } clearPreview(); });
+            point.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; const state = swipe(event.clientX - startX, event.clientY - startY); if (state) { updatePoint(point, state); clearPreview(); } else { clearPreview(); if (point.dataset.state === 'grey') { point.classList.toggle('grey-filled'); applyVisual(point, 'grey'); saveState(); } else { point.classList.toggle('treated'); saveState(); refreshGuide(); } } });
             point.addEventListener('pointercancel', clearPreview); point.addEventListener('contextmenu', event => event.preventDefault());
             cell.appendChild(point);
         }
@@ -277,12 +278,12 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             if (layout.moveRightMeToRe) { const move = new Set(['GE1', 'TA1', 'PE1', 'SC1', 'HU', 'CU1', 'CA1', 'DI1']); rows.forEach(row => { if (move.has(row[0])) { row[layout.rightMeColumn + 1] = ''; row[layout.rightMeColumn + 2] = 'x'; } }); rows.find(row => row[0] === 'CX')[layout.rightMeColumn + 1] = ''; }
             const corner = document.createElement('div'); corner.className = 'corner'; const button = document.createElement('button'); button.type = 'button'; button.className = 'clear-button'; button.textContent = '×'; button.title = 'Tap for point data. Drag down for assistance.';
             let crossStartX; let crossStartY; let crossPointerId; let guideOpened = false; let suppressCrossClick = false;
-            const guideAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-guide-name], button[data-guide-action]');
-            const updateGuideTarget = (x, y) => { const target = guideAt(x, y); guideActions.querySelectorAll('button').forEach(action => action.classList.toggle('guide-target', action === target)); return target; };
+            const guideAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-guide-name], button[data-guide-action], button[data-layout]');
+            const updateGuideTarget = (x, y) => { const target = guideAt(x, y); guideDialog.querySelectorAll('button[data-guide-name], button[data-guide-action], button[data-layout]').forEach(action => action.classList.toggle('guide-target', action === target)); return target; };
             button.addEventListener('pointerdown', event => { crossStartX = event.clientX; crossStartY = event.clientY; crossPointerId = event.pointerId; guideOpened = false; button.setPointerCapture(event.pointerId); });
             button.addEventListener('pointermove', event => { if (event.pointerId !== crossPointerId) return; if (guideOpened) { updateGuideTarget(event.clientX, event.clientY); return; } const deltaX = event.clientX - crossStartX; const deltaY = event.clientY - crossStartY; if (deltaY < 12 || Math.abs(deltaX) > deltaY) return; guideOpened = true; suppressCrossClick = true; guideDialog.showModal(); updateGuideTarget(event.clientX, event.clientY); });
-            button.addEventListener('pointerup', event => { if (event.pointerId !== crossPointerId) return; crossPointerId = undefined; if (!guideOpened) return; const target = updateGuideTarget(event.clientX, event.clientY); const guide = guideSets.find(candidate => candidate.name === target?.dataset.guideName); if (guide) { selectGuide(guide); guideDialog.close(); } else if (target?.dataset.guideAction === 'clear') { selectGuide(); guideDialog.close(); } guideActions.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
-            button.addEventListener('pointercancel', () => { crossPointerId = undefined; guideOpened = false; guideActions.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
+            button.addEventListener('pointerup', event => { if (event.pointerId !== crossPointerId) return; crossPointerId = undefined; if (!guideOpened) return; const target = updateGuideTarget(event.clientX, event.clientY); const guide = guideSets.find(candidate => candidate.name === target?.dataset.guideName); if (target?.dataset.layout && target.dataset.layout !== layoutId) { saveState(); layoutId = target.dataset.layout; location.hash = layoutId; activeGuide = undefined; buildSheet(); guideDialog.close(); } else if (guide) { selectGuide(guide); guideDialog.close(); } else if (target?.dataset.guideAction === 'clear') { selectGuide(); guideDialog.close(); } guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
+            button.addEventListener('pointercancel', () => { crossPointerId = undefined; guideOpened = false; guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
             button.addEventListener('click', () => { if (suppressCrossClick) { suppressCrossClick = false; return; } stateDialog.showModal(); }); corner.appendChild(button); sheet.appendChild(corner);
             headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); label.textContent = header.replaceAll('|', '\n'); sheet.appendChild(label); });
             rows.forEach(([rowName, ...marks]) => { const label = document.createElement('div'); label.className = 'row-label'; if (separatorAfterRows.has(rowName)) label.classList.add('separator-bottom'); label.textContent = rowName; sheet.appendChild(label); headers.forEach((header, index) => { if (mergedMeRows.has(rowName) && index === firstMeColumn + 1) return; const cell = document.createElement('div'); cell.className = 'cell'; if (layout.separatorColumns.includes(index)) cell.classList.add('separator-right'); if (separatorAfterRows.has(rowName)) cell.classList.add('separator-bottom'); const merged = mergedMeRows.has(rowName) && index === firstMeColumn; if (merged) { cell.classList.add('merged-me'); cell.style.gridColumn = 'span 2'; } const hasPoint = merged ? marks.slice(firstMeColumn, firstMeColumn + 2).some(mark => mark?.trim().toLowerCase() === 'x') : marks[index]?.trim().toLowerCase() === 'x'; if (hasPoint) renderPoint(cell, rowName, header, index, merged); sheet.appendChild(cell); }); });
@@ -290,7 +291,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         }
         guideGroups.forEach(group => { const section = document.createElement('section'); section.className = 'guide-group'; if (group.title) { const title = document.createElement('div'); title.className = 'guide-group-title'; title.textContent = group.title; section.appendChild(title); } const grid = document.createElement('div'); grid.className = group.columns ? `guide-grid columns-${group.columns}` : 'guide-grid'; group.guides.forEach(guide => { const button = document.createElement('button'); button.type = 'button'; button.dataset.guideName = guide.name; button.textContent = guide.name; button.addEventListener('click', () => { selectGuide(guide); guideDialog.close(); }); grid.appendChild(button); }); section.appendChild(grid); guideActions.appendChild(section); });
         const clearGuide = document.createElement('button'); clearGuide.type = 'button'; clearGuide.dataset.guideAction = 'clear'; clearGuide.textContent = 'Clear guide'; clearGuide.addEventListener('click', () => { selectGuide(); guideDialog.close(); }); guideActions.appendChild(clearGuide);
-        document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; activeGuide = undefined; buildSheet(); stateDialog.close(); }));
+        document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; activeGuide = undefined; buildSheet(); guideDialog.close(); }));
         document.getElementById('import-json').addEventListener('click', async () => { try { restoreState(JSON.parse(await navigator.clipboard.readText())); stateDialog.close(); } catch (error) { alert(`Unable to import JSON: ${error.message}`); } });
         document.getElementById('export-json').addEventListener('click', async () => { try { await navigator.clipboard.writeText(JSON.stringify(serializeState(), null, 2)); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export JSON: ${error.message}`); } });
         document.getElementById('clear-current').addEventListener('click', () => { document.querySelectorAll('.point').forEach(point => { point.dataset.state = 'grey'; point.classList.remove('grey-filled'); applyVisual(point, 'grey'); }); selectGuide(); saveState(); stateDialog.close(); });
