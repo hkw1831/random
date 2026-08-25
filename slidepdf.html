@@ -106,6 +106,35 @@
     .photo-grid[data-count="9"] label[data-photo="3"] { grid-area: 3 / 1; }
     .photo-grid[data-count="9"] label[data-photo="6"] { grid-area: 3 / 2; }
     .photo-grid[data-count="9"] label[data-photo="9"] { grid-area: 3 / 3; }
+    .photo-grid[data-count="12"] { grid-template-columns: repeat(3, 1fr); }
+    .photo-grid[data-count="12"] label[data-photo="1"] { grid-area: 1 / 1; }
+    .photo-grid[data-count="12"] label[data-photo="5"] { grid-area: 1 / 2; }
+    .photo-grid[data-count="12"] label[data-photo="9"] { grid-area: 1 / 3; }
+    .photo-grid[data-count="12"] label[data-photo="2"] { grid-area: 2 / 1; }
+    .photo-grid[data-count="12"] label[data-photo="6"] { grid-area: 2 / 2; }
+    .photo-grid[data-count="12"] label[data-photo="10"] { grid-area: 2 / 3; }
+    .photo-grid[data-count="12"] label[data-photo="3"] { grid-area: 3 / 1; }
+    .photo-grid[data-count="12"] label[data-photo="7"] { grid-area: 3 / 2; }
+    .photo-grid[data-count="12"] label[data-photo="11"] { grid-area: 3 / 3; }
+    .photo-grid[data-count="12"] label[data-photo="4"] { grid-area: 4 / 1; }
+    .photo-grid[data-count="12"] label[data-photo="8"] { grid-area: 4 / 2; }
+    .photo-grid[data-count="12"] label[data-photo="12"] { grid-area: 4 / 3; }
+    .photo-grid[data-count="15"] { grid-template-columns: repeat(3, 1fr); }
+    .photo-grid[data-count="15"] label[data-photo="1"] { grid-area: 1 / 1; }
+    .photo-grid[data-count="15"] label[data-photo="6"] { grid-area: 1 / 2; }
+    .photo-grid[data-count="15"] label[data-photo="11"] { grid-area: 1 / 3; }
+    .photo-grid[data-count="15"] label[data-photo="2"] { grid-area: 2 / 1; }
+    .photo-grid[data-count="15"] label[data-photo="7"] { grid-area: 2 / 2; }
+    .photo-grid[data-count="15"] label[data-photo="12"] { grid-area: 2 / 3; }
+    .photo-grid[data-count="15"] label[data-photo="3"] { grid-area: 3 / 1; }
+    .photo-grid[data-count="15"] label[data-photo="8"] { grid-area: 3 / 2; }
+    .photo-grid[data-count="15"] label[data-photo="13"] { grid-area: 3 / 3; }
+    .photo-grid[data-count="15"] label[data-photo="4"] { grid-area: 4 / 1; }
+    .photo-grid[data-count="15"] label[data-photo="9"] { grid-area: 4 / 2; }
+    .photo-grid[data-count="15"] label[data-photo="14"] { grid-area: 4 / 3; }
+    .photo-grid[data-count="15"] label[data-photo="5"] { grid-area: 5 / 1; }
+    .photo-grid[data-count="15"] label[data-photo="10"] { grid-area: 5 / 2; }
+    .photo-grid[data-count="15"] label[data-photo="15"] { grid-area: 5 / 3; }
     .photo-grid input { margin-top: 3px; padding: 6px; font-size: 12px; }
     .photo-grid label.is-hidden { display: none; }
     .hint { margin: 4px 0 0; color: var(--muted); font: 12px/1.35 Arial, sans-serif; }
@@ -192,6 +221,8 @@
     .photo-area.count-6 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); }
     .photo-area.count-8 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 1fr); }
     .photo-area.count-9 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+    .photo-area.count-12 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); }
+    .photo-area.count-15 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(5, 1fr); }
     .photo-slot {
       position: relative;
       overflow: hidden;
@@ -276,6 +307,8 @@
             <option value="6">6</option>
             <option value="8" selected>8</option>
             <option value="9">9</option>
+            <option value="12">12</option>
+            <option value="15">15</option>
           </select>
         </label>
         <label for="description-size">Description px
@@ -301,6 +334,12 @@
           <label data-photo="7">Photo 7<input class="photo-input" data-photo="7" type="url" placeholder="https://..."></label>
           <label data-photo="8">Photo 8<input class="photo-input" data-photo="8" type="url" placeholder="https://..."></label>
           <label data-photo="9">Photo 9<input class="photo-input" data-photo="9" type="url" placeholder="https://..."></label>
+          <label data-photo="10">Photo 10<input class="photo-input" data-photo="10" type="url" placeholder="https://..."></label>
+          <label data-photo="11">Photo 11<input class="photo-input" data-photo="11" type="url" placeholder="https://..."></label>
+          <label data-photo="12">Photo 12<input class="photo-input" data-photo="12" type="url" placeholder="https://..."></label>
+          <label data-photo="13">Photo 13<input class="photo-input" data-photo="13" type="url" placeholder="https://..."></label>
+          <label data-photo="14">Photo 14<input class="photo-input" data-photo="14" type="url" placeholder="https://..."></label>
+          <label data-photo="15">Photo 15<input class="photo-input" data-photo="15" type="url" placeholder="https://..."></label>
         </div>
         <p class="hint">Accepts a plain URL or Markdown image syntax.</p>
       </div>
@@ -412,7 +451,9 @@
         4: [1, 2, 3, 4],
         6: [1, 4, 2, 5, 3, 6],
         8: [1, 5, 2, 6, 3, 7, 4, 8],
-        9: [1, 4, 7, 2, 5, 8, 3, 6, 9]
+        9: [1, 4, 7, 2, 5, 8, 3, 6, 9],
+        12: [1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12],
+        15: [1, 6, 11, 2, 7, 12, 3, 8, 13, 4, 9, 14, 5, 10, 15]
       };
       return layouts[photoCount];
     }
@@ -492,7 +533,7 @@
         descriptionInput.value = data.description || '';
         descriptionSizeInput.value = data.descriptionSize || 16;
         borderStyleInput.value = ['black', 'light', 'none'].includes(data.borderStyle) ? data.borderStyle : 'light';
-        photoCountInput.value = [1, 2, 3, 4, 6, 8, 9].includes(Number(data.photoCount)) ? data.photoCount : 6;
+        photoCountInput.value = [1, 2, 3, 4, 6, 8, 9, 12, 15].includes(Number(data.photoCount)) ? data.photoCount : 6;
         photoInputs.forEach(input => { input.value = data.photos?.[input.dataset.photo] || ''; });
         updatePreview();
     }
@@ -518,7 +559,7 @@
         description: data.description || '',
         descriptionSize: Number(data.descriptionSize) || 16,
         borderStyle: ['black', 'light', 'none'].includes(data.borderStyle) ? data.borderStyle : 'light',
-        photoCount: [1, 2, 3, 4, 6, 8, 9].includes(Number(data.photoCount)) ? Number(data.photoCount) : 6,
+        photoCount: [1, 2, 3, 4, 6, 8, 9, 12, 15].includes(Number(data.photoCount)) ? Number(data.photoCount) : 6,
         photos: data.photos || {}
       };
     }
