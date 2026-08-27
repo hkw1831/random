@@ -742,7 +742,17 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             refreshGuide(); saveState();
         }
         function loadState() { try { const saved = localStorage.getItem(getStorageKey()); if (saved) restoreState(JSON.parse(saved)); } catch { localStorage.removeItem(getStorageKey()); } }
-        function updatePoint(point, check, state) { point.dataset[check] = state; if (check === 'palpation' && state === 'clear') point.classList.remove('treated'); applyVisual(point, point.dataset.palpation, point.dataset.movement, point.classList.contains('treated')); saveState(); refreshGuide(); }
+        function updatePoint(point, check, state) {
+            if (check === 'both') {
+                point.dataset.palpation = state;
+                point.dataset.movement = state;
+                point.classList.remove('treated');
+            } else {
+                point.dataset[check] = state;
+                if (check === 'palpation' && state === 'clear') point.classList.remove('treated');
+            }
+            applyVisual(point, point.dataset.palpation, point.dataset.movement, point.classList.contains('treated')); saveState(); refreshGuide();
+        }
         function guideKeys(guide) {
             if (guide?.rule !== 'cc-cf-balance') return guide?.keys || [];
             const points = [...document.querySelectorAll('.point')]; const keys = new Set();
@@ -763,8 +773,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             const key = document.createElement('span'); key.className = 'point-key'; key.textContent = point.dataset.key; const gesture = document.createElement('span'); gesture.className = 'gesture-preview'; point.append(key, gesture);
             let startX; let startY; let pointerId; let preview; let wasTreated;
             const clearPreview = () => { preview = undefined; pointerId = undefined; gesture.textContent = ''; point.classList.remove('active', 'preview-red', 'preview-green', 'preview-yellow', 'preview-grey', 'preview-clear'); applyVisual(point, point.dataset.palpation, point.dataset.movement, wasTreated); };
-            const swipe = (x, y) => { if (Math.hypot(x, y) < 12) return undefined; const check = x >= 0 ? 'palpation' : 'movement'; const angle = Math.atan2(-y, Math.abs(x)) * 180 / Math.PI; const state = angle >= 60 ? 'red' : angle >= 30 ? 'green' : angle >= 0 ? 'yellow' : angle >= -45 ? 'grey' : 'clear'; return { check, state }; };
-            const previewGesture = result => { const id = result ? `${result.check}-${result.state}` : ''; if (id === preview) return; preview = id; gesture.textContent = result ? `${result.check === 'palpation' ? 'P' : 'M'} ${result.state.toUpperCase()}` : ''; point.classList.remove('preview-red', 'preview-green', 'preview-yellow', 'preview-grey', 'preview-clear'); if (!result) { applyVisual(point, point.dataset.palpation, point.dataset.movement, wasTreated); return; } point.classList.add(`preview-${result.state}`); applyVisual(point, result.check === 'palpation' ? result.state : point.dataset.palpation, result.check === 'movement' ? result.state : point.dataset.movement, wasTreated); };
+            const swipe = (x, y) => { if (Math.hypot(x, y) < 12) return undefined; const angle = Math.atan2(-y, Math.abs(x)) * 180 / Math.PI; const check = angle < -72 ? 'both' : x >= 0 ? 'palpation' : 'movement'; const state = angle >= 60 ? 'red' : angle >= 30 ? 'green' : angle >= 0 ? 'yellow' : angle >= -36 ? 'grey' : 'clear'; return { check, state }; };
+            const previewGesture = result => { const id = result ? `${result.check}-${result.state}` : ''; if (id === preview) return; preview = id; gesture.textContent = result ? `${result.check === 'palpation' ? 'P' : result.check === 'movement' ? 'M' : 'P/M'} ${result.state.toUpperCase()}` : ''; point.classList.remove('preview-red', 'preview-green', 'preview-yellow', 'preview-grey', 'preview-clear'); if (!result) { applyVisual(point, point.dataset.palpation, point.dataset.movement, wasTreated); return; } point.classList.add(`preview-${result.state}`); applyVisual(point, result.check === 'movement' ? point.dataset.palpation : result.state, result.check === 'palpation' ? point.dataset.movement : result.state, wasTreated); };
             point.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; wasTreated = point.classList.contains('treated'); point.classList.add('active'); point.setPointerCapture(pointerId); });
             point.addEventListener('pointermove', event => { if (event.pointerId === pointerId) previewGesture(swipe(event.clientX - startX, event.clientY - startY)); });
             point.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; const result = swipe(event.clientX - startX, event.clientY - startY); if (result) { updatePoint(point, result.check, result.state); clearPreview(); } else { clearPreview(); if (point.dataset.palpation !== 'clear') { point.classList.toggle('treated'); saveState(); refreshGuide(); } } });
