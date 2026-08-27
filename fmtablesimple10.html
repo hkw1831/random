@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>問診記錄 - 極簡手機版</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: -apple-system, "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+        background: #f1f5f9;
+        margin: 0;
+        padding: 4px 0;
+        color: #0f172a;
+    }
+    .container-app { max-width: 420px; margin: 0 auto; padding: 0; }
+
+    #error_banner {
+        display: none;
+        max-width: 420px;
+        margin: 0 auto 5px auto;
+        background: #fef2f2;
+        border: 1px solid #fca5a5;
+        color: #991b1b;
+        font-size: 11px;
+        padding: 8px;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    #error_banner b { display: block; margin-bottom: 3px; font-size: 12px; }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; padding: 0 2px; }
+    .topbar-title { font-weight: 700; color: #1e293b; font-size: 13px; display: flex; align-items: center; gap: 4px; }
+    .save-indicator { font-size: 8px; color: #10b981; opacity: 0; display: flex; align-items: center; gap: 2px; transition: opacity .3s ease; }
+    .topbar-actions { display: flex; gap: 3px; }
+    .btn {
+        padding: 2px 7px; border-radius: 6px; font-size: 9px; display: flex; align-items: center;
+        gap: 3px; border: none; cursor: pointer; font-family: inherit;
+    }
+    .btn-green { background: #059669; color: #fff; }
+    .btn-red { background: #dc2626; color: #fff; }
+    .btn-white { background: #fff; border: 1px solid #cbd5e1; color: #334155; }
+
+    .form-card {
+        max-width: 420px; margin: 0 auto; background: #ffffff; border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 1px solid #e2e8f0;
+        padding: 6px; font-size: 12px; line-height: 1.1;
+        min-height: 40px;
+    }
+
+    .flex-row { display: flex; gap: 3px; align-items: flex-end; flex-wrap: nowrap; }
+    .fx-1  { flex: 1 1 0%; min-width: 0; }
+    .fx-2  { flex: 2 1 0%; min-width: 0; }
+    .fx-3  { flex: 3 1 0%; min-width: 0; }
+    .fx-4  { flex: 4 1 0%; min-width: 0; }
+    .fx-5  { flex: 5 1 0%; min-width: 0; }
+
+    .field-label { font-size: 8px; color: #64748b; margin-bottom: 1px; }
+    .section-prompt-placeholder { font-size: 8px; color: #94a3b8; }
+
+    .tiny-input {
+        font-size: 7px; padding: 1px 2px; line-height: 1.05; width: 100%;
+        border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; color: #0f172a; background: #fff;
+        height: 18px;
+    }
+    .mini-textarea {
+        font-size: 8px; padding: 2.5px 4px; line-height: 1.25; width: 100%;
+        border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; color: #0f172a; background: #fff;
+        resize: vertical;
+    }
+    .micro-textarea {
+        font-size: 7.5px; padding: 2px 3px; line-height: 1.2; width: 100%;
+        border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; color: #0f172a; background: #fff;
+        resize: vertical;
+    }
+    .timeline-textarea {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .tiny-input::placeholder, .mini-textarea::placeholder, .micro-textarea::placeholder { color: #94a3b8; }
+
+    .tight-section { margin-bottom: 4px; }
+    .section-title-row { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
+    .section-header { font-size: 10.5px; font-weight: 600; color: #1e40af; }
+    .icon { font-size: 11px; line-height: 1; }
+
+    .section-header-with-btn { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+    .mini-btn {
+        font-size: 8px; padding: 1px 5px; border-radius: 4px; border: none; color: #fff;
+        display: flex; align-items: center; gap: 2px; cursor: pointer; font-family: inherit;
+    }
+    .mini-btn.teal { background: #0d9488; }
+    .mini-btn.orange { background: #ea580c; }
+    .mini-btn.rose { background: #e11d48; }
+    .mini-btn.amber { background: #d97706; }
+    .mini-btn.slate { background: #475569; }
+
+    .assoc-row { margin-bottom: 4px; position: relative; }
+    .remove-btn {
+        position: absolute; top: 2px; right: 2px; background: none; border: none;
+        color: #fca5a5; cursor: pointer; padding: 1px; font-size: 11px; line-height: 1;
+    }
+    .remove-btn:hover { color: #ef4444; }
+    .pr-guard { padding-right: 14px; }
+
+    .past-section { margin-bottom: 4px; }
+    .past-row-wrap { margin-bottom: 3px; position: relative; }
+    .past-row-wrap:last-child { margin-bottom: 0; }
+    .past-row {
+        display: flex;
+        gap: 2px;
+        align-items: center;
+        padding-right: 15px;
+    }
+    .past-field { min-width: 0; }
+    .past-description-field { flex: 4 1 0%; }
+    .past-row .tiny-input { padding: 1px 2px; font-size: 7px; }
+    .past-remove-btn {
+        position: absolute; top: 50%; right: 0; transform: translateY(-50%);
+        background: none; border: none; color: #fca5a5; cursor: pointer;
+        padding: 1px; font-size: 12px; line-height: 1;
+    }
+    .past-remove-btn:hover { color: #ef4444; }
+
+    .two-col-footer { display: flex; gap: 4px; }
+    .two-col-footer > div { min-width: 0; }
+    .footer-med-block { flex: 2 1 0%; }
+    .footer-summary-block { flex: 2 1 0%; }
+    .footer-summary-block .flex-row { gap: 4px; align-items: stretch; }
+    .footer-summary-block .flex-row > div { flex: 1 1 0%; min-width: 0; }
+
+    .six-col-footer { display: flex; gap: 3px; }
+    .six-col-footer > div { flex: 1 1 0%; min-width: 0; }
+    .six-col-footer .section-title-row { gap: 2px; margin-bottom: 1px; }
+    .six-col-footer .section-header {
+        font-size: 8.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .six-col-footer .icon { font-size: 9px; }
+
+    input[type="date"].tiny-input {
+        -webkit-appearance: none; appearance: none; background-color: #ffffff;
+        text-align: left; display: block; height: 18px;
+        font-size: 8px;
+    }
+    input[type="date"].tiny-input::-webkit-datetime-edit { text-align: left; padding: 0; }
+    input[type="date"].tiny-input::-webkit-calendar-picker-indicator {
+        filter: invert(0.4) sepia(1) saturate(4) hue-rotate(180deg); opacity: 0.8;
+    }
+</style>
+</head>
+<body>
+
+    <div id="error_banner"><b>⚠️ 發生錯誤 / Script Error:</b><span id="error_text"></span></div>
+
+    <div class="container-app">
+
+        <div class="topbar">
+            <div class="topbar-title">
+                <span class="icon">📋</span>
+                <span>問診記錄</span>
+                <span id="save_indicator" class="save-indicator"><span>✓</span><span>已儲存</span></span>
+            </div>
+            <div class="topbar-actions">
+                <button onclick="importFromJSON()" class="btn btn-white"><span>⬆</span><span>匯入</span></button>
+                <button onclick="clearAll()" class="btn btn-red"><span>🗑</span><span>清空</span></button>
+                <button onclick="exportToJSON()" class="btn btn-green"><span>⬇</span><span>匯出</span></button>
+            </div>
+        </div>
+
+        <div id="form-card" class="form-card">
+
+            <div class="flex-row" style="margin-bottom:4px;">
+                <div class="fx-2">
+                    <div class="field-label">日期</div>
+                    <input type="date" id="record_date" class="tiny-input">
+                </div>
+                <div class="fx-2">
+                    <div class="field-label">姓名 / 代號</div>
+                    <input type="text" id="patient_name" class="tiny-input" placeholder="">
+                </div>
+                <div class="fx-1">
+                    <div class="field-label">年齡 / 性別</div>
+                    <input type="text" id="patient_age_gender" class="tiny-input" placeholder="">
+                </div>
+                <div class="fx-1">
+                    <div class="field-label">職業</div>
+                    <input type="text" id="occupation" class="tiny-input" placeholder="">
+                </div>
+                <div class="fx-2">
+                    <div class="field-label">運動 / 頻率</div>
+                    <input type="text" id="sport_frequency" class="tiny-input" placeholder="">
+                </div>
+            </div>
+
+            <div class="tight-section">
+                <div class="section-title-row">
+                    <span class="icon" style="color:#2563eb;">🩺</span>
+                    <div class="section-header">主要問題</div>
+                    <span class="section-prompt-placeholder">讓對方用手指指出不適的地方</span>
+                </div>
+                <div class="flex-row">
+                    <div class="fx-2">
+                        <input type="text" id="main_location" class="tiny-input" placeholder="位置">
+                    </div>
+                    <div class="fx-1">
+                        <input type="text" id="main_duration" class="tiny-input" placeholder="首次發作時間？">
+                    </div>
+                    <div class="fx-1">
+                        <input type="text" id="first_occurrence" class="tiny-input" placeholder="近期急性發作時間？">
+                    </div>
+                    <div class="fx-1">
+                        <input type="text" id="main_frequency" class="tiny-input" placeholder="頻率">
+                    </div>
+                    <div class="fx-1">
+                        <input type="text" id="main_trauma" class="tiny-input" placeholder="創傷 / 過度使用？">
+                    </div>
+                    <div class="fx-3">
+                        <input type="text" id="main_factors" class="tiny-input" placeholder="加重 / 緩解因素">
+                    </div>
+                    <div class="fx-1">
+                        <input type="text" id="main_vrs" class="tiny-input" placeholder="VRS">
+                    </div>
+                    <div class="fx-3">
+                        <input type="text" id="main_description" class="tiny-input" placeholder="描述">
+                    </div>
+                </div>
+            </div>
+
+            <div class="tight-section">
+                <div class="section-header-with-btn">
+                    <div class="section-title-row" style="margin-bottom:0;">
+                        <span class="icon" style="color:#0d9488;">🔗</span>
+                        <div class="section-header">伴隨疼痛</div>
+                        <span class="section-prompt-placeholder">「你有沒有其它問題開始的早於 (SiPa) 年前的？」</span>
+                    </div>
+                    <button onclick="addAssociatedRow(null)" class="mini-btn teal"><span>＋</span><span>新增</span></button>
+                </div>
+                <div id="associated_container"></div>
+            </div>
+
+            <div class="tight-section">
+                <div class="section-header-with-btn">
+                    <div class="section-title-row" style="margin-bottom:0;">
+                        <span class="icon" style="color:#0d9488;">🦶</span>
+                        <div class="section-header">四肢末端</div>
+                        <span class="section-prompt-placeholder">頭：偏頭痛/感覺異常 || 手：痛/麻/感覺異常/扳機指 || 腳：痛/麻/感覺異常/錘狀趾</span>
+                    </div>
+                    <button onclick="addExtremityRow(null)" class="mini-btn teal"><span>＋</span><span>新增</span></button>
+                </div>
+                <div id="extremity_container"></div>
+            </div>
+
+            <div class="past-section">
+                <div class="section-header-with-btn">
+                    <div class="section-title-row" style="margin-bottom:0;">
+                        <span class="icon" style="color:#ea580c;">🕰️</span>
+                        <div class="section-header">過去疼痛</div>
+                        <span class="section-prompt-placeholder">「你有沒有其它嚴重問題，開始的早於 (SiPa) 年前的，但已經康復的？」</span>
+                    </div>
+                    <button onclick="addHistoryRow('past_pain_container', null, true, true)" class="mini-btn orange"><span>＋</span><span>新增</span></button>
+                </div>
+                <div id="past_pain_container"></div>
+            </div>
+
+            <div class="past-section">
+                <div class="section-header-with-btn">
+                    <div class="section-title-row" style="margin-bottom:0;">
+                        <span class="icon" style="color:#e11d48;">🏥</span>
+                        <div class="section-header">手術史</div>
+                        <span class="section-prompt-placeholder">記錄到達深筋膜的手術、急性手術比一般手術重要</span>
+                    </div>
+                    <button onclick="addHistoryRow('surgery_history_container', null, true, true)" class="mini-btn rose"><span>＋</span><span>新增</span></button>
+                </div>
+                <div id="surgery_history_container"></div>
+            </div>
+
+            <div class="past-section">
+                <div class="section-header-with-btn">
+                    <div class="section-title-row" style="margin-bottom:0;">
+                        <span class="icon" style="color:#d97706;">🩹</span>
+                        <div class="section-header">外傷史</div>
+                        <span class="section-prompt-placeholder">記錄有改變解剖結構的 / 復原時間長的外傷</span>
+                    </div>
+                    <button onclick="addHistoryRow('injury_history_container', null, true, true)" class="mini-btn amber"><span>＋</span><span>新增</span></button>
+                </div>
+                <div id="injury_history_container"></div>
+            </div>
+
+            <div class="past-section">
+                <div class="section-header-with-btn">
+                    <div class="section-title-row" style="margin-bottom:0;">
+                        <span class="icon" style="color:#475569;">🦴</span>
+                        <div class="section-header">骨折史</div>
+                        <span class="section-prompt-placeholder">復原時間長的更重要</span>
+                    </div>
+                    <button onclick="addHistoryRow('fracture_history_container', null, false)" class="mini-btn slate"><span>＋</span><span>新增</span></button>
+                </div>
+                <div id="fracture_history_container"></div>
+            </div>
+
+            <div class="two-col-footer tight-section">
+                <div style="flex:1 1 0%;">
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#e11d48;">💊</span>
+                        <div class="section-header">藥物 / 內部失調</div>
+                    </div>
+                    <textarea id="medication_disorder_overuse" rows="10" class="micro-textarea" placeholder="藥物&#10;&#10;內部失調：腹漲 / 食道反流 / 胃炎 / 結腸炎 / 便秘 etc&#10;&#10;過度使用&#10;&#10;姿勢（可能指出潛伏CC）"></textarea>
+                </div>
+                <div style="flex:1 1 0%;">
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#475569;">⏱️</span>
+                        <div class="section-header">時間序</div>
+                        <button type="button" onclick="buildTimeline()" class="mini-btn slate" style="margin-left:auto;" title="由最早至最新排列">排序</button>
+                    </div>
+                    <textarea id="medication_timeline" rows="10" class="micro-textarea timeline-textarea" placeholder="時間序&#10;&#10;目的是為了建立假設，找尋疼痛模式和代償路徑&#10;&#10;Old is Gold"></textarea>
+                </div>
+                <div style="flex:1 1 0%;">
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#475569;">💡</span>
+                        <div class="section-header">假設</div>
+                    </div>
+                    <textarea id="summary_notes" rows="10" class="micro-textarea" placeholder="作用：&#10;- 上行還是下行代償&#10;- 決定要觸診的節段&#10;- 建立疼痛的關係：有代償關係的話中間所有節段也會有至少一星&#10;&#10;如果最後觸診和推理不一致，就要重新推理，問患者更多問題"></textarea>
+                </div>
+                <div style="flex:1 1 0%;">
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#475569;">📝</span>
+                        <div class="section-header">治療及總結</div>
+                    </div>
+                    <textarea id="summary_notes_2" rows="10" class="micro-textarea" placeholder="不要一開始在主訴疼痛部位開始(ancl)治療，從最久遠或最緻密的點開始&#10;&#10;每治療一個點叫對方做動作驗證（最差的動作）和再觸診本來決定要治療的點&#10;&#10;下次有改善做相同平面，否則做其他平面"></textarea>
+                </div>
+            </div>
+
+            <div class="six-col-footer">
+                <div>
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#7c3aed;">🏃</span>
+                        <div class="section-header">動作驗證</div>
+                    </div>
+                    <textarea id="motion_verification" rows="10" class="micro-textarea" placeholder="作用：重現患者的症狀&#10;&#10;做主要疼痛和伴隨疼痛的節段&#10;&#10;主動/被動/抗阻&#10;&#10;(*)：放射到其他節段"></textarea>
+                </div>
+                <div>
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#0891b2;">👆</span>
+                        <div class="section-header">橫向觸診1</div>
+                    </div>
+                    <textarea id="horizontal_palpation_1" rows="10" class="micro-textarea" placeholder="從節段找平面&#10;&#10;通常是疼痛節段&#10;&#10;太疼痛就選擇相鄰節段&#10;&#10;感受粗糙感/兩個兩個做痛楚比較"></textarea>
+                </div>
+                <div>
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#0891b2;">👆</span>
+                        <div class="section-header">橫向觸診2</div>
+                    </div>
+                    <textarea id="horizontal_palpation_2" rows="10" class="micro-textarea" placeholder="通常是最舊/有嚴重問題的節段&#10;&#10;不要選擇和橫向觸診1相鄰的節  段&#10;&#10;放射 &gt; 手感 &gt; 痛&#10;&#10;小心延遲CC"></textarea>
+                </div>
+                <div>
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#0891b2;">👆</span>
+                        <div class="section-header">橫向觸診3</div>
+                    </div>
+                    <textarea id="horizontal_palpation_3" rows="10" class="micro-textarea" placeholder="只有在之前兩個節段中無法作決定時才使用這個節段&#10;&#10;由假設決定：伴隨疼痛/疼痛史/骨折/創傷 / 如果肢端有症狀：CA TA CL"></textarea>
+                </div>
+                <div>
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#0891b2;">👆</span>
+                        <div class="section-header">縱向觸診</div>
+                    </div>
+                    <textarea id="vertical_palpation" rows="10" class="micro-textarea "placeholder="遠端近端鬆解&#10;&#10;原動拮抗平衡（1:1 - 1:3）&#10;&#10;前內前外 / 後內後外不要同時做&#10;&#10;找出潛伏CC：病史不會體現"></textarea>
+                </div>
+                <div>
+                    <div class="section-title-row">
+                        <span class="icon" style="color:#16a34a;">⚖️</span>
+                        <div class="section-header">軀幹平衡</div>
+                    </div>
+                    <textarea id="trunk_balance" rows="10" class="micro-textarea" placeholder="軀幹節段需要雙側觸診&#10;&#10;不能只找一邊&#10;&#10;可以用 ZigZag 狀選擇點"></textarea>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    window.onerror = function (msg, url, line, col, err) {
+        try {
+            var banner = document.getElementById('error_banner');
+            var textEl = document.getElementById('error_text');
+            if (banner && textEl) {
+                textEl.textContent = msg + ' (line ' + line + ', col ' + col + ')';
+                banner.style.display = 'block';
+            }
+        } catch (e) {}
+        return false;
+    };
+</script>
+
+<script>
+    var STORAGE_KEY = 'pain_record_autosave';
+    var saveIndicatorTimeout = null;
+
+    var HISTORY_LISTS = [
+        { id: 'past_pain_container', key: 'past_pain_history', trauma: true, traumaBeforeDescription: true },
+        { id: 'surgery_history_container', key: 'surgery_history', trauma: true, traumaBeforeDescription: true },
+        { id: 'injury_history_container', key: 'injury_history', trauma: true, traumaBeforeDescription: true },
+        { id: 'fracture_history_container', key: 'fracture_history', trauma: false, traumaBeforeDescription: false }
+    ];
+
+    function fieldVal(id) {
+        var el = document.getElementById(id);
+        return el ? el.value : '';
+    }
+
+    function setFieldVal(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.value = (val === undefined || val === null) ? '' : val;
+    }
+
+    function qVal(parent, selector) {
+        var el = parent.querySelector(selector);
+        return el ? el.value : '';
+    }
+
+    function addAssociatedRow(data) {
+        var container = document.getElementById('associated_container');
+        var card = document.createElement('div');
+        card.className = 'flex-row pr-guard assoc-row';
+
+        var locationVal = (data && data.location) ? data.location : '';
+        var onsetVal = (data && data.onset_time) ? data.onset_time : '';
+        var recentVal = (data && data.recent_onset) ? data.recent_onset : '';
+        var freqVal = (data && data.frequency) ? data.frequency : '';
+        var traumaVal = (data && data.trauma) ? data.trauma : '';
+        var factorsVal = mergedFactorVal(data);
+        var vrsVal = (data && data.vrs) ? data.vrs : '';
+        var descriptionVal = (data && data.description) ? data.description : '';
+
+        var html = '';
+        html += '<button type="button" onclick="removeAssocCard(this)" class="remove-btn">✕</button>';
+        html += '<div class="fx-2"><input type="text" class="tiny-input assoc-location" placeholder="位置" value="' + locationVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input assoc-duration" placeholder="首次發作時間？" value="' + onsetVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input assoc-first" placeholder="近期急性發作時間？" value="' + recentVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input assoc-frequency" placeholder="頻率" value="' + freqVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input assoc-trauma" placeholder="創傷 / 過度使用？" value="' + traumaVal + '"></div>';
+        html += '<div class="fx-3"><input type="text" class="tiny-input assoc-factors" placeholder="加重 / 緩解因素" value="' + factorsVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input assoc-vrs" placeholder="VRS" value="' + vrsVal + '"></div>';
+        html += '<div class="fx-3"><input type="text" class="tiny-input assoc-description" placeholder="描述" value="' + descriptionVal + '"></div>';
+
+        card.innerHTML = html;
+        container.appendChild(card);
+        saveToStorage();
+    }
+
+    function removeAssocCard(btn) {
+        var card = btn.closest('.assoc-row');
+        if (card && card.parentNode) card.parentNode.removeChild(card);
+        saveToStorage();
+    }
+
+    function addExtremityRow(data) {
+        var container = document.getElementById('extremity_container');
+        var card = document.createElement('div');
+        card.className = 'flex-row pr-guard assoc-row';
+
+        var locationVal = (data && data.location) ? data.location : '';
+        var onsetVal = (data && data.onset_time) ? data.onset_time : '';
+        var recentVal = (data && data.recent_onset) ? data.recent_onset : '';
+        var freqVal = (data && data.frequency) ? data.frequency : '';
+        var traumaVal = (data && data.trauma) ? data.trauma : '';
+        var factorsVal = mergedFactorVal(data);
+        var vrsVal = (data && data.vrs) ? data.vrs : '';
+        var descriptionVal = (data && data.description) ? data.description : '';
+
+        var html = '';
+        html += '<button type="button" onclick="removeExtremityCard(this)" class="remove-btn">✕</button>';
+        html += '<div class="fx-2"><input type="text" class="tiny-input extremity-location" placeholder="位置" value="' + locationVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input extremity-duration" placeholder="首次發作時間？" value="' + onsetVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input extremity-first" placeholder="近期急性發作時間？" value="' + recentVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input extremity-frequency" placeholder="頻率" value="' + freqVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input extremity-trauma" placeholder="創傷 / 過度使用？" value="' + traumaVal + '"></div>';
+        html += '<div class="fx-3"><input type="text" class="tiny-input extremity-factors" placeholder="加重 / 緩解因素" value="' + factorsVal + '"></div>';
+        html += '<div class="fx-1"><input type="text" class="tiny-input extremity-vrs" placeholder="VRS" value="' + vrsVal + '"></div>';
+        html += '<div class="fx-3"><input type="text" class="tiny-input extremity-description" placeholder="描述" value="' + descriptionVal + '"></div>';
+
+        card.innerHTML = html;
+        container.appendChild(card);
+        saveToStorage();
+    }
+
+    function removeExtremityCard(btn) {
+        var card = btn.closest('.assoc-row');
+        if (card && card.parentNode) card.parentNode.removeChild(card);
+        saveToStorage();
+    }
+
+    function mergedFactorVal(data) {
+        if (!data) { return ''; }
+        if (data.aggravating_relieving_factors) { return data.aggravating_relieving_factors; }
+        if (data.factors) { return data.factors; }
+        var factors = [];
+        if (data.aggravate) { factors.push('加重：' + data.aggravate); }
+        if (data.relieve) { factors.push('緩解：' + data.relieve); }
+        if (data.aggravating_factors) { factors.push('加重：' + data.aggravating_factors); }
+        if (data.relieving_factors) { factors.push('緩解：' + data.relieving_factors); }
+        return factors.join('；');
+    }
+
+    function addHistoryRow(containerId, data, includeTrauma, traumaBeforeDescription) {
+        if (includeTrauma === undefined) includeTrauma = true;
+        if (traumaBeforeDescription === undefined) traumaBeforeDescription = false;
+        var container = document.getElementById(containerId);
+        var wrap = document.createElement('div');
+        wrap.className = 'past-row-wrap';
+
+        var locationVal = (data && data.location) ? data.location : '';
+        var startVal = '';
+        var endVal = '';
+        var traumaVal = (data && data.trauma) ? data.trauma : '';
+        var descriptionVal = (data && data.description) ? data.description : '';
+        var startDatePlaceholder = '開始日期';
+        var endDatePlaceholder = '完結日期';
+
+        if (containerId === 'surgery_history_container') {
+            startVal = (data && data.symptom_onset_date) ? data.symptom_onset_date : '';
+            endVal = (data && data.surgery_date) ? data.surgery_date : '';
+            startDatePlaceholder = '症狀發生日期';
+            endDatePlaceholder = '手術日期';
+        } else if (containerId === 'injury_history_container' || containerId === 'fracture_history_container') {
+            startVal = (data && data.occurrence_date) ? data.occurrence_date : '';
+            endVal = (data && data.end_date) ? data.end_date : '';
+            startDatePlaceholder = '發生日期';
+        } else {
+            startVal = (data && data.start_date) ? data.start_date : '';
+            endVal = (data && data.end_date) ? data.end_date : '';
+        }
+
+        var traumaHtml = '';
+        if (includeTrauma) {
+            traumaHtml = '<div class="past-field fx-1"><input type="text" class="tiny-input past-trauma" placeholder="創傷 / 過度使用？" value="' + traumaVal + '"></div>';
+        }
+
+        var html = '';
+        html += '<div class="past-row">';
+        html += '<div class="past-field fx-1"><input type="text" class="tiny-input past-location" placeholder="位置" value="' + locationVal + '"></div>';
+        html += '<div class="past-field fx-1"><input type="text" class="tiny-input past-duration" placeholder="' + startDatePlaceholder + '" value="' + startVal + '"></div>';
+        html += '<div class="past-field fx-1"><input type="text" class="tiny-input past-when" placeholder="' + endDatePlaceholder + '" value="' + endVal + '"></div>';
+        if (traumaBeforeDescription) { html += traumaHtml; }
+        html += '<div class="past-field past-description-field"><input type="text" class="tiny-input past-description" placeholder="描述" value="' + descriptionVal + '"></div>';
+        if (!traumaBeforeDescription) { html += traumaHtml; }
+        html += '</div>';
+        html += '<button type="button" onclick="removeHistoryRow(this)" class="past-remove-btn">✕</button>';
+
+        wrap.innerHTML = html;
+        container.appendChild(wrap);
+        saveToStorage();
+    }
+
+    function removeHistoryRow(btn) {
+        var wrap = btn.closest('.past-row-wrap');
+        if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+        saveToStorage();
+    }
+
+    function parseTimelineNotation(value) {
+        var text = (value || '').trim();
+        var match = /^(?:(\d+)y)?(?:(\d+)m)?(?:(\d+)d)?$/.exec(text);
+        if (!match || (!match[1] && !match[2] && !match[3])) { return null; }
+
+        return (parseInt(match[1] || '0', 10) * 365) +
+            (parseInt(match[2] || '0', 10) * 30) +
+            parseInt(match[3] || '0', 10);
+    }
+
+    function addTimelineEntry(entries, timeValue, location) {
+        var time = (timeValue || '').trim();
+        if (!time) { return; }
+
+        var elapsedDays = parseTimelineNotation(time);
+        entries.push({
+            time: time,
+            location: (location || '').trim(),
+            elapsedDays: elapsedDays,
+            valid: elapsedDays !== null
+        });
+    }
+
+    function buildTimeline() {
+        var entries = [];
+        addTimelineEntry(entries, fieldVal('main_duration'), fieldVal('main_location'));
+
+        var associatedRows = document.querySelectorAll('#associated_container .assoc-row');
+        for (var i = 0; i < associatedRows.length; i++) {
+            addTimelineEntry(entries, qVal(associatedRows[i], '.assoc-duration'), qVal(associatedRows[i], '.assoc-location'));
+        }
+
+        var extremityRows = document.querySelectorAll('#extremity_container .assoc-row');
+        for (var j = 0; j < extremityRows.length; j++) {
+            addTimelineEntry(entries, qVal(extremityRows[j], '.extremity-duration'), qVal(extremityRows[j], '.extremity-location'));
+        }
+
+        for (var k = 0; k < HISTORY_LISTS.length; k++) {
+            var historyRows = document.querySelectorAll('#' + HISTORY_LISTS[k].id + ' .past-row-wrap');
+            for (var m = 0; m < historyRows.length; m++) {
+                addTimelineEntry(entries, qVal(historyRows[m], '.past-duration'), qVal(historyRows[m], '.past-location'));
+            }
+        }
+
+        entries.sort(function (first, second) {
+            if (first.valid !== second.valid) { return first.valid ? -1 : 1; }
+            if (!first.valid) { return 0; }
+            return second.elapsedDays - first.elapsedDays;
+        });
+
+        var timeColumnWidth = 0;
+        for (var n = 0; n < entries.length; n++) {
+            timeColumnWidth = Math.max(timeColumnWidth, entries[n].time.length);
+        }
+
+        var lines = [];
+        for (var n = 0; n < entries.length; n++) {
+            var timeColumn = entries[n].time;
+            while (timeColumn.length < timeColumnWidth) { timeColumn += ' '; }
+            lines.push(timeColumn + (entries[n].location ? ' ' + entries[n].location : ''));
+        }
+        setFieldVal('medication_timeline', lines.join('\n'));
+        saveToStorage();
+    }
+
+    function collectHistoryList(containerId, includeTrauma) {
+        var list = [];
+        var rows = document.querySelectorAll('#' + containerId + ' .past-row-wrap');
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            var item = {
+                location: qVal(row, '.past-location'),
+                description: qVal(row, '.past-description')
+            };
+            if (containerId === 'surgery_history_container') {
+                item.symptom_onset_date = qVal(row, '.past-duration');
+                item.surgery_date = qVal(row, '.past-when');
+            } else if (containerId === 'injury_history_container' || containerId === 'fracture_history_container') {
+                item.occurrence_date = qVal(row, '.past-duration');
+                item.end_date = qVal(row, '.past-when');
+            } else {
+                item.start_date = qVal(row, '.past-duration');
+                item.end_date = qVal(row, '.past-when');
+            }
+            if (includeTrauma) { item.trauma = qVal(row, '.past-trauma'); }
+            list.push(item);
+        }
+        return list;
+    }
+
+    function collectFormData() {
+        var data = {
+            version: "26.0-history-date-fields",
+            export_date: new Date().toISOString(),
+            record_date: fieldVal('record_date'),
+            patient_name: fieldVal('patient_name'),
+            patient_age_gender: fieldVal('patient_age_gender'),
+            occupation: fieldVal('occupation'),
+            sport_frequency: fieldVal('sport_frequency'),
+            main_problem: {
+                location: fieldVal('main_location'),
+                description: fieldVal('main_description'),
+                onset_time: fieldVal('main_duration'),
+                recent_onset: fieldVal('first_occurrence'),
+                frequency: fieldVal('main_frequency'),
+                trauma: fieldVal('main_trauma')
+            },
+            pain_intensity: {
+                vrs: fieldVal('main_vrs')
+            },
+            pain_pattern: {
+                aggravating_relieving_factors: fieldVal('main_factors')
+            },
+            associated_symptoms: [],
+            extremity_symptoms: [],
+            past_pain_history: collectHistoryList('past_pain_container', true),
+            surgery_history: collectHistoryList('surgery_history_container', true),
+            injury_history: collectHistoryList('injury_history_container', true),
+            fracture_history: collectHistoryList('fracture_history_container', false),
+            medication_internal_disorder_overuse: fieldVal('medication_disorder_overuse'),
+            medication_timeline: fieldVal('medication_timeline'),
+            observation_notes: fieldVal('summary_notes'),
+            treatment_summary_notes: fieldVal('summary_notes_2'),
+            motion_verification: fieldVal('motion_verification'),
+            horizontal_palpation_1: fieldVal('horizontal_palpation_1'),
+            horizontal_palpation_2: fieldVal('horizontal_palpation_2'),
+            horizontal_palpation_3: fieldVal('horizontal_palpation_3'),
+            vertical_palpation: fieldVal('vertical_palpation'),
+            trunk_balance: fieldVal('trunk_balance')
+        };
+
+        var assocCards = document.querySelectorAll('#associated_container .assoc-row');
+        for (var i = 0; i < assocCards.length; i++) {
+            var card = assocCards[i];
+            data.associated_symptoms.push({
+                location: qVal(card, '.assoc-location'),
+                onset_time: qVal(card, '.assoc-duration'),
+                recent_onset: qVal(card, '.assoc-first'),
+                frequency: qVal(card, '.assoc-frequency'),
+                trauma: qVal(card, '.assoc-trauma'),
+                aggravating_relieving_factors: qVal(card, '.assoc-factors'),
+                vrs: qVal(card, '.assoc-vrs'),
+                description: qVal(card, '.assoc-description')
+            });
+        }
+
+        var extremityCards = document.querySelectorAll('#extremity_container .assoc-row');
+        for (var j = 0; j < extremityCards.length; j++) {
+            var extremityCard = extremityCards[j];
+            data.extremity_symptoms.push({
+                location: qVal(extremityCard, '.extremity-location'),
+                onset_time: qVal(extremityCard, '.extremity-duration'),
+                recent_onset: qVal(extremityCard, '.extremity-first'),
+                frequency: qVal(extremityCard, '.extremity-frequency'),
+                trauma: qVal(extremityCard, '.extremity-trauma'),
+                aggravating_relieving_factors: qVal(extremityCard, '.extremity-factors'),
+                vrs: qVal(extremityCard, '.extremity-vrs'),
+                description: qVal(extremityCard, '.extremity-description')
+            });
+        }
+
+        return data;
+    }
+
+    function saveToStorage() {
+        try {
+            var data = collectFormData();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            flashSaveIndicator();
+        } catch (e) {
+            console.error('儲存失敗', e);
+        }
+    }
+
+    function flashSaveIndicator() {
+        var el = document.getElementById('save_indicator');
+        if (!el) { return; }
+        el.style.opacity = '1';
+        clearTimeout(saveIndicatorTimeout);
+        saveIndicatorTimeout = setTimeout(function () { el.style.opacity = '0'; }, 900);
+    }
+
+    function loadFromStorage() {
+        try {
+            var raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) { return false; }
+            var data = JSON.parse(raw);
+            fillFormWithData(data);
+            return true;
+        } catch (e) {
+            console.error('讀取失敗', e);
+            return false;
+        }
+    }
+
+    function exportToJSON() {
+        var data = collectFormData();
+        var json = JSON.stringify(data, null, 2);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(json).then(function () {
+                alert('JSON 已複製');
+            }, function () {
+                prompt('請手動複製', json);
+            });
+        } else {
+            prompt('請手動複製', json);
+        }
+    }
+
+    function applyImportedText(text) {
+        if (!text) { return; }
+        try {
+            var parsed = JSON.parse(text);
+            fillFormWithData(parsed);
+            saveToStorage();
+        } catch (e) {
+            alert('格式錯誤');
+        }
+    }
+
+    function importFromJSON() {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            navigator.clipboard.readText().then(function (text) {
+                applyImportedText(text);
+            }, function () {
+                var text = prompt('貼上 JSON');
+                applyImportedText(text);
+            });
+        } else {
+            var text = prompt('貼上 JSON');
+            applyImportedText(text);
+        }
+    }
+
+    function clearAll() {
+        if (!confirm('確定要清空所有已填寫的資料嗎？此操作無法復原。')) { return; }
+
+        setFieldVal('patient_name', '');
+        setFieldVal('patient_age_gender', '');
+        setFieldVal('occupation', '');
+        setFieldVal('sport_frequency', '');
+        setFieldVal('main_location', '');
+        setFieldVal('main_description', '');
+        setFieldVal('main_duration', '');
+        setFieldVal('first_occurrence', '');
+        setFieldVal('main_frequency', '');
+        setFieldVal('main_trauma', '');
+        setFieldVal('main_vrs', '');
+        setFieldVal('main_factors', '');
+        setFieldVal('medication_disorder_overuse', '');
+        setFieldVal('medication_timeline', '');
+        setFieldVal('summary_notes', '');
+        setFieldVal('summary_notes_2', '');
+        setFieldVal('motion_verification', '');
+        setFieldVal('horizontal_palpation_1', '');
+        setFieldVal('horizontal_palpation_2', '');
+        setFieldVal('horizontal_palpation_3', '');
+        setFieldVal('vertical_palpation', '');
+        setFieldVal('trunk_balance', '');
+
+        document.getElementById('associated_container').innerHTML = '';
+        document.getElementById('extremity_container').innerHTML = '';
+        for (var i = 0; i < HISTORY_LISTS.length; i++) {
+            document.getElementById(HISTORY_LISTS[i].id).innerHTML = '';
+        }
+
+        setFieldVal('record_date', new Date().toISOString().split('T')[0]);
+
+        try {
+            localStorage.removeItem(STORAGE_KEY);
+        } catch (e) {
+            console.error('清除儲存失敗', e);
+        }
+        saveToStorage();
+    }
+
+    function fillFormWithData(data) {
+        if (!data) { return; }
+
+        if (data.record_date) { setFieldVal('record_date', data.record_date); }
+        if (data.patient_name !== undefined) { setFieldVal('patient_name', data.patient_name); }
+        if (data.patient_age_gender !== undefined) { setFieldVal('patient_age_gender', data.patient_age_gender); }
+        if (data.occupation !== undefined) { setFieldVal('occupation', data.occupation); }
+        if (data.sport_frequency !== undefined) { setFieldVal('sport_frequency', data.sport_frequency); }
+
+        if (data.main_problem) {
+            setFieldVal('main_location', data.main_problem.location || data.main_problem.location_description || '');
+            setFieldVal('main_description', data.main_problem.description || '');
+            setFieldVal('main_duration', data.main_problem.onset_time || '');
+            setFieldVal('first_occurrence', data.main_problem.recent_onset || '');
+            setFieldVal('main_frequency', data.main_problem.frequency || '');
+            setFieldVal('main_trauma', data.main_problem.trauma || '');
+        }
+
+        if (data.pain_intensity) {
+            setFieldVal('main_vrs', data.pain_intensity.vrs || '');
+        }
+
+        if (data.pain_pattern) {
+            setFieldVal('main_factors', mergedFactorVal(data.pain_pattern));
+        }
+
+        document.getElementById('associated_container').innerHTML = '';
+        if (data.associated_symptoms) {
+            for (var i = 0; i < data.associated_symptoms.length; i++) {
+                addAssociatedRow(data.associated_symptoms[i]);
+            }
+        }
+
+        document.getElementById('extremity_container').innerHTML = '';
+        if (data.extremity_symptoms) {
+            for (var j = 0; j < data.extremity_symptoms.length; j++) {
+                addExtremityRow(data.extremity_symptoms[j]);
+            }
+        }
+
+        for (var h = 0; h < HISTORY_LISTS.length; h++) {
+            var cfg = HISTORY_LISTS[h];
+            document.getElementById(cfg.id).innerHTML = '';
+            var items = data[cfg.key];
+            if (items) {
+                for (var k = 0; k < items.length; k++) {
+                    addHistoryRow(cfg.id, items[k], cfg.trauma, cfg.traumaBeforeDescription);
+                }
+            }
+        }
+
+        if (data.medication_internal_disorder_overuse !== undefined) {
+            setFieldVal('medication_disorder_overuse', data.medication_internal_disorder_overuse);
+        } else if (data.medication_disorder_overuse !== undefined) {
+            setFieldVal('medication_disorder_overuse', data.medication_disorder_overuse);
+        }
+        if (data.medication_timeline !== undefined) { setFieldVal('medication_timeline', data.medication_timeline); }
+        if (data.observation_notes !== undefined) { setFieldVal('summary_notes', data.observation_notes); }
+        if (data.treatment_summary_notes !== undefined) { setFieldVal('summary_notes_2', data.treatment_summary_notes); }
+        if (data.motion_verification !== undefined) { setFieldVal('motion_verification', data.motion_verification); }
+        if (data.horizontal_palpation_1 !== undefined) { setFieldVal('horizontal_palpation_1', data.horizontal_palpation_1); }
+        if (data.horizontal_palpation_2 !== undefined) { setFieldVal('horizontal_palpation_2', data.horizontal_palpation_2); }
+        if (data.horizontal_palpation_3 !== undefined) { setFieldVal('horizontal_palpation_3', data.horizontal_palpation_3); }
+        if (data.vertical_palpation !== undefined) { setFieldVal('vertical_palpation', data.vertical_palpation); }
+        if (data.trunk_balance !== undefined) { setFieldVal('trunk_balance', data.trunk_balance); }
+    }
+
+    function init() {
+        var restored = loadFromStorage();
+
+        var dateInput = document.getElementById('record_date');
+        if (dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        var formCard = document.getElementById('form-card');
+        formCard.addEventListener('input', saveToStorage);
+        formCard.addEventListener('change', saveToStorage);
+
+        saveToStorage();
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
