@@ -5,14 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Pointsheet</title>
     <style>
-        :root { --label-width: 38px; --header-height: 28px; }
+        :root { --label-width: 34px; --header-height: 28px; }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; background: #0d0d0d; }
         body { color: #d4d4d4; font-family: "Courier New", monospace; overflow: hidden; }
-        #sheet { display: grid; grid-template-columns: var(--label-width) repeat(21, minmax(0, 1fr)); grid-template-rows: var(--header-height) repeat(31, minmax(0, 1fr)); width: 100vw; height: 100dvh; padding: 4px; }
+        #sheet { display: grid; grid-template-columns: var(--label-width) repeat(21, minmax(0, 1fr)) var(--label-width); grid-template-rows: var(--header-height) repeat(31, minmax(0, 1fr)) var(--header-height); width: 100vw; height: 100dvh; padding: 4px; }
         .corner, .column-label, .row-label, .cell { display: flex; align-items: center; justify-content: center; }
         .column-label { color: #f3f4f6; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; white-space: pre-line; border-bottom: 1px solid #575757; }
-        .row-label { justify-content: flex-end; padding-right: 3px; color: #d4d4d4; font-size: clamp(10px, 2.5vw, 13px); font-weight: 700; border-right: 1px solid #575757; }
+        .column-label-bottom { border-top: 1px solid #575757; border-bottom: 0; }
+        .row-label { justify-content: flex-end; padding-right: 3px; color: #d4d4d4; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; border-right: 1px solid #575757; }
+        .row-label-right { justify-content: flex-start; padding-left: 3px; padding-right: 0; border-left: 1px solid #575757; border-right: 0; }
         .cell { position: relative; border-right: 1px solid #202020; border-bottom: 1px solid #202020; }
         .separator-right { border-right: 2px solid #f59e0b; }
         .separator-bottom { border-bottom: 2px solid #f59e0b; }
@@ -774,7 +776,11 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             button.addEventListener('pointercancel', () => { crossPointerId = undefined; guideOpened = false; guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
             button.addEventListener('click', () => { if (suppressCrossClick) { suppressCrossClick = false; return; } stateDialog.showModal(); }); corner.appendChild(button); sheet.appendChild(corner);
             headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); label.textContent = header.includes('|') ? header.replaceAll('|', '\n') : `\n${header}`; sheet.appendChild(label); });
-            rows.forEach(([rowName, ...marks]) => { const label = document.createElement('div'); label.className = 'row-label'; if (separatorAfterRows.has(rowName)) label.classList.add('separator-bottom'); label.textContent = rowName; sheet.appendChild(label); headers.forEach((header, index) => { if (mergedMeRows.has(rowName) && index === firstMeColumn + 1) return; const cell = document.createElement('div'); cell.className = 'cell'; if (layout.separatorColumns.includes(index)) cell.classList.add('separator-right'); if (separatorAfterRows.has(rowName)) cell.classList.add('separator-bottom'); const merged = mergedMeRows.has(rowName) && index === firstMeColumn; if (merged) { cell.classList.add('merged-me'); cell.style.gridColumn = 'span 2'; } const hasPoint = merged ? marks.slice(firstMeColumn, firstMeColumn + 2).some(mark => mark?.trim().toLowerCase() === 'x') : marks[index]?.trim().toLowerCase() === 'x'; if (hasPoint) renderPoint(cell, rowName, header, index, merged); sheet.appendChild(cell); }); });
+            const rightCorner = document.createElement('div'); rightCorner.className = 'corner'; sheet.appendChild(rightCorner);
+            rows.forEach(([rowName, ...marks]) => { const label = document.createElement('div'); label.className = 'row-label'; if (separatorAfterRows.has(rowName)) label.classList.add('separator-bottom'); label.textContent = rowName; sheet.appendChild(label); headers.forEach((header, index) => { if (mergedMeRows.has(rowName) && index === firstMeColumn + 1) return; const cell = document.createElement('div'); cell.className = 'cell'; if (layout.separatorColumns.includes(index)) cell.classList.add('separator-right'); if (separatorAfterRows.has(rowName)) cell.classList.add('separator-bottom'); const merged = mergedMeRows.has(rowName) && index === firstMeColumn; if (merged) { cell.classList.add('merged-me'); cell.style.gridColumn = 'span 2'; } const hasPoint = merged ? marks.slice(firstMeColumn, firstMeColumn + 2).some(mark => mark?.trim().toLowerCase() === 'x') : marks[index]?.trim().toLowerCase() === 'x'; if (hasPoint) renderPoint(cell, rowName, header, index, merged); sheet.appendChild(cell); }); const rightLabel = document.createElement('div'); rightLabel.className = 'row-label row-label-right'; if (separatorAfterRows.has(rowName)) rightLabel.classList.add('separator-bottom'); rightLabel.textContent = rowName; sheet.appendChild(rightLabel); });
+            const bottomCorner = document.createElement('div'); bottomCorner.className = 'corner'; sheet.appendChild(bottomCorner);
+            headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label column-label-bottom'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); label.textContent = header.includes('|') ? header.replaceAll('|', '\n') : `\n${header}`; sheet.appendChild(label); });
+            const bottomRightCorner = document.createElement('div'); bottomRightCorner.className = 'corner'; sheet.appendChild(bottomRightCorner);
             loadState(); document.querySelectorAll('[data-layout]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layout === layoutId)));
         }
         const clearGuide = document.createElement('button'); clearGuide.type = 'button'; clearGuide.className = 'clear-guide-button'; clearGuide.dataset.guideAction = 'clear'; clearGuide.textContent = 'Clear guide'; clearGuide.addEventListener('click', () => { selectGuide(); guideDialog.close(); }); guideActions.appendChild(clearGuide);
