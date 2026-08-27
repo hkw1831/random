@@ -11,7 +11,12 @@
         body { color: #d4d4d4; font-family: "Courier New", monospace; overflow: hidden; }
         #sheet { position: relative; z-index: 1; display: grid; grid-template-columns: var(--label-width) repeat(21, minmax(0, 1fr)) var(--label-width); grid-template-rows: var(--header-height) repeat(31, minmax(0, 1fr)) var(--header-height); width: 100vw; height: 100dvh; padding: 4px; }
         .corner, .column-label, .row-label, .cell { display: flex; align-items: center; justify-content: center; }
-        .column-label { color: #f3f4f6; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; white-space: pre-line; border-bottom: 1px solid #575757; }
+        .column-label { display: grid; grid-template-rows: 1fr 1fr; color: #f3f4f6; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; border-bottom: 1px solid #575757; }
+        .column-side, .column-name { align-self: center; }
+        .column-side { justify-self: center; }
+        .column-side.left { justify-self: start; }
+        .column-side.right { justify-self: end; }
+        .column-name { justify-self: center; }
         .column-label-bottom { border-top: 1px solid #575757; border-bottom: 0; }
         .row-label { justify-content: flex-end; padding-right: 3px; color: #d4d4d4; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; border-right: 1px solid #575757; }
         .row-label-right { justify-content: flex-start; padding-left: 3px; padding-right: 0; border-left: 1px solid #575757; border-right: 0; }
@@ -65,6 +70,12 @@
         .grey-point-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .guide-actions button[aria-pressed="true"] { border-color: #22d3ee; background: #155e75; }
         .guide-actions button.guide-target { border-color: #a5f3fc; background: #454545; }
+        #guide-dialog { width: min(430px, calc(100vw - 16px)); padding: 8px; }
+        #guide-dialog h2 { margin-bottom: 6px; font-size: 13px; }
+        #guide-dialog .layout-switch { min-height: 26px; margin-bottom: 4px; }
+        #guide-dialog .layout-switch button, #guide-dialog .guide-actions button { min-height: 21px; font-size: 9px; line-height: 1; }
+        #guide-dialog .guide-actions, #guide-dialog .guide-group, #guide-dialog .guide-grid { gap: 3px; }
+        #guide-dialog .guide-group-title { font-size: 10px; line-height: 1; }
         .clear-guide-button { margin-bottom: 8px; }
         .guide-group { display: grid; gap: 8px; }
         .guide-group-title { color: #d4d4d4; font: 700 13px Arial, sans-serif; }
@@ -702,6 +713,12 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             const matching = headers.map((value, index) => value.split('|').at(-1) === pointName ? index : -1).filter(index => index >= 0);
             return matching.length === 1 ? `${prefix}-${keyRow}` : `${prefix}-${keyRow}-${matching.indexOf(columnIndex) === 0 ? 'lt' : 'rt'}`;
         }
+        function populateColumnLabel(label, header) {
+            const [side, name] = header.includes('|') ? header.split('|') : ['', header];
+            const sideLabel = document.createElement('span'); sideLabel.className = `column-side ${side === 'L' ? 'left' : side === 'R' ? 'right' : ''}`; sideLabel.textContent = side;
+            const nameLabel = document.createElement('span'); nameLabel.className = 'column-name'; nameLabel.textContent = name;
+            label.replaceChildren(sideLabel, nameLabel);
+        }
         function applyVisual(point, palpation = point.dataset.palpation, movement = point.dataset.movement, treated = false) {
             point.classList.remove('palpation-grey', 'palpation-yellow', 'palpation-green', 'palpation-red', 'movement-grey', 'movement-yellow', 'movement-green', 'movement-red');
             if (palpation !== 'clear') point.classList.add(`palpation-${palpation}`);
@@ -819,11 +836,11 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             button.addEventListener('pointerup', event => { if (event.pointerId !== crossPointerId) return; crossPointerId = undefined; if (!guideOpened) return; const target = updateGuideTarget(event.clientX, event.clientY); const guide = guideSets.find(candidate => candidate.name === target?.dataset.guideName); if (target?.dataset.layout && target.dataset.layout !== layoutId) { saveState(); layoutId = target.dataset.layout; location.hash = layoutId; buildSheet(); guideDialog.close(); } else if (guide) { selectGuide(guide); guideDialog.close(); } else if (target?.dataset.guideAction === 'clear') { selectGuide(); guideDialog.close(); } guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
             button.addEventListener('pointercancel', () => { crossPointerId = undefined; guideOpened = false; guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
             button.addEventListener('click', () => { if (suppressCrossClick) { suppressCrossClick = false; return; } stateDialog.showModal(); }); corner.appendChild(button); sheet.appendChild(corner);
-            headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); label.textContent = header.includes('|') ? header.replaceAll('|', '\n') : `\n${header}`; sheet.appendChild(label); });
+            headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); populateColumnLabel(label, header); sheet.appendChild(label); });
             const rightCorner = document.createElement('div'); rightCorner.className = 'corner'; sheet.appendChild(rightCorner);
             rows.forEach(([rowName, ...marks]) => { const label = document.createElement('div'); label.className = 'row-label'; if (separatorAfterRows.has(rowName)) label.classList.add('separator-bottom'); label.textContent = rowName; sheet.appendChild(label); headers.forEach((header, index) => { if (mergedMeRows.has(rowName) && index === firstMeColumn + 1) return; const cell = document.createElement('div'); cell.className = 'cell'; if (layout.separatorColumns.includes(index)) cell.classList.add('separator-right'); if (separatorAfterRows.has(rowName)) cell.classList.add('separator-bottom'); const merged = mergedMeRows.has(rowName) && index === firstMeColumn; if (merged) { cell.classList.add('merged-me'); cell.style.gridColumn = 'span 2'; } const hasPoint = merged ? marks.slice(firstMeColumn, firstMeColumn + 2).some(mark => mark?.trim().toLowerCase() === 'x') : marks[index]?.trim().toLowerCase() === 'x'; if (hasPoint) renderPoint(cell, rowName, header, index, merged); sheet.appendChild(cell); }); const rightLabel = document.createElement('div'); rightLabel.className = 'row-label row-label-right'; if (separatorAfterRows.has(rowName)) rightLabel.classList.add('separator-bottom'); rightLabel.textContent = rowName; sheet.appendChild(rightLabel); });
             const bottomCorner = document.createElement('div'); bottomCorner.className = 'corner'; sheet.appendChild(bottomCorner);
-            headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label column-label-bottom'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); label.textContent = header.includes('|') ? header.replaceAll('|', '\n') : `\n${header}`; sheet.appendChild(label); });
+            headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label column-label-bottom'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); populateColumnLabel(label, header); sheet.appendChild(label); });
             const bottomRightCorner = document.createElement('div'); bottomRightCorner.className = 'corner'; sheet.appendChild(bottomRightCorner);
             loadState(); document.querySelectorAll('[data-layout]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layout === layoutId)));
         }
