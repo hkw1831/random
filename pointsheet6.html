@@ -9,7 +9,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; background: #0d0d0d; }
         body { color: #d4d4d4; font-family: "Courier New", monospace; overflow: hidden; }
-        #sheet { display: grid; grid-template-columns: var(--label-width) repeat(21, minmax(0, 1fr)) var(--label-width); grid-template-rows: var(--header-height) repeat(31, minmax(0, 1fr)) var(--header-height); width: 100vw; height: 100dvh; padding: 4px; }
+        #sheet { position: relative; z-index: 1; display: grid; grid-template-columns: var(--label-width) repeat(21, minmax(0, 1fr)) var(--label-width); grid-template-rows: var(--header-height) repeat(31, minmax(0, 1fr)) var(--header-height); width: 100vw; height: 100dvh; padding: 4px; }
         .corner, .column-label, .row-label, .cell { display: flex; align-items: center; justify-content: center; }
         .column-label { color: #f3f4f6; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; white-space: pre-line; border-bottom: 1px solid #575757; }
         .column-label-bottom { border-top: 1px solid #575757; border-bottom: 0; }
@@ -23,7 +23,7 @@
         .point::before { position: absolute; top: 50%; left: 50%; width: 70%; aspect-ratio: 1; max-height: 70%; border: 1px solid #3b3b3b; border-radius: 50%; background: #202020; content: ""; transform: translate(-50%, -50%); transition: background-color 100ms ease, border-color 100ms ease, box-shadow 100ms ease; }
         .point::after { position: absolute; top: 50%; left: 50%; width: 90%; aspect-ratio: 1; max-height: 90%; border: 2px solid #303030; border-radius: 50%; content: ""; pointer-events: none; transform: translate(-50%, -50%); transition: border-color 100ms ease, box-shadow 100ms ease; }
         .point-key, .gesture-preview { position: absolute; inset: 0; display: none; align-content: center; overflow-wrap: anywhere; color: #fff; font: 700 5px/1 "Courier New", monospace; pointer-events: none; text-align: center; text-shadow: 0 0 2px #000, 0 0 2px #000; }
-        #sheet.show-point-keys .point-key, .point.active .gesture-preview { display: block; }
+        #sheet.show-point-keys .point-key { display: block; }
         .gesture-preview { color: #f8fafc; font-size: 6px; line-height: 1.1; }
         .point:focus-visible { outline: 2px solid #facc15; outline-offset: -2px; }
         .point.palpation-yellow::before { background: #fde68a; border-color: #facc15; box-shadow: 0 0 6px #fde68a99; }
@@ -38,6 +38,20 @@
         .point.active::before { outline: 2px dashed #e5e7eb; outline-offset: 2px; }
         .point.preview-red::before, .point.preview-red::after { outline-color: #f87171; } .point.preview-green::before, .point.preview-green::after { outline-color: #4ade80; } .point.preview-yellow::before, .point.preview-yellow::after { outline-color: #facc15; } .point.preview-grey::before, .point.preview-grey::after { outline-color: #9ca3af; }
         .point.preview-clear::before, .point.preview-clear::after { opacity: .3; outline-color: #e5e7eb; }
+        .gesture-overlay { position: fixed; inset: 0; z-index: 0; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 100ms ease, visibility 100ms step-end; }
+        .gesture-overlay.visible { visibility: visible; opacity: 1; transition: opacity 100ms ease; }
+        .gesture-point-name { position: fixed; top: 12dvh; left: 16px; right: 16px; z-index: 2; color: #fff; font: 700 clamp(28px, 10vw, 88px)/1 "Courier New", monospace; letter-spacing: 0; pointer-events: none; text-align: center; text-shadow: 0 2px 4px #000; }
+        .gesture-dot { position: absolute; top: 52%; left: 50%; width: min(72vw, 520px); aspect-ratio: 1; border: 10px solid #303030; border-radius: 50%; box-shadow: 0 0 16px #00000088; transform: translate(-50%, -50%); transition: border-color 100ms ease, box-shadow 100ms ease; }
+        .gesture-dot::before { position: absolute; inset: 12%; border: 5px solid #3b3b3b; border-radius: 50%; background: #202020; content: ""; transition: background-color 100ms ease, border-color 100ms ease, box-shadow 100ms ease; }
+        .gesture-overlay.palpation.yellow .gesture-dot::before { background: #fde68a; border-color: #facc15; box-shadow: 0 0 18px #fde68a99; }
+        .gesture-overlay.palpation.grey .gesture-dot::before { background: #6b7280; border-color: #9ca3af; box-shadow: 0 0 18px #9ca3af66; }
+        .gesture-overlay.palpation.green .gesture-dot::before { background: #22c55e; border-color: #16a34a; box-shadow: 0 0 18px #22c55e99; }
+        .gesture-overlay.palpation.red .gesture-dot::before { background: #ef4444; border-color: #dc2626; box-shadow: 0 0 18px #ef444499; }
+        .gesture-overlay.treated .gesture-dot::after { position: absolute; inset: 12%; z-index: 1; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M24 24L76 76M76 24L24 76' fill='none' stroke='%23101010' stroke-width='15' stroke-linecap='round'/%3E%3C/svg%3E") center/72% no-repeat; content: ""; }
+        .gesture-overlay.movement.yellow .gesture-dot { border-color: #facc15; box-shadow: 0 0 18px #fde68a99; }
+        .gesture-overlay.movement.grey .gesture-dot { border-color: #9ca3af; box-shadow: 0 0 18px #9ca3af66; }
+        .gesture-overlay.movement.green .gesture-dot { border-color: #16a34a; box-shadow: 0 0 18px #22c55e99; }
+        .gesture-overlay.movement.red .gesture-dot { border-color: #dc2626; box-shadow: 0 0 18px #ef444499; }
         .merged-me .point::before { width: 35%; }
         .clear-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(16px, 3.5vw, 22px) Arial, sans-serif; line-height: 1; }
         .state-dialog { width: min(320px, calc(100vw - 32px)); border: 1px solid #737373; border-radius: 5px; background: #1c1c1c; color: #f3f4f6; padding: 18px; }
@@ -66,6 +80,8 @@
 </head>
 <body>
     <main id="sheet" aria-label="Pointsheet"></main>
+    <div id="gesture-overlay" class="gesture-overlay" aria-live="polite"><span class="gesture-dot"></span></div>
+    <span id="gesture-point-name" class="gesture-point-name"></span>
     <dialog id="state-dialog" class="state-dialog" aria-labelledby="state-dialog-title">
         <h2 id="state-dialog-title">Admin</h2>
         <div class="state-dialog-actions">
@@ -650,6 +666,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             're-la-di2-rt': { rule1: [], rule2: [], rule3: [] },
         };
         const sheet = document.getElementById('sheet');
+        const gestureOverlay = document.getElementById('gesture-overlay');
+        const gesturePointName = document.getElementById('gesture-point-name');
         const stateDialog = document.getElementById('state-dialog');
         const guideDialog = document.getElementById('guide-dialog');
         const guideActions = document.getElementById('guide-actions');
@@ -753,6 +771,11 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             }
             applyVisual(point, point.dataset.palpation, point.dataset.movement, point.classList.contains('treated')); saveState(); refreshGuide();
         }
+        function showGestureOverlay(point, result) {
+            gestureOverlay.className = `gesture-overlay visible ${point.classList.contains('treated') ? 'treated' : ''} ${result?.check || ''} ${result?.state || ''}`;
+            gesturePointName.textContent = point.dataset.key;
+        }
+        function hideGestureOverlay() { gestureOverlay.className = 'gesture-overlay'; gesturePointName.textContent = ''; }
         function guideKeys(guide) {
             if (guide?.rule !== 'cc-cf-balance') return guide?.keys || [];
             const points = [...document.querySelectorAll('.point')]; const keys = new Set();
@@ -774,11 +797,13 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             let startX; let startY; let pointerId; let preview; let wasTreated;
             const clearPreview = () => { preview = undefined; pointerId = undefined; gesture.textContent = ''; point.classList.remove('active', 'preview-red', 'preview-green', 'preview-yellow', 'preview-grey', 'preview-clear'); applyVisual(point, point.dataset.palpation, point.dataset.movement, wasTreated); };
             const swipe = (x, y) => { if (Math.hypot(x, y) < 12) return undefined; const angle = Math.atan2(-y, Math.abs(x)) * 180 / Math.PI; const check = angle < -72 ? 'both' : x >= 0 ? 'palpation' : 'movement'; const state = angle >= 60 ? 'red' : angle >= 30 ? 'green' : angle >= 0 ? 'yellow' : angle >= -36 ? 'grey' : 'clear'; return { check, state }; };
-            const previewGesture = result => { const id = result ? `${result.check}-${result.state}` : ''; if (id === preview) return; preview = id; gesture.textContent = result ? `${result.check === 'palpation' ? 'P' : result.check === 'movement' ? 'M' : 'P/M'} ${result.state.toUpperCase()}` : ''; point.classList.remove('preview-red', 'preview-green', 'preview-yellow', 'preview-grey', 'preview-clear'); if (!result) { applyVisual(point, point.dataset.palpation, point.dataset.movement, wasTreated); return; } point.classList.add(`preview-${result.state}`); applyVisual(point, result.check === 'movement' ? point.dataset.palpation : result.state, result.check === 'palpation' ? point.dataset.movement : result.state, wasTreated); };
-            point.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; wasTreated = point.classList.contains('treated'); point.classList.add('active'); point.setPointerCapture(pointerId); });
+            const previewGesture = result => { const id = result ? `${result.check}-${result.state}` : ''; if (id === preview) return; preview = id; showGestureOverlay(point, result); point.classList.remove('preview-red', 'preview-green', 'preview-yellow', 'preview-grey', 'preview-clear'); if (!result) { applyVisual(point, point.dataset.palpation, point.dataset.movement, wasTreated); return; } point.classList.add(`preview-${result.state}`); applyVisual(point, result.check === 'movement' ? point.dataset.palpation : result.state, result.check === 'palpation' ? point.dataset.movement : result.state, wasTreated); };
+            point.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; wasTreated = point.classList.contains('treated'); point.classList.add('active'); showGestureOverlay(point); point.setPointerCapture(pointerId); });
             point.addEventListener('pointermove', event => { if (event.pointerId === pointerId) previewGesture(swipe(event.clientX - startX, event.clientY - startY)); });
-            point.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; const result = swipe(event.clientX - startX, event.clientY - startY); if (result) { updatePoint(point, result.check, result.state); clearPreview(); } else { clearPreview(); if (point.dataset.palpation !== 'clear') { point.classList.toggle('treated'); saveState(); refreshGuide(); } } });
-            point.addEventListener('pointercancel', clearPreview); point.addEventListener('contextmenu', event => event.preventDefault());
+            point.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; const result = swipe(event.clientX - startX, event.clientY - startY); if (result) { updatePoint(point, result.check, result.state); clearPreview(); } else { clearPreview(); if (point.dataset.palpation !== 'clear') { point.classList.toggle('treated'); saveState(); refreshGuide(); } } hideGestureOverlay(); });
+            point.addEventListener('pointercancel', () => { clearPreview(); hideGestureOverlay(); });
+            point.addEventListener('lostpointercapture', event => { if (event.pointerId === pointerId) { clearPreview(); hideGestureOverlay(); } });
+            point.addEventListener('contextmenu', event => event.preventDefault());
             cell.appendChild(point);
         }
         function buildSheet() {
