@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Pointsheet</title>
     <style>
-        :root { --label-width: 34px; --header-height: 28px; }
+        :root { --label-width: 32px; --header-height: 28px; }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; background: #0d0d0d; }
         body { color: #d4d4d4; font-family: "Courier New", monospace; overflow: hidden; }
@@ -20,8 +20,10 @@
         .column-label-bottom { border-top: 1px solid #575757; border-bottom: 0; }
         .column-label.location-marked { position: relative; cursor: pointer; }
         .column-label.location-marked::after { position: absolute; inset: 1px; border: 2px solid #f8fafc; box-shadow: inset 0 0 0 1px #0c4a6e, 0 0 4px #7dd3fc; content: ""; pointer-events: none; }
-        .row-label { justify-content: flex-end; padding-right: 3px; color: #d4d4d4; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; border-right: 1px solid #575757; }
+        .row-label { display: grid; align-content: center; justify-content: end; padding-right: 3px; color: #d4d4d4; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; border-right: 1px solid #575757; }
         .row-label-right { justify-content: flex-start; padding-left: 3px; padding-right: 0; border-left: 1px solid #575757; border-right: 0; }
+        .history-label-name, .history-label-age { display: block; text-align: inherit; }
+        .history-label-age { min-height: 6px; color: #dbeafe; font: 700 5px/1 "Courier New", monospace; }
         .cell { position: relative; border-right: 1px solid #202020; border-bottom: 1px solid #202020; }
         .separator-right { border-right: 2px solid #f59e0b; }
         .separator-bottom { border-bottom: 2px solid #f59e0b; }
@@ -842,12 +844,20 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         function saveBodyHistory(history) { updateCurrentTreatment({ bodyHistory: history }); }
         function bodyHistoryKey(label) { return `${label.dataset.historyEdge}:${label.dataset.rowName}`; }
         function historyColor(ageIndex) {
-            const lightness = 70 - ageIndex * 3;
-            const saturation = 42 + ageIndex * 4;
+            const lightness = 60 - ageIndex * 2.4;
+            const saturation = 58 + ageIndex * 2.5;
             return `hsl(198 ${saturation}% ${lightness}% / 0.9)`;
+        }
+        function populateHistoryLabel(label) {
+            const name = document.createElement('span'); name.className = 'history-label-name'; name.textContent = label.dataset.rowName;
+            const age = document.createElement('span'); age.className = 'history-label-age';
+            label.replaceChildren(name, age);
         }
         function applyHistoryLabel(label) {
             const selections = loadBodyHistory()[bodyHistoryKey(label)] || {};
+            const displayedSelection = selections.main || selections.secondary || selections.previous;
+            if (!label.querySelector('.history-label-name')) populateHistoryLabel(label);
+            label.querySelector('.history-label-age').textContent = bodyHistoryAges[displayedSelection?.ageIndex] || '';
             label.style.removeProperty('--history-left'); label.style.removeProperty('--history-right');
             label.classList.remove('history-marked', 'history-main-left', 'history-main-right', 'history-secondary-left', 'history-secondary-right');
             const isRightEdge = label.dataset.historyEdge === 'right';
@@ -909,13 +919,22 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
                 sideOrder.forEach(side => historyActions.appendChild(group.find(button => button.dataset.historySide === side)));
             }
         }
+        function updateHistoryPositionIndicator(edge) {
+            const position = edge === 'left' ? 'A' : 'P';
+            historyActions.querySelectorAll('button[data-history-side]').forEach(button => {
+                const text = `${button.dataset.historySide} ${position} ${bodyHistoryAges[button.dataset.historyAge]}`;
+                button.textContent = text;
+                button.title = `${text}: ${bodyHistorySegments.find(segment => segment.name === button.dataset.historySegment).label}`;
+                button.setAttribute('aria-label', button.title);
+            });
+        }
         function bindBodyHistoryGesture(label) {
             let startY; let pointerId; let opened = false;
             const targetAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-history-side], #clear-body-history');
             const updateTarget = (x, y) => { const target = targetAt(x, y); historyDialog.querySelectorAll('button[data-history-side], #clear-body-history').forEach(button => button.classList.toggle('history-target', button === target)); historyHoverValue.textContent = target?.dataset.historySide ? target.textContent : ''; return target; };
             const clearGesture = () => { pointerId = undefined; opened = false; label.classList.remove('history-active'); historyDialog.querySelectorAll('.history-target').forEach(button => button.classList.remove('history-target')); };
             label.addEventListener('pointerdown', event => { startY = event.clientY; pointerId = event.pointerId; opened = false; label.setPointerCapture(pointerId); });
-            label.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (opened) { updateTarget(event.clientX, event.clientY); return; } if (Math.abs(event.clientY - startY) < 12) return; opened = true; activeHistoryLabel = label; label.classList.add('history-active'); historyDialogTitle.textContent = label.dataset.rowName; historyHoverValue.textContent = ''; historyDialog.classList.toggle('history-from-right', label.dataset.historyEdge === 'right'); orderHistorySideButtons(true); historyDialog.showModal(); updateTarget(event.clientX, event.clientY); });
+            label.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (opened) { updateTarget(event.clientX, event.clientY); return; } if (Math.abs(event.clientY - startY) < 12) return; opened = true; activeHistoryLabel = label; label.classList.add('history-active'); historyDialogTitle.textContent = label.dataset.rowName; historyHoverValue.textContent = ''; updateHistoryPositionIndicator(label.dataset.historyEdge); historyDialog.classList.toggle('history-from-right', label.dataset.historyEdge === 'right'); orderHistorySideButtons(label.dataset.historyEdge === 'right'); historyDialog.showModal(); updateTarget(event.clientX, event.clientY); });
             label.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; if (!opened) { clearGesture(); return; } const target = updateTarget(event.clientX, event.clientY); if (target?.id === 'clear-body-history') clearBodyHistory(); else if (target) selectBodyHistory(target.dataset.historySide, Number(target.dataset.historyAge), target.dataset.historyActive === 'true'); else historyDialog.close(); clearGesture(); });
             label.addEventListener('pointercancel', () => { if (opened) historyDialog.close(); clearGesture(); });
         }
@@ -1121,6 +1140,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea').forEach(field => field.addEventListener('input', savePatientDetails));
         historyActions.addEventListener('pointerover', event => { const button = event.target.closest('button[data-history-side]'); if (button) historyHoverValue.textContent = button.textContent; });
         historyActions.addEventListener('pointerleave', () => { historyHoverValue.textContent = ''; });
+        document.addEventListener('pointermove', event => { if (!historyDialog.open) return; const button = document.elementFromPoint(event.clientX, event.clientY)?.closest('button[data-history-side]'); historyHoverValue.textContent = button?.textContent || ''; });
+        historyDialog.addEventListener('toggle', () => { if (historyDialog.open && activeHistoryLabel) updateHistoryPositionIndicator(activeHistoryLabel.dataset.historyEdge); });
         historyDialog.addEventListener('close', () => { historyDialog.classList.remove('history-from-right'); orderHistorySideButtons(false); });
         document.getElementById('clear-body-history').addEventListener('click', clearBodyHistory);
         document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; buildSheet(); guideDialog.close(); }));
