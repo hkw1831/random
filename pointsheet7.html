@@ -137,7 +137,10 @@
         .patient-details-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) minmax(0, 2fr); gap: 1px; }
         .patient-details-row-secondary { grid-template-columns: 1fr 1fr; }
         .patient-details-notes { grid-template-columns: minmax(0, 1fr); }
-        .patient-details-example { color: #d4d4d4; font: 700 10px/1 "Courier New", monospace; }
+        .patient-details-example-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+        .patient-details-example { min-width: 0; color: #d4d4d4; font: 700 10px/1 "Courier New", monospace; }
+        .patient-details-close { flex: 0 0 auto; border: 0; background: none; color: #d4d4d4; cursor: pointer; font: 700 16px/1 Arial, sans-serif; }
+        .patient-details-close:hover, .patient-details-close:focus-visible { color: #fff; }
         .patient-details-form input, .patient-details-form textarea { width: 100%; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 700 16px/1.2 "Courier New", monospace; }
         #record_date { min-width: 0; }
         .patient-details-form input { height: 34px; padding: 6px 8px; }
@@ -215,7 +218,10 @@
                 <input id="occupation" type="text" placeholder="occupation" aria-label="occupation">
                 <input id="sport_frequency" type="text" placeholder="exercise / freq" aria-label="exercise / frequency">
             </div>
-            <label class="patient-details-example" for="history">e.g. AN CL BI 5m/1w T 5-8 1xm Rotate neck</label>
+            <div class="patient-details-example-row">
+                <label class="patient-details-example" for="history">e.g. AN CL BI 5m/1w T 5-8 1xm Rotate neck</label>
+                <button id="close-patient-details" class="patient-details-close" type="button" aria-label="Close patient details" title="Close">×</button>
+            </div>
             <textarea id="history" rows="12" aria-label="history"></textarea>
             <div class="patient-details-row patient-details-notes">
                 <textarea id="trauma" rows="8" aria-label="Investigations, medications, internal dysfunctions, posture, or overuse"></textarea>
@@ -1176,6 +1182,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         document.getElementById('clear-current').addEventListener('click', () => { clearCurrentVisit(); stateDialog.close(); });
         document.getElementById('clear-all-visits').addEventListener('click', () => { clearAllVisits(); stateDialog.close(); });
         document.getElementById('toggle-point-keys').addEventListener('click', event => { const visible = sheet.classList.toggle('show-point-keys'); event.currentTarget.setAttribute('aria-pressed', String(visible)); stateDialog.close(); });
+        document.getElementById('close-patient-details').addEventListener('click', () => patientDetailsDialog.close());
         stateDialog.addEventListener('click', event => { if (event.target === stateDialog) stateDialog.close(); }); guideDialog.addEventListener('click', event => { if (event.target === guideDialog) guideDialog.close(); }); historyDialog.addEventListener('click', event => { if (event.target === historyDialog) historyDialog.close(); }); treatmentResultDialog.addEventListener('click', event => { if (event.target === treatmentResultDialog) treatmentResultDialog.close(); }); treatmentNumberDialog.addEventListener('click', event => { if (event.target === treatmentNumberDialog) treatmentNumberDialog.close(); }); patientDetailsDialog.addEventListener('click', event => { if (event.target === patientDetailsDialog) patientDetailsDialog.close(); });
         activeTreatmentNumber = Number(localStorage.getItem('pointsheet7-active-treatment')) || 1;
         window.addEventListener('pagehide', saveState); buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber();
