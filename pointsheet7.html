@@ -138,14 +138,11 @@
         .patient-details-row-secondary { grid-template-columns: 1fr 1fr; }
         .patient-details-notes { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
         .patient-details-example { color: #d4d4d4; font: 700 10px/1.2 "Courier New", monospace; }
-        .patient-details-form input, .patient-details-form textarea { width: 100%; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 700 10px/1.2 "Courier New", monospace; }
+        .patient-details-form input, .patient-details-form textarea { width: 100%; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 700 16px/1.2 "Courier New", monospace; }
         #record_date { min-width: 0; }
         .patient-details-form input { height: 34px; padding: 6px 8px; }
         .patient-details-form textarea { padding: 8px; resize: none; }
         .patient-details-form input:focus-visible, .patient-details-form textarea:focus-visible { outline: 2px solid #7dd3fc; outline-offset: -1px; }
-        @media (pointer: coarse) {
-            .patient-details-form input, .patient-details-form textarea { font-size: 16px; }
-        }
         .patient-details-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; }
     </style>
 </head>
@@ -219,9 +216,9 @@
                 <input id="sport_frequency" type="text" placeholder="exercise / freq" aria-label="exercise / frequency">
             </div>
             <label class="patient-details-example" for="history">e.g. AN CL BI 5m/1w T 5-8 1xm Rotate neck</label>
-            <textarea id="history" rows="14" aria-label="history"></textarea>
+            <textarea id="history" rows="12" aria-label="history"></textarea>
             <div class="patient-details-row patient-details-notes">
-                <textarea id="trauma" rows="12" aria-label="Investigations, medications, internal dysfunctions, posture, or overuse"></textarea>
+                <textarea id="trauma" rows="8" aria-label="Investigations, medications, internal dysfunctions, posture, or overuse"></textarea>
                 <textarea id="comment" rows="8" placeholder="Comment:" aria-label="comment"></textarea>
             </div>
         </form>
