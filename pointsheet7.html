@@ -134,9 +134,12 @@
         .treatment-number-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; touch-action: none; }
         #patient-details-dialog { position: fixed; top: 8px; right: 8px; bottom: auto; left: auto; width: min(430px, calc(100vw - 16px)); margin: 0; overflow: visible; padding: 10px; }
         .patient-details-form { display: grid; gap: 6px; }
-        .patient-details-row { display: grid; grid-template-columns: 1.4fr 2fr 1fr; gap: 6px; }
+        .patient-details-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) minmax(0, 2fr); gap: 6px; }
         .patient-details-row-secondary { grid-template-columns: 1fr 1fr; }
+        .patient-details-notes { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+        .patient-details-example { color: #d4d4d4; font: 700 10px/1.2 "Courier New", monospace; }
         .patient-details-form input, .patient-details-form textarea { width: 100%; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 700 13px/1.2 Arial, sans-serif; }
+        #record_date { min-width: 0; }
         .patient-details-form input { height: 34px; padding: 6px 8px; }
         .patient-details-form textarea { padding: 8px; resize: none; }
         .patient-details-form input:focus-visible, .patient-details-form textarea:focus-visible { outline: 2px solid #7dd3fc; outline-offset: -1px; }
@@ -212,8 +215,12 @@
                 <input id="occupation" type="text" placeholder="occupation" aria-label="occupation">
                 <input id="sport_frequency" type="text" placeholder="exercise / freq" aria-label="exercise / frequency">
             </div>
-            <textarea id="main_trauma" rows="10" placeholder="Truma / Overuse / Surgery / Internal dysfunction" aria-label="Trauma, overuse, surgery, or internal dysfunction"></textarea>
-            <textarea id="comment" rows="10" placeholder="comment" aria-label="comment"></textarea>
+            <label class="patient-details-example" for="history">e.g. AN CL BI 5m/1w T 5-8 1xm Rotate neck</label>
+            <textarea id="history" rows="12" aria-label="history"></textarea>
+            <div class="patient-details-row patient-details-notes">
+                <textarea id="trauma" rows="8" aria-label="Investigations, medications, internal dysfunctions, posture, or overuse"></textarea>
+                <textarea id="comment" rows="8" placeholder="Comment:" aria-label="comment"></textarea>
+            </div>
         </form>
     </dialog>
     <script>
@@ -1016,9 +1023,19 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             if (persist) updateCurrentTreatment({ guideName: guide?.name || '' });
         }
         function refreshGuide() { if (activeGuide) selectGuide(activeGuide); }
+        const patientDetailsDefaults = {
+            history: 'SiPa: \nPaConc:\nExtremit: \nPaPrev:\nSurgery:\nTrauma: \nFractures: ',
+            trauma: 'Investigations: \nMedications: \nFMID:\nPostura:\nOveruse:'
+        };
+        const previousHistoryTemplate = 'SiPa: \nPaConc:\nExtremit: \nPaPrev:\nSurgery:\nTrauma\nFractures';
+        const previousTraumaTemplate = 'Investigations: \nMedications: \nInternal dysfunctions:\nPostura:\nOveruse:';
+        function patientDetailsFields() { return [...document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea')]; }
+        function serializePatientDetails() { return Object.fromEntries(patientDetailsFields().map(field => [field.id, field.value])); }
+        function normalizePatientDetails(details) { const validFields = new Set(patientDetailsFields().map(field => field.id)); return Object.fromEntries(Object.entries(details || {}).filter(([key]) => validFields.has(key))); }
+        function normalizeTreatments(treatments) { return Object.fromEntries(Object.entries(treatments).map(([number, treatment]) => [number, { ...treatment, patientDetails: normalizePatientDetails(treatment.patientDetails) }])); }
         function loadPatientDetails() { return currentTreatment().patientDetails || {}; }
-        function applyPatientDetails() { const details = loadPatientDetails(); document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea').forEach(field => { field.value = details[field.id] || ''; }); }
-        function savePatientDetails() { updateCurrentTreatment({ patientDetails: Object.fromEntries([...document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea')].map(field => [field.id, field.value])) }); }
+        function applyPatientDetails() { const details = loadPatientDetails(); patientDetailsFields().forEach(field => { const value = details[field.id] === previousHistoryTemplate ? patientDetailsDefaults.history : details[field.id] === previousTraumaTemplate ? patientDetailsDefaults.trauma : details[field.id]; field.value = value || patientDetailsDefaults[field.id] || ''; }); }
+        function savePatientDetails() { updateCurrentTreatment({ patientDetails: serializePatientDetails() }); }
         function applyTreatmentNumber() {
             if (!treatmentNumberButton) return;
             treatmentNumberButton.textContent = activeTreatmentNumber;
@@ -1144,8 +1161,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         historyDialog.addEventListener('close', () => { historyDialog.classList.remove('history-from-right'); orderHistorySideButtons(false); });
         document.getElementById('clear-body-history').addEventListener('click', clearBodyHistory);
         document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; buildSheet(); guideDialog.close(); }));
-        document.getElementById('import-json').addEventListener('click', async () => { try { const treatments = JSON.parse(await navigator.clipboard.readText()); if (!treatments || typeof treatments !== 'object' || Array.isArray(treatments)) throw new Error('Expected a treatments JSON object.'); localStorage.setItem(getTreatmentStorageKey(), JSON.stringify(treatments)); activeGuide = undefined; buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); stateDialog.close(); } catch (error) { alert(`Unable to import JSON: ${error.message}`); } });
-        document.getElementById('export-json').addEventListener('click', async () => { try { saveState(); await navigator.clipboard.writeText(JSON.stringify(loadTreatments(), null, 2)); stateDialog.close(); } catch (error) { alert(`Unable to export JSON: ${error.message}`); } });
+        document.getElementById('import-json').addEventListener('click', async () => { try { const treatments = JSON.parse(await navigator.clipboard.readText()); if (!treatments || typeof treatments !== 'object' || Array.isArray(treatments)) throw new Error('Expected a treatments JSON object.'); localStorage.setItem(getTreatmentStorageKey(), JSON.stringify(normalizeTreatments(treatments))); activeGuide = undefined; buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); stateDialog.close(); } catch (error) { alert(`Unable to import JSON: ${error.message}`); } });
+        document.getElementById('export-json').addEventListener('click', async () => { try { saveState(); savePatientDetails(); await navigator.clipboard.writeText(JSON.stringify(loadTreatments(), null, 2)); stateDialog.close(); } catch (error) { alert(`Unable to export JSON: ${error.message}`); } });
         document.getElementById('import-grey-points').addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedGreyPoints(JSON.parse(text.replace(/'/g, '"'))); stateDialog.close(); } catch (error) { alert(`Unable to import grey points: ${error.message}`); } });
         document.getElementById('export-grey-points').addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedGreyPointKeys().map(key => `'${key}'`).join(', ')}]`); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export grey points: ${error.message}`); } });
         ['yellow', 'green', 'red'].forEach(state => {
