@@ -132,12 +132,12 @@
         .treatment-number-grid button { min-height: 42px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 18px/1 Arial, sans-serif; }
         .treatment-number-grid button:hover, .treatment-number-grid button:focus-visible, .treatment-number-grid button.treatment-number-target, .treatment-number-grid button[aria-pressed="true"] { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
         .treatment-number-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; touch-action: none; }
-        #patient-details-dialog, #patient-details-dialog[open] { position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); bottom: auto; left: auto; z-index: 3; width: min(430px, calc(100vw - 16px)); margin: 0; overflow: visible; padding: 10px; transform: none; }
-        .patient-details-form { display: grid; gap: 6px; }
-        .patient-details-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) minmax(0, 2fr); gap: 6px; }
+        #patient-details-dialog, #patient-details-dialog[open] { position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); bottom: auto; left: auto; z-index: 3; width: min(430px, calc(100vw - 16px)); margin: 0; overflow: visible; padding: 6px 10px; transform: none; }
+        .patient-details-form { display: grid; gap: 3px; }
+        .patient-details-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) minmax(0, 2fr); gap: 3px; }
         .patient-details-row-secondary { grid-template-columns: 1fr 1fr; }
         .patient-details-notes { grid-template-columns: minmax(0, 1fr); }
-        .patient-details-example { color: #d4d4d4; font: 700 10px/1.2 "Courier New", monospace; }
+        .patient-details-example { color: #d4d4d4; font: 700 10px/1 "Courier New", monospace; }
         .patient-details-form input, .patient-details-form textarea { width: 100%; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 700 16px/1.2 "Courier New", monospace; }
         #record_date { min-width: 0; }
         .patient-details-form input { height: 34px; padding: 6px 8px; }
