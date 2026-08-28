@@ -143,6 +143,9 @@
         .patient-details-form input { height: 34px; padding: 6px 8px; }
         .patient-details-form textarea { padding: 8px; resize: none; }
         .patient-details-form input:focus-visible, .patient-details-form textarea:focus-visible { outline: 2px solid #7dd3fc; outline-offset: -1px; }
+        @media (pointer: coarse) {
+            .patient-details-form input, .patient-details-form textarea { font-size: 16px; }
+        }
         .patient-details-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; }
     </style>
 </head>
@@ -1155,11 +1158,11 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         treatmentNumbers.forEach(number => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentNumber = number; button.textContent = number; button.setAttribute('aria-pressed', 'false'); button.addEventListener('click', () => selectTreatmentNumber(number)); treatmentNumberActions.appendChild(button); });
         document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea').forEach(field => {
             field.addEventListener('input', savePatientDetails);
-            field.addEventListener('focus', () => {
-                const scrollX = window.scrollX;
-                const scrollY = window.scrollY;
-                requestAnimationFrame(() => window.scrollTo(scrollX, scrollY));
-            });
+            field.addEventListener('touchstart', event => {
+                if (document.activeElement === field) return;
+                event.preventDefault();
+                field.focus({ preventScroll: true });
+            }, { passive: false });
         });
         historyActions.addEventListener('pointerover', event => { const button = event.target.closest('button[data-history-side]'); if (button) historyHoverValue.textContent = historyHoverText(button); });
         historyActions.addEventListener('pointerleave', () => { historyHoverValue.textContent = ''; });
