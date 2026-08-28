@@ -69,6 +69,7 @@
         .state-dialog-actions button:hover, .state-dialog-actions button:focus-visible, .guide-actions button:hover, .guide-actions button:focus-visible { background: #454545; }
         .state-dialog-actions .danger-button { color: #fecaca; }
         .state-data-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .state-data-actions .full-span { grid-column: 1 / -1; }
         .grey-point-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .guide-actions button[aria-pressed="true"] { border-color: #22d3ee; background: #155e75; }
         .guide-actions button.guide-target { border-color: #a5f3fc; background: #454545; }
@@ -104,7 +105,7 @@
         .row-label.history-main-right.history-secondary-right::after { border: 3px solid #ef4444; border-left: 0; background: linear-gradient(#facc15 0 0) right 3px top 3px / calc(100% - 3px) 3px no-repeat, linear-gradient(#facc15 0 0) right 3px bottom 3px / calc(100% - 3px) 3px no-repeat, linear-gradient(#facc15 0 0) right 3px top 3px / 3px calc(100% - 6px) no-repeat; }
         .row-label.history-active { outline: 1px solid #f8fafc; outline-offset: -1px; }
         #history-dialog { width: min(430px, calc(100vw - 16px)); height: calc(100dvh - 16px); max-height: calc(100dvh - 16px); overflow: hidden; padding: 8px; }
-        #history-dialog[open] { display: flex; flex-direction: column; }
+        #history-dialog[open] { display: flex; flex-direction: column; margin-right: auto; margin-left: 8px; }
         #history-dialog[open].history-from-right { margin-right: 8px; margin-left: auto; }
         .history-dialog-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
         #history-dialog h2 { flex: 0 0 auto; min-width: 0; font-size: 17px; white-space: nowrap; }
@@ -119,13 +120,13 @@
         .history-grid button:hover, .history-grid button:focus-visible, .history-grid button.history-target { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
         #treatment-result-dialog { position: fixed; top: auto; right: 8px; bottom: 8px; left: auto; width: min(320px, calc(100vw - 32px)); margin: 0; padding: 12px; }
         #treatment-result-dialog h2 { margin-bottom: 10px; }
-        .treatment-result-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+        .treatment-result-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
         .treatment-result-grid button { min-height: 42px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 18px/1 Arial, sans-serif; }
         .treatment-result-grid button:hover, .treatment-result-grid button:focus-visible, .treatment-result-grid button.treatment-target { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
         .treatment-result-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; }
         #treatment-number-dialog { position: fixed; top: auto; right: auto; bottom: 8px; left: 8px; width: min(260px, calc(100vw - 32px)); margin: 0; padding: 12px; }
         #treatment-number-dialog h2 { margin-bottom: 10px; }
-        .treatment-number-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+        .treatment-number-grid { display: grid; grid-template-columns: 1fr; gap: 2px; }
         .treatment-number-grid button { min-height: 42px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 18px/1 Arial, sans-serif; }
         .treatment-number-grid button:hover, .treatment-number-grid button:focus-visible, .treatment-number-grid button.treatment-number-target, .treatment-number-grid button[aria-pressed="true"] { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
         .treatment-number-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; touch-action: none; }
@@ -152,12 +153,10 @@
                 <button id="export-json" type="button">Export to JSON</button>
             </div>
             <div class="state-data-actions">
-                <button id="clear-current" class="danger-button" type="button">Clear current</button>
-                <button id="toggle-point-keys" type="button" aria-pressed="false">Show JSON field names</button>
-            </div>
-            <div class="state-data-actions">
+                <button id="clear-current" class="danger-button" type="button">Clear current visit</button>
                 <button id="clear-all-visits" class="danger-button" type="button">Clear all visits</button>
             </div>
+            <div class="state-data-actions"><button id="toggle-point-keys" class="full-span" type="button" aria-pressed="false">Show JSON field names</button></div>
             <div class="grey-point-actions">
                 <button id="import-grey-points" type="button">Import grey points</button>
                 <button id="export-grey-points" type="button">Export grey points</button>
@@ -203,9 +202,9 @@
     <dialog id="patient-details-dialog" class="state-dialog" aria-label="Patient details">
         <form class="patient-details-form">
             <div class="patient-details-row">
-                <input id="record_date" type="date" placeholder="date" aria-label="date">
                 <input id="patient_name" type="text" placeholder="name" aria-label="name">
                 <input id="patient_age_gender" type="text" placeholder="age / gender" aria-label="age / gender">
+                <input id="record_date" type="date" placeholder="date" aria-label="date">
             </div>
             <div class="patient-details-row patient-details-row-secondary">
                 <input id="occupation" type="text" placeholder="occupation" aria-label="occupation">
@@ -902,13 +901,21 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             applyPatientDetails();
             applyTreatmentNumber();
         }
+        function orderHistorySideButtons(fromRight) {
+            const sideOrder = fromRight ? ['LT', 'RT', 'BI'] : ['RT', 'LT', 'BI'];
+            const buttons = [...historyActions.querySelectorAll('button[data-history-side]')];
+            for (let index = 0; index < buttons.length; index += 3) {
+                const group = buttons.slice(index, index + 3);
+                sideOrder.forEach(side => historyActions.appendChild(group.find(button => button.dataset.historySide === side)));
+            }
+        }
         function bindBodyHistoryGesture(label) {
             let startY; let pointerId; let opened = false;
             const targetAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-history-side], #clear-body-history');
             const updateTarget = (x, y) => { const target = targetAt(x, y); historyDialog.querySelectorAll('button[data-history-side], #clear-body-history').forEach(button => button.classList.toggle('history-target', button === target)); historyHoverValue.textContent = target?.dataset.historySide ? target.textContent : ''; return target; };
             const clearGesture = () => { pointerId = undefined; opened = false; label.classList.remove('history-active'); historyDialog.querySelectorAll('.history-target').forEach(button => button.classList.remove('history-target')); };
             label.addEventListener('pointerdown', event => { startY = event.clientY; pointerId = event.pointerId; opened = false; label.setPointerCapture(pointerId); });
-            label.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (opened) { updateTarget(event.clientX, event.clientY); return; } if (Math.abs(event.clientY - startY) < 12) return; opened = true; activeHistoryLabel = label; label.classList.add('history-active'); historyDialogTitle.textContent = label.dataset.rowName; historyHoverValue.textContent = ''; historyDialog.classList.toggle('history-from-right', label.dataset.historyEdge === 'right'); historyDialog.showModal(); updateTarget(event.clientX, event.clientY); });
+            label.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (opened) { updateTarget(event.clientX, event.clientY); return; } if (Math.abs(event.clientY - startY) < 12) return; opened = true; activeHistoryLabel = label; label.classList.add('history-active'); historyDialogTitle.textContent = label.dataset.rowName; historyHoverValue.textContent = ''; historyDialog.classList.toggle('history-from-right', label.dataset.historyEdge === 'right'); orderHistorySideButtons(true); historyDialog.showModal(); updateTarget(event.clientX, event.clientY); });
             label.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; if (!opened) { clearGesture(); return; } const target = updateTarget(event.clientX, event.clientY); if (target?.id === 'clear-body-history') clearBodyHistory(); else if (target) selectBodyHistory(target.dataset.historySide, Number(target.dataset.historyAge), target.dataset.historyActive === 'true'); else historyDialog.close(); clearGesture(); });
             label.addEventListener('pointercancel', () => { if (opened) historyDialog.close(); clearGesture(); });
         }
@@ -1059,7 +1066,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         }
         function createPatientDetailsButton() {
             const button = document.createElement('button'); button.type = 'button'; button.className = 'patient-details-button'; button.textContent = 'i'; button.title = 'Patient details'; button.setAttribute('aria-label', button.title);
-            button.addEventListener('click', () => patientDetailsDialog.showModal());
+            button.addEventListener('click', () => { patientDetailsDialog.showModal(); document.getElementById('patient_name').focus(); });
             return button;
         }
         function renderPoint(cell, rowName, header, columnIndex, isMergedMe) {
@@ -1107,17 +1114,18 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         const bodyHistoryAges = ['1m', '3m', '6m', '1y', '2y', '3y', '4y', '5y', '7y', '10y', '15y', '20y', '25y', '30y'];
         const bodyHistorySegments = [{ name: 'previous', active: false, label: 'previous pain' }, { name: 'main', active: true, label: 'main pain' }, { name: 'secondary', active: true, label: 'secondary pain' }];
         const treatmentResultValues = ['+++', '++', '+', 'NC', '-', '--', '---', 'clear'];
-        const treatmentNumbers = Array.from({ length: 10 }, (_, index) => index + 1);
+        const treatmentNumbers = Array.from({ length: 10 }, (_, index) => 10 - index);
         bodyHistoryAges.forEach((age, ageIndex) => bodyHistorySegments.forEach(segment => ['RT', 'LT', 'BI'].forEach(side => { const button = document.createElement('button'); button.type = 'button'; button.dataset.historySide = side; button.dataset.historyAge = ageIndex; button.dataset.historyActive = String(segment.active); button.dataset.historySegment = segment.name; button.classList.add(`history-${segment.name}`); button.classList.toggle('history-current-choice', segment.active); button.textContent = `${side} ${age}`; button.title = `${side} ${age}: ${segment.label}`; button.setAttribute('aria-label', button.title); button.addEventListener('click', () => selectBodyHistory(side, ageIndex, segment.active, segment.name)); historyActions.appendChild(button); })));
         treatmentResultValues.forEach(value => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentResult = value; button.textContent = value; button.addEventListener('click', () => selectTreatmentResult(value)); treatmentResultActions.appendChild(button); });
         treatmentNumbers.forEach(number => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentNumber = number; button.textContent = number; button.setAttribute('aria-pressed', 'false'); button.addEventListener('click', () => selectTreatmentNumber(number)); treatmentNumberActions.appendChild(button); });
         document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea').forEach(field => field.addEventListener('input', savePatientDetails));
         historyActions.addEventListener('pointerover', event => { const button = event.target.closest('button[data-history-side]'); if (button) historyHoverValue.textContent = button.textContent; });
         historyActions.addEventListener('pointerleave', () => { historyHoverValue.textContent = ''; });
+        historyDialog.addEventListener('close', () => { historyDialog.classList.remove('history-from-right'); orderHistorySideButtons(false); });
         document.getElementById('clear-body-history').addEventListener('click', clearBodyHistory);
         document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; buildSheet(); guideDialog.close(); }));
-        document.getElementById('import-json').addEventListener('click', async () => { try { restoreState(JSON.parse(await navigator.clipboard.readText())); stateDialog.close(); } catch (error) { alert(`Unable to import JSON: ${error.message}`); } });
-        document.getElementById('export-json').addEventListener('click', async () => { try { await navigator.clipboard.writeText(JSON.stringify(serializeState(), null, 2)); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export JSON: ${error.message}`); } });
+        document.getElementById('import-json').addEventListener('click', async () => { try { const treatments = JSON.parse(await navigator.clipboard.readText()); if (!treatments || typeof treatments !== 'object' || Array.isArray(treatments)) throw new Error('Expected a treatments JSON object.'); localStorage.setItem(getTreatmentStorageKey(), JSON.stringify(treatments)); activeGuide = undefined; buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); stateDialog.close(); } catch (error) { alert(`Unable to import JSON: ${error.message}`); } });
+        document.getElementById('export-json').addEventListener('click', async () => { try { saveState(); await navigator.clipboard.writeText(JSON.stringify(loadTreatments(), null, 2)); stateDialog.close(); } catch (error) { alert(`Unable to export JSON: ${error.message}`); } });
         document.getElementById('import-grey-points').addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedGreyPoints(JSON.parse(text.replace(/'/g, '"'))); stateDialog.close(); } catch (error) { alert(`Unable to import grey points: ${error.message}`); } });
         document.getElementById('export-grey-points').addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedGreyPointKeys().map(key => `'${key}'`).join(', ')}]`); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export grey points: ${error.message}`); } });
         ['yellow', 'green', 'red'].forEach(state => {
