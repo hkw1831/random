@@ -144,9 +144,6 @@
         .patient-details-form textarea { padding: 8px; resize: none; }
         .patient-details-form input:focus-visible, .patient-details-form textarea:focus-visible { outline: 2px solid #7dd3fc; outline-offset: -1px; }
         .patient-details-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; }
-        @supports (-webkit-touch-callout: none) {
-            .patient-details-form input, .patient-details-form textarea { font-size: 16px; }
-        }
     </style>
 </head>
 <body>
@@ -1104,7 +1101,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         }
         function createPatientDetailsButton() {
             const button = document.createElement('button'); button.type = 'button'; button.className = 'patient-details-button'; button.textContent = 'i'; button.title = 'Patient details'; button.setAttribute('aria-label', button.title);
-            button.addEventListener('click', () => { patientDetailsDialog.showModal(); document.getElementById('patient_name').focus(); });
+            button.addEventListener('click', () => patientDetailsDialog.show());
             return button;
         }
         function renderPoint(cell, rowName, header, columnIndex, isMergedMe) {
