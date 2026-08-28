@@ -1153,7 +1153,14 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         bodyHistoryAges.forEach((age, ageIndex) => bodyHistorySegments.forEach(segment => ['RT', 'LT', 'BI'].forEach(side => { const button = document.createElement('button'); button.type = 'button'; button.dataset.historySide = side; button.dataset.historyAge = ageIndex; button.dataset.historyActive = String(segment.active); button.dataset.historySegment = segment.name; button.classList.add(`history-${segment.name}`); button.classList.toggle('history-current-choice', segment.active); button.textContent = `${side} ${age}`; button.title = `${side} ${age}: ${segment.label}`; button.setAttribute('aria-label', button.title); button.addEventListener('click', () => selectBodyHistory(side, ageIndex, segment.active, segment.name)); historyActions.appendChild(button); })));
         treatmentResultValues.forEach(value => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentResult = value; button.textContent = value; button.addEventListener('click', () => selectTreatmentResult(value)); treatmentResultActions.appendChild(button); });
         treatmentNumbers.forEach(number => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentNumber = number; button.textContent = number; button.setAttribute('aria-pressed', 'false'); button.addEventListener('click', () => selectTreatmentNumber(number)); treatmentNumberActions.appendChild(button); });
-        document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea').forEach(field => field.addEventListener('input', savePatientDetails));
+        document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea').forEach(field => {
+            field.addEventListener('input', savePatientDetails);
+            field.addEventListener('focus', () => {
+                const scrollX = window.scrollX;
+                const scrollY = window.scrollY;
+                requestAnimationFrame(() => window.scrollTo(scrollX, scrollY));
+            });
+        });
         historyActions.addEventListener('pointerover', event => { const button = event.target.closest('button[data-history-side]'); if (button) historyHoverValue.textContent = historyHoverText(button); });
         historyActions.addEventListener('pointerleave', () => { historyHoverValue.textContent = ''; });
         document.addEventListener('pointermove', event => { if (!historyDialog.open) return; const button = document.elementFromPoint(event.clientX, event.clientY)?.closest('button[data-history-side]'); historyHoverValue.textContent = historyHoverText(button); });
