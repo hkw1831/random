@@ -22,8 +22,8 @@
         .column-label.location-marked::after { position: absolute; inset: 1px; border: 2px solid #f8fafc; box-shadow: inset 0 0 0 1px #0c4a6e, 0 0 4px #7dd3fc; content: ""; pointer-events: none; }
         .row-label { display: grid; align-content: center; justify-content: end; padding-right: 3px; color: #d4d4d4; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; border-right: 1px solid #575757; }
         .row-label-right { justify-content: flex-start; padding-left: 3px; padding-right: 0; border-left: 1px solid #575757; border-right: 0; }
-        .history-label-name, .history-label-age { display: block; text-align: inherit; }
-        .history-label-age { min-height: 6px; color: #dbeafe; font: 700 5px/1 "Courier New", monospace; }
+        .history-label-name, .history-label-age { display: block; }
+        .history-label-age { width: 100%; min-height: 7px; color: #dbeafe; font: 700 6px/1 "Courier New", monospace; text-align: center; }
         .cell { position: relative; border-right: 1px solid #202020; border-bottom: 1px solid #202020; }
         .separator-right { border-right: 2px solid #f59e0b; }
         .separator-bottom { border-bottom: 2px solid #f59e0b; }
@@ -97,14 +97,14 @@
         .row-label.history-main-left::before, .row-label.history-secondary-left::before, .row-label.history-main-right::after, .row-label.history-secondary-right::after { position: absolute; top: 0; bottom: 0; width: calc(50% - 1px); content: ""; pointer-events: none; }
         .row-label.history-main-left::before, .row-label.history-secondary-left::before { left: 0; border-right: 0; }
         .row-label.history-main-right::after, .row-label.history-secondary-right::after { right: 0; border-left: 0; }
-        .row-label.history-main-left::before, .row-label.history-main-right::after { border: 3px solid #ef4444; }
+        .row-label.history-main-left::before, .row-label.history-main-right::after { border: 2px solid #ef4444; }
         .row-label.history-main-left::before { border-right: 0; }
         .row-label.history-main-right::after { border-left: 0; }
-        .row-label.history-secondary-left::before, .row-label.history-secondary-right::after { border: 3px solid #facc15; }
+        .row-label.history-secondary-left::before, .row-label.history-secondary-right::after { border: 2px solid #facc15; }
         .row-label.history-secondary-left::before { border-right: 0; }
         .row-label.history-secondary-right::after { border-left: 0; }
-        .row-label.history-main-left.history-secondary-left::before { border: 3px solid #ef4444; border-right: 0; background: linear-gradient(#facc15 0 0) left 3px top 3px / calc(100% - 3px) 3px no-repeat, linear-gradient(#facc15 0 0) left 3px bottom 3px / calc(100% - 3px) 3px no-repeat, linear-gradient(#facc15 0 0) left 3px top 3px / 3px calc(100% - 6px) no-repeat; }
-        .row-label.history-main-right.history-secondary-right::after { border: 3px solid #ef4444; border-left: 0; background: linear-gradient(#facc15 0 0) right 3px top 3px / calc(100% - 3px) 3px no-repeat, linear-gradient(#facc15 0 0) right 3px bottom 3px / calc(100% - 3px) 3px no-repeat, linear-gradient(#facc15 0 0) right 3px top 3px / 3px calc(100% - 6px) no-repeat; }
+        .row-label.history-main-left.history-secondary-left::before { border: 2px solid #ef4444; border-right: 0; background: linear-gradient(#facc15 0 0) left 2px top 2px / calc(100% - 2px) 2px no-repeat, linear-gradient(#facc15 0 0) left 2px bottom 2px / calc(100% - 2px) 2px no-repeat, linear-gradient(#facc15 0 0) left 2px top 2px / 2px calc(100% - 4px) no-repeat; }
+        .row-label.history-main-right.history-secondary-right::after { border: 2px solid #ef4444; border-left: 0; background: linear-gradient(#facc15 0 0) right 2px top 2px / calc(100% - 2px) 2px no-repeat, linear-gradient(#facc15 0 0) right 2px bottom 2px / calc(100% - 2px) 2px no-repeat, linear-gradient(#facc15 0 0) right 2px top 2px / 2px calc(100% - 4px) no-repeat; }
         .row-label.history-active { outline: 1px solid #f8fafc; outline-offset: -1px; }
         #history-dialog { width: min(430px, calc(100vw - 16px)); height: calc(100dvh - 16px); max-height: calc(100dvh - 16px); overflow: hidden; padding: 8px; }
         #history-dialog[open] { display: flex; flex-direction: column; margin-right: auto; margin-left: 8px; }
@@ -844,8 +844,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         function saveBodyHistory(history) { updateCurrentTreatment({ bodyHistory: history }); }
         function bodyHistoryKey(label) { return `${label.dataset.historyEdge}:${label.dataset.rowName}`; }
         function historyColor(ageIndex) {
-            const lightness = 60 - ageIndex * 2.4;
-            const saturation = 58 + ageIndex * 2.5;
+            const lightness = 66 - ageIndex * 3.2;
+            const saturation = 48 + ageIndex * 3.8;
             return `hsl(198 ${saturation}% ${lightness}% / 0.9)`;
         }
         function populateHistoryLabel(label) {
@@ -919,22 +919,21 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
                 sideOrder.forEach(side => historyActions.appendChild(group.find(button => button.dataset.historySide === side)));
             }
         }
-        function updateHistoryPositionIndicator(edge) {
-            const position = edge === 'left' ? 'A' : 'P';
-            historyActions.querySelectorAll('button[data-history-side]').forEach(button => {
-                const text = `${button.dataset.historySide} ${position} ${bodyHistoryAges[button.dataset.historyAge]}`;
-                button.textContent = text;
-                button.title = `${text}: ${bodyHistorySegments.find(segment => segment.name === button.dataset.historySegment).label}`;
-                button.setAttribute('aria-label', button.title);
-            });
+        function historyHoverText(button) {
+            if (!button?.dataset.historySide || !activeHistoryLabel) return '';
+            return button.textContent;
+        }
+        function updateHistoryDialogTitle(label) {
+            const position = label.dataset.historyEdge === 'left' ? 'A' : 'P';
+            historyDialogTitle.textContent = `${label.dataset.rowName}-${position}`;
         }
         function bindBodyHistoryGesture(label) {
             let startY; let pointerId; let opened = false;
             const targetAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-history-side], #clear-body-history');
-            const updateTarget = (x, y) => { const target = targetAt(x, y); historyDialog.querySelectorAll('button[data-history-side], #clear-body-history').forEach(button => button.classList.toggle('history-target', button === target)); historyHoverValue.textContent = target?.dataset.historySide ? target.textContent : ''; return target; };
+            const updateTarget = (x, y) => { const target = targetAt(x, y); historyDialog.querySelectorAll('button[data-history-side], #clear-body-history').forEach(button => button.classList.toggle('history-target', button === target)); historyHoverValue.textContent = historyHoverText(target); return target; };
             const clearGesture = () => { pointerId = undefined; opened = false; label.classList.remove('history-active'); historyDialog.querySelectorAll('.history-target').forEach(button => button.classList.remove('history-target')); };
             label.addEventListener('pointerdown', event => { startY = event.clientY; pointerId = event.pointerId; opened = false; label.setPointerCapture(pointerId); });
-            label.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (opened) { updateTarget(event.clientX, event.clientY); return; } if (Math.abs(event.clientY - startY) < 12) return; opened = true; activeHistoryLabel = label; label.classList.add('history-active'); historyDialogTitle.textContent = label.dataset.rowName; historyHoverValue.textContent = ''; updateHistoryPositionIndicator(label.dataset.historyEdge); historyDialog.classList.toggle('history-from-right', label.dataset.historyEdge === 'right'); orderHistorySideButtons(label.dataset.historyEdge === 'right'); historyDialog.showModal(); updateTarget(event.clientX, event.clientY); });
+            label.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (opened) { updateTarget(event.clientX, event.clientY); return; } if (Math.abs(event.clientY - startY) < 12) return; opened = true; activeHistoryLabel = label; label.classList.add('history-active'); updateHistoryDialogTitle(label); historyHoverValue.textContent = ''; historyDialog.classList.toggle('history-from-right', label.dataset.historyEdge === 'right'); orderHistorySideButtons(label.dataset.historyEdge === 'right'); historyDialog.showModal(); updateTarget(event.clientX, event.clientY); });
             label.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; if (!opened) { clearGesture(); return; } const target = updateTarget(event.clientX, event.clientY); if (target?.id === 'clear-body-history') clearBodyHistory(); else if (target) selectBodyHistory(target.dataset.historySide, Number(target.dataset.historyAge), target.dataset.historyActive === 'true'); else historyDialog.close(); clearGesture(); });
             label.addEventListener('pointercancel', () => { if (opened) historyDialog.close(); clearGesture(); });
         }
@@ -1138,10 +1137,10 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         treatmentResultValues.forEach(value => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentResult = value; button.textContent = value; button.addEventListener('click', () => selectTreatmentResult(value)); treatmentResultActions.appendChild(button); });
         treatmentNumbers.forEach(number => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentNumber = number; button.textContent = number; button.setAttribute('aria-pressed', 'false'); button.addEventListener('click', () => selectTreatmentNumber(number)); treatmentNumberActions.appendChild(button); });
         document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea').forEach(field => field.addEventListener('input', savePatientDetails));
-        historyActions.addEventListener('pointerover', event => { const button = event.target.closest('button[data-history-side]'); if (button) historyHoverValue.textContent = button.textContent; });
+        historyActions.addEventListener('pointerover', event => { const button = event.target.closest('button[data-history-side]'); if (button) historyHoverValue.textContent = historyHoverText(button); });
         historyActions.addEventListener('pointerleave', () => { historyHoverValue.textContent = ''; });
-        document.addEventListener('pointermove', event => { if (!historyDialog.open) return; const button = document.elementFromPoint(event.clientX, event.clientY)?.closest('button[data-history-side]'); historyHoverValue.textContent = button?.textContent || ''; });
-        historyDialog.addEventListener('toggle', () => { if (historyDialog.open && activeHistoryLabel) updateHistoryPositionIndicator(activeHistoryLabel.dataset.historyEdge); });
+        document.addEventListener('pointermove', event => { if (!historyDialog.open) return; const button = document.elementFromPoint(event.clientX, event.clientY)?.closest('button[data-history-side]'); historyHoverValue.textContent = historyHoverText(button); });
+        historyDialog.addEventListener('toggle', () => { if (historyDialog.open && activeHistoryLabel) updateHistoryDialogTitle(activeHistoryLabel); });
         historyDialog.addEventListener('close', () => { historyDialog.classList.remove('history-from-right'); orderHistorySideButtons(false); });
         document.getElementById('clear-body-history').addEventListener('click', clearBodyHistory);
         document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; buildSheet(); guideDialog.close(); }));
