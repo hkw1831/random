@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Patient Record</title>
+    <style>
+        :root { --label-width: 32px; --header-height: 28px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { width: 100%; height: 100%; background: #0d0d0d; }
+        body { color: #d4d4d4; font-family: "Courier New", monospace; overflow: hidden; }
+        #sheet { position: relative; z-index: 1; display: grid; grid-template-columns: var(--label-width) repeat(21, minmax(0, 1fr)) var(--label-width); grid-template-rows: var(--header-height) repeat(31, minmax(0, 1fr)) var(--header-height); width: 100vw; height: 100dvh; padding: 4px; }
+        .corner, .column-label, .row-label, .cell { display: flex; align-items: center; justify-content: center; }
+        .column-label { display: grid; grid-template-rows: 1fr 1fr; color: #f3f4f6; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; border-bottom: 1px solid #575757; }
+        .column-side, .column-name { align-self: center; }
+        .column-side { justify-self: center; }
+        .column-side.left { justify-self: start; }
+        .column-side.right { justify-self: end; }
+        .column-name { justify-self: center; }
+        .column-label-bottom { border-top: 1px solid #575757; border-bottom: 0; }
+        .column-label.location-marked { position: relative; cursor: pointer; }
+        .column-label.location-marked::after { position: absolute; inset: 1px; border: 2px solid #f8fafc; box-shadow: inset 0 0 0 1px #0c4a6e, 0 0 4px #7dd3fc; content: ""; pointer-events: none; }
+        .row-label { position: relative; display: grid; align-content: center; justify-content: end; padding-right: 3px; color: #d4d4d4; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; border-right: 1px solid #575757; }
+        .row-label-right { justify-content: flex-start; padding-left: 3px; padding-right: 0; border-left: 1px solid #575757; border-right: 0; }
+        .history-label-name, .history-label-age { display: block; }
+        .history-label-age { position: absolute; bottom: 1px; left: 50%; z-index: 1; min-height: 7px; color: #dbeafe; font: 700 6px/1 "Courier New", monospace; text-align: center; transform: translateX(-50%); }
+        .cell { position: relative; border-right: 1px solid #202020; border-bottom: 1px solid #202020; }
+        .separator-right { border-right: 2px solid #f59e0b; }
+        .separator-bottom { border-bottom: 2px solid #f59e0b; }
+        .point { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: none; cursor: pointer; touch-action: none; }
+        .point.guided { background: #155e75; }
+        .point::before { position: absolute; top: 50%; left: 50%; width: 70%; aspect-ratio: 1; max-height: 70%; border: 1px solid #3b3b3b; border-radius: 50%; background: #202020; content: ""; transform: translate(-50%, -50%); transition: background-color 100ms ease, border-color 100ms ease, box-shadow 100ms ease; }
+        .point::after { position: absolute; top: 50%; left: 50%; width: 90%; aspect-ratio: 1; max-height: 90%; border: 2px solid #303030; border-radius: 50%; content: ""; pointer-events: none; transform: translate(-50%, -50%); transition: border-color 100ms ease, box-shadow 100ms ease; }
+        .point-key, .gesture-preview { position: absolute; inset: 0; display: none; align-content: center; overflow-wrap: anywhere; color: #fff; font: 700 5px/1 "Courier New", monospace; pointer-events: none; text-align: center; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+        #sheet.show-point-keys .point-key { display: block; }
+        .gesture-preview { color: #f8fafc; font-size: 6px; line-height: 1.1; }
+        .point:focus-visible { outline: 2px solid #facc15; outline-offset: -2px; }
+        .point.palpation-yellow::before { background: #fde68a; border-color: #facc15; box-shadow: 0 0 6px #fde68a99; }
+        .point.palpation-grey::before { background: #6b7280; border-color: #9ca3af; box-shadow: 0 0 6px #9ca3af66; }
+        .point.palpation-green::before { background: #22c55e; border-color: #16a34a; box-shadow: 0 0 6px #22c55e99; }
+        .point.palpation-red::before { background: #ef4444; border-color: #dc2626; box-shadow: 0 0 6px #ef444499; }
+        .point.movement-yellow::after { border-color: #facc15; box-shadow: 0 0 5px #fde68a99; }
+        .point.movement-grey::after { border-color: #9ca3af; box-shadow: 0 0 5px #9ca3af66; }
+        .point.movement-green::after { border-color: #16a34a; box-shadow: 0 0 5px #22c55e99; }
+        .point.movement-red::after { border-color: #dc2626; box-shadow: 0 0 5px #ef444499; }
+        .point-treatment-result { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; color: #101010; font: 700 clamp(7px, 1.8vw, 12px)/1 Arial, sans-serif; pointer-events: none; text-shadow: 0 1px 1px #ffffffaa; }
+        .point.active::before { outline: 2px dashed #e5e7eb; outline-offset: 2px; }
+        .point.preview-red::before, .point.preview-red::after { outline-color: #f87171; } .point.preview-green::before, .point.preview-green::after { outline-color: #4ade80; } .point.preview-yellow::before, .point.preview-yellow::after { outline-color: #facc15; } .point.preview-grey::before, .point.preview-grey::after { outline-color: #9ca3af; }
+        .point.preview-clear::before, .point.preview-clear::after { opacity: .3; outline-color: #e5e7eb; }
+        .gesture-overlay { position: fixed; inset: 0; z-index: 0; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 100ms ease, visibility 100ms step-end; }
+        .gesture-overlay.visible { visibility: visible; opacity: 1; transition: opacity 100ms ease; }
+        .gesture-point-name { position: fixed; top: 12dvh; left: 16px; right: 16px; z-index: 2; color: #fff; font: 700 clamp(28px, 10vw, 88px)/1 "Courier New", monospace; letter-spacing: 0; pointer-events: none; text-align: center; text-shadow: 0 2px 4px #000; }
+        .gesture-dot { position: absolute; top: 52%; left: 50%; width: min(72vw, 520px); aspect-ratio: 1; border: 10px solid #303030; border-radius: 50%; box-shadow: 0 0 16px #00000088; transform: translate(-50%, -50%); transition: border-color 100ms ease, box-shadow 100ms ease; }
+        .gesture-dot::before { position: absolute; inset: 12%; border: 5px solid #3b3b3b; border-radius: 50%; background: #202020; content: ""; transition: background-color 100ms ease, border-color 100ms ease, box-shadow 100ms ease; }
+        .gesture-overlay.palpation.yellow .gesture-dot::before { background: #fde68a; border-color: #facc15; box-shadow: 0 0 18px #fde68a99; }
+        .gesture-overlay.palpation.grey .gesture-dot::before { background: #6b7280; border-color: #9ca3af; box-shadow: 0 0 18px #9ca3af66; }
+        .gesture-overlay.palpation.green .gesture-dot::before { background: #22c55e; border-color: #16a34a; box-shadow: 0 0 18px #22c55e99; }
+        .gesture-overlay.palpation.red .gesture-dot::before { background: #ef4444; border-color: #dc2626; box-shadow: 0 0 18px #ef444499; }
+        .gesture-overlay.movement.yellow .gesture-dot { border-color: #facc15; box-shadow: 0 0 18px #fde68a99; }
+        .gesture-overlay.movement.grey .gesture-dot { border-color: #9ca3af; box-shadow: 0 0 18px #9ca3af66; }
+        .gesture-overlay.movement.green .gesture-dot { border-color: #16a34a; box-shadow: 0 0 18px #22c55e99; }
+        .gesture-overlay.movement.red .gesture-dot { border-color: #dc2626; box-shadow: 0 0 18px #ef444499; }
+        .merged-me .point::before { width: 35%; }
+        .clear-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(16px, 3.5vw, 22px) Arial, sans-serif; line-height: 1; }
+        .state-dialog { width: min(320px, calc(100vw - 32px)); border: 1px solid #737373; border-radius: 5px; background: #1c1c1c; color: #f3f4f6; padding: 18px; }
+        .state-dialog::backdrop { background: #00000099; }
+        .state-dialog h2 { margin-bottom: 14px; font: 700 16px Arial, sans-serif; }
+        .state-dialog-actions, .guide-actions { display: grid; gap: 8px; }
+        .state-dialog-actions button, .guide-actions button { min-height: 38px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 13px Arial, sans-serif; }
+        .state-dialog-actions button:hover, .state-dialog-actions button:focus-visible, .guide-actions button:hover, .guide-actions button:focus-visible { background: #454545; }
+        .state-dialog-actions .danger-button { color: #fecaca; }
+        .state-data-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .state-data-actions .full-span { grid-column: 1 / -1; }
+        .state-data-actions input, .patient-actions input { min-width: 0; min-height: 38px; padding: 6px 8px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 700 13px Arial, sans-serif; }
+        .patient-search-group { position: relative; min-width: 0; }
+        .patient-search-group input { width: 100%; }
+        .patient-actions { display: grid; grid-template-columns: minmax(0, 1fr) 38px 38px; gap: 8px; }
+        .patient-actions button { min-width: 38px; padding: 0; font-size: 20px; }
+        .patient-search-options { position: absolute; top: calc(100% + 3px); right: 0; left: 0; z-index: 4; display: grid; max-height: 154px; overflow-y: auto; border: 1px solid #737373; border-radius: 3px; background: #1c1c1c; box-shadow: 0 4px 12px #00000099; }
+        .patient-search-options[hidden] { display: none; }
+        .patient-search-options button { min-height: 32px; padding: 6px 8px; border: 0; border-radius: 0; border-bottom: 1px solid #575757; background: #303030; color: inherit; cursor: pointer; font: 700 13px Arial, sans-serif; text-align: left; }
+        .patient-search-options button:last-child { border-bottom: 0; }
+        .grey-point-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .guide-actions button[aria-pressed="true"] { border-color: #22d3ee; background: #155e75; }
+        .guide-actions button.guide-target { border-color: #a5f3fc; background: #454545; }
+        #guide-dialog { width: min(430px, calc(100vw - 16px)); padding: 8px; }
+        #guide-dialog h2 { margin-bottom: 6px; font-size: 13px; }
+        #guide-dialog .layout-switch { min-height: 26px; margin-bottom: 4px; }
+        #guide-dialog .layout-switch button, #guide-dialog .guide-actions button { min-height: 21px; font-size: 9px; line-height: 1; }
+        #guide-dialog .guide-actions, #guide-dialog .guide-group, #guide-dialog .guide-grid { gap: 3px; }
+        #guide-dialog .guide-group-title { font-size: 10px; line-height: 1; }
+        #guide-dialog[open].guide-from-right { margin-right: 8px; margin-left: auto; }
+        .clear-guide-button { margin-bottom: 8px; }
+        .guide-group { display: grid; gap: 8px; }
+        .guide-group-title { color: #d4d4d4; font: 700 13px Arial, sans-serif; }
+        .guide-grid { display: grid; gap: 8px; }
+        .guide-grid.columns-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .guide-grid.columns-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .layout-switch { display: grid; grid-template-columns: 1fr 1fr; min-height: 38px; margin-bottom: 8px; border: 1px solid #575757; border-radius: 3px; overflow: hidden; }
+        .layout-switch button { border: 0; border-radius: 0; background: #272727; color: inherit; cursor: pointer; font: 700 13px Arial, sans-serif; }
+        .layout-switch button + button { border-left: 1px solid #575757; }
+        .layout-switch button[aria-pressed="true"] { background: #155e75; color: #ecfeff; }
+        .layout-switch button.guide-target { border-color: #a5f3fc; background: #454545; }
+        .row-label.history-marked { position: relative; background: linear-gradient(to right, var(--history-left, transparent) 0 50%, var(--history-right, transparent) 50% 100%); }
+        .row-label.history-sipa-left::before, .row-label.history-paconc-left::before, .row-label.history-sipa-right::after, .row-label.history-paconc-right::after { position: absolute; top: 0; bottom: 0; width: calc(50% - 1px); content: ""; pointer-events: none; }
+        .row-label.history-sipa-left::before, .row-label.history-paconc-left::before { left: 0; border-right: 0; }
+        .row-label.history-sipa-right::after, .row-label.history-paconc-right::after { right: 0; border-left: 0; }
+        .row-label.history-sipa-left::before, .row-label.history-sipa-right::after { border: 2px solid #ef4444; }
+        .row-label.history-sipa-left::before { border-right: 0; }
+        .row-label.history-sipa-right::after { border-left: 0; }
+        .row-label.history-paconc-left::before, .row-label.history-paconc-right::after { border: 2px solid #facc15; }
+        .row-label.history-paconc-left::before { border-right: 0; }
+        .row-label.history-paconc-right::after { border-left: 0; }
+        .row-label.history-active { outline: 1px solid #f8fafc; outline-offset: -1px; }
+        #history-dialog { width: min(430px, calc(100vw - 16px)); height: calc(100dvh - 16px); max-height: calc(100dvh - 16px); overflow: hidden; padding: 8px; }
+        #history-dialog[open] { display: flex; flex-direction: column; margin-right: auto; margin-left: 8px; }
+        #history-dialog[open].history-from-right { margin-right: 8px; margin-left: auto; }
+        .history-dialog-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+        #history-dialog h2 { flex: 0 0 auto; min-width: 0; font-size: 17px; white-space: nowrap; }
+        #history-hover-value { flex: 1; min-width: 0; overflow: hidden; color: #7dd3fc; font: 700 17px Arial, sans-serif; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+        #clear-body-history { width: 58%; min-height: 30px; padding: 4px 12px; border: 1px solid #7f1d1d; border-radius: 3px; background: #3f1616; color: #fecaca; cursor: pointer; font: 700 11px Arial, sans-serif; }
+        #clear-body-history:hover, #clear-body-history:focus-visible { background: #7f1d1d; color: #fff; }
+        .history-grid { display: grid; flex: 1; grid-template-columns: repeat(9, minmax(0, 1fr)); grid-template-rows: repeat(14, minmax(0, 1fr)); min-height: 0; gap: 2px; }
+        .history-grid button { min-height: 0; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 clamp(8px, 2vw, 11px)/1 Arial, sans-serif; white-space: nowrap; }
+        .history-grid button.history-paprev { border-color: transparent; }
+        .history-grid button.history-sipa { border: 3px solid #ef4444; }
+        .history-grid button.history-paconc { border: 3px solid #facc15; }
+        .history-grid button:hover, .history-grid button:focus-visible, .history-grid button.history-target { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
+        #treatment-result-dialog { position: fixed; top: auto; right: auto; bottom: auto; left: auto; width: min(260px, calc(100vw - 32px)); max-height: calc(100dvh - 16px); margin: 0; overflow-y: auto; padding: 12px; }
+        #treatment-result-dialog h2 { margin-bottom: 10px; }
+        .treatment-result-grid { display: grid; grid-template-columns: 1fr; gap: 2px; }
+        .treatment-result-grid button { min-width: 0; min-height: 42px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 18px/1 Arial, sans-serif; }
+        .treatment-result-grid button:hover, .treatment-result-grid button:focus-visible, .treatment-result-grid button.treatment-target { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
+        .treatment-result-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; }
+        #treatment-number-dialog { position: fixed; top: auto; right: auto; bottom: 8px; left: 8px; width: min(260px, calc(100vw - 32px)); margin: 0; padding: 12px; }
+        #treatment-number-dialog h2 { margin-bottom: 10px; }
+        .treatment-number-grid { display: grid; grid-template-columns: 1fr; gap: 2px; }
+        .treatment-number-grid button { min-height: 42px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 18px/1 Arial, sans-serif; }
+        .treatment-number-grid button:hover, .treatment-number-grid button:focus-visible, .treatment-number-grid button.treatment-number-target, .treatment-number-grid button[aria-pressed="true"] { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
+        .treatment-number-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; touch-action: none; }
+        #patient-details-dialog, #patient-details-dialog[open] { position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); bottom: auto; left: auto; z-index: 3; width: min(430px, calc(100vw - 16px)); margin: 0; overflow: visible; padding: 3px 10px; transform: none; }
+        .patient-details-form { display: grid; gap: 1px; }
+        .patient-details-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) minmax(0, 2fr); gap: 1px; }
+        .patient-details-row-secondary { grid-template-columns: 1fr 1fr; }
+        .patient-details-notes { grid-template-columns: minmax(0, 1fr); }
+        .patient-details-example-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+        .patient-details-example { min-width: 0; color: #d4d4d4; font: 700 10px/1 "Courier New", monospace; }
+        .patient-details-close { flex: 0 0 auto; border: 0; background: none; color: #d4d4d4; cursor: pointer; font: 700 16px/1 Arial, sans-serif; }
+        .patient-details-close:hover, .patient-details-close:focus-visible { color: #fff; }
+        .patient-details-form input, .patient-details-form textarea { width: 100%; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 700 16px/1.2 "Courier New", monospace; }
+        #record_date { min-width: 0; }
+        .patient-details-form input { height: 34px; padding: 6px 8px; }
+        .patient-details-form textarea { padding: 1px 8px; resize: none; }
+        .patient-details-form input:focus-visible, .patient-details-form textarea:focus-visible { outline: 2px solid #7dd3fc; outline-offset: -1px; }
+        .patient-details-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; }
+    </style>
+</head>
+<body>
+    <main id="sheet" aria-label="Patient record"></main>
+    <div id="gesture-overlay" class="gesture-overlay" aria-live="polite"><span class="gesture-dot"></span></div>
+    <span id="gesture-point-name" class="gesture-point-name"></span>
+    <dialog id="state-dialog" class="state-dialog" aria-label="Patient administration">
+        <div class="state-dialog-actions">
+            <div class="patient-actions">
+                <div class="patient-search-group">
+                    <input id="patient-search" type="search" placeholder="patient name" aria-label="Patient name" autocomplete="off" enterkeyhint="search">
+                    <div id="patient-search-options" class="patient-search-options" role="listbox" aria-label="Matching patients" hidden></div>
+                </div>
+                <button id="create-patient" type="button" autofocus aria-label="Create patient" title="Create patient">+</button>
+                <button id="remove-patient" class="danger-button" type="button" aria-label="Remove current patient" title="Remove current patient">×</button>
+            </div>
+            <div class="state-data-actions">
+                <button id="import-json" type="button">Import patient JSON</button>
+                <button id="export-json" type="button">Export patient JSON</button>
+            </div>
+            <div class="state-data-actions">
+                <button id="import-all-json" type="button">Import storage JSON</button>
+                <button id="export-all-json" type="button">Export storage JSON</button>
+            </div>
+            <div class="state-data-actions">
+                <button id="clear-current" class="danger-button" type="button">Clear current visit</button>
+                <button id="clear-all-visits" class="danger-button" type="button">Clear all visits</button>
+            </div>
+            <div class="state-data-actions"><button id="clear-all-patient-info" class="danger-button full-span" type="button">Clear all patient info</button></div>
+            <div class="state-data-actions"><button id="toggle-point-keys" class="full-span" type="button" aria-pressed="false">Show JSON field names</button></div>
+            <div class="grey-point-actions">
+                <button id="import-grey-points" type="button">Import grey points</button>
+                <button id="export-grey-points" type="button">Export grey points</button>
+            </div>
+            <div class="grey-point-actions">
+                <button id="import-yellow-points" type="button">Import yellow points</button>
+                <button id="export-yellow-points" type="button">Export yellow points</button>
+            </div>
+            <div class="grey-point-actions">
+                <button id="import-green-points" type="button">Import green points</button>
+                <button id="export-green-points" type="button">Export green points</button>
+            </div>
+            <div class="grey-point-actions">
+                <button id="import-red-points" type="button">Import red points</button>
+                <button id="export-red-points" type="button">Export red points</button>
+            </div>
+        </div>
+    </dialog>
+    <dialog id="guide-dialog" class="state-dialog" aria-labelledby="guide-dialog-title">
+        <h2 id="guide-dialog-title">Assistance</h2>
+        <div class="layout-switch" aria-label="Layout">
+            <button type="button" data-layout="fmmd" aria-pressed="true">FMMD</button>
+            <button type="button" data-layout="fmid" aria-pressed="false">FMID</button>
+        </div>
+        <div id="guide-actions" class="guide-actions"></div>
+    </dialog>
+    <dialog id="history-dialog" class="state-dialog" aria-labelledby="history-dialog-title">
+        <div class="history-dialog-header">
+            <h2 id="history-dialog-title">Body history</h2>
+            <span id="history-hover-value"></span>
+            <button id="clear-body-history" type="button">Clear</button>
+        </div>
+        <div id="history-actions" class="history-grid"></div>
+    </dialog>
+    <dialog id="treatment-result-dialog" class="state-dialog" aria-labelledby="treatment-result-dialog-title">
+        <h2 id="treatment-result-dialog-title">Treatment result</h2>
+        <div id="treatment-result-actions" class="treatment-result-grid"></div>
+    </dialog>
+    <dialog id="treatment-number-dialog" class="state-dialog" aria-labelledby="treatment-number-dialog-title">
+        <h2 id="treatment-number-dialog-title">Visit number</h2>
+        <div id="treatment-number-actions" class="treatment-number-grid"></div>
+    </dialog>
+    <dialog id="patient-details-dialog" class="state-dialog" aria-label="Patient details">
+        <form class="patient-details-form">
+            <div class="patient-details-row">
+                <input id="patient_name" type="text" placeholder="name" aria-label="name">
+                <input id="patient_age_gender" type="text" placeholder="age / gender" aria-label="age / gender">
+                <input id="record_date" type="date" placeholder="date" aria-label="date">
+            </div>
+            <div class="patient-details-row patient-details-row-secondary">
+                <input id="occupation" type="text" placeholder="occupation" aria-label="occupation">
+                <input id="sport_frequency" type="text" placeholder="exercise / freq" aria-label="exercise / frequency">
+            </div>
+            <div class="patient-details-example-row">
+                <label class="patient-details-example" for="history">e.g. AN CL BI 5m/1w T 5-8 1xm Rotate neck</label>
+                <button id="close-patient-details" class="patient-details-close" type="button" aria-label="Close patient details" title="Close">×</button>
+            </div>
+            <textarea id="history" rows="12" aria-label="history"></textarea>
+            <div class="patient-details-row patient-details-notes">
+                <textarea id="trauma" rows="8" aria-label="Investigations, medications, internal dysfunctions, posture, or overuse"></textarea>
+            </div>
+        </form>
+    </dialog>
+    <script>
+        const layouts = {
+            fmmd: {
+                name: 'FMMD',
+                csv: `,L|AN,R|AN,L|RE,R|RE,L|ME,R|ME,ME,L|LA,R|LA,L|IR,R|IR,L|ER,R|ER,L|AL,L|AM,R|AM,R|AL,L|RL,L|RM,R|RM,R|RL
+CP1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CP2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CP3,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CL,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+TH1,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+TH2,,,,,,,,,,,,,,x,x,x,x,,x,x,
+TH3,,,,,,,,,,,,,,,x,x,,,x,x,
+LU1P,,,,,,,,,,x,x,x,x,x,x,x,x,x,x,x,x
+LU2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,,x,x,,x
+LU3D,,,,,,,,,,,,,,,x,x,,,,,
+PV1P,,,,,,,,,,x,x,,,x,x,x,x,x,x,x,x
+PV2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+PV3D,,,,,,,,,,,,x,x,,x,x,,,,,
+CX,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+GE1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+GE2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+GE3,,,,,,,,,,,,,,x,x,x,x,,,,,
+TA1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+TA2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+PE1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+PE2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+PE3,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+SC1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+SC2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+HU,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CU1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CU2,,,,,,,,,,,,,,,,,,,x,x,
+CA1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CA2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
+DI1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+DI2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x`,
+                separatorColumns: [3, 8, 12, 16],
+                rightMeColumn: 6
+            },
+            fmid: {
+                name: 'FMID',
+                csv: `,R|AL,R|AM,R|IR,R|AN,R|ME,L|ME,L|AN,L|IR,L|AM,L|AL,L|RL,L|RM,L|LA,L|ER,L|RE,ME,R|RE,R|ER,R|LA,R|RM,R|RL
+CP1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x,x
+CP2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CP3,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+CL,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+TH1,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+TH2,x,x,,,,,,,x,x,,x,,,,,,,,x,
+TH3,,x,,,,,,,x,,,x,,,,,,,,x,
+LU1P,x,x,x,,,,,x,x,x,x,x,,x,,,,x,,x,x
+LU2,x,x,x,x,x,,x,x,x,x,,x,x,x,x,x,x,x,x,x,
+LU3D,,x,,,,,,,x,,,,,,,,,,,,
+PV1P,x,x,x,,,,,x,x,x,x,x,,,,,,,,x,x
+PV2,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+PV3D,,x,,,,,,,x,,,,,x,,,,x,,,
+CX,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+GE1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+GE2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+GE3,x,x,,,,,,,x,x,,,,,,,,,,,
+TA1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+TA2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+PE1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+PE2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+PE3,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+SC1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+SC2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+HU,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+CU1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+CU2,,,,,,,,,,,,x,,,,,,,,x,
+CA1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+CA2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
+DI1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
+DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
+                separatorColumns: [9],
+                rightMeColumn: 15,
+                moveRightMeToRe: true
+            }
+        };
+        const guideGroups = [
+            { guides: [{ name: 'Balance Treated Points', rule: 'cc-cf-balance' }] },
+            { title: '橫向觸診', columns: 3, guides: [
+                { name: '180 腳背', keys: ['an-pe-lt', 'an-pe-rt', 'la-pe-lt', 'la-pe-rt', 'er-pe-lt', 'er-pe-rt'] },
+                { name: '180 胸前', keys: ['an-th-lt', 'an-th-rt', 'me-sc-lt', 'me-sc-rt', 'ir-th-lt', 'ir-th-rt'] },
+                { name: '180 後肩頸', keys: ['re-cl-lt', 're-cl-rt', 'la-sc-lt', 'la-sc-rt', 'er-sc-lt', 'er-sc-rt'] },
+                { name: '180 前頸', keys: ['an-cl-lt', 'an-cl-rt', 'la-cl-lt', 'la-cl-rt', 'ir-cl-lt', 'ir-cl-rt'] },
+                { name: '180 臀部', keys: ['re-cx-lt', 're-cx-rt', 'la-pv-lt', 'la-pv-rt', 'er-cx-lt', 'er-cx-rt'] }
+            ] },
+            { title: '張拉結構', columns: 3, guides: [
+                { name: 'TCL-AP', keys: ['an-me-cp3-rt', 'an-cp3-rt', 'me-cp3-a', 'an-cp3-lt', 'an-me-cp3-lt', 're-me-cp3-lt', 're-cp3-lt', 'me-cp3-r', 're-cp3-rt', 're-me-cp3-rt', 'an-me-cl-rt', 'an-cl-rt', 'me-cl-a', 'an-cl-lt', 'an-me-cl-lt', 're-me-cl-lt', 're-cl-lt', 'me-cl-r', 're-cl-rt', 're-me-cl-rt'] },
+                { name: 'TCL-LL', keys: ['an-la-cp3-rt', 'an-la-cp3-lt', 're-la-cp3-lt', 'la-cp3-lt', 'la-cp3-rt', 're-la-cp3-rt', 'an-la-cl-rt', 'an-la-cl-lt', 're-la-cl-lt', 'la-cl-lt', 'la-cl-rt', 're-la-cl-rt', 'la-sc-lt', 'la-sc-rt'] },
+                { name: 'TCL-OB', keys: ['ir-cp3-rt', 'ir-cp3-lt', 'er-cp3-lt', 'er-cp3-rt', 'ir-cl-rt', 'ir-cl-lt', 'er-cl-lt', 'er-cl-rt', 'er-sc-lt', 'er-sc-rt'] },
+                { name: 'TTH-AP', keys: ['an-me-th1-rt', 'an-me-th1-lt', 're-me-th1-lt', 're-me-th1-rt', 'an-me-th2-rt', 'an-me-th2-lt', 're-me-th2-lt', 're-me-th2-rt', 'an-me-th3-rt', 'an-me-th3-lt', 're-me-th3-lt', 're-me-th3-rt'] },
+                { name: 'TTH-LL', keys: ['an-la-th1-rt', 'an-la-th1-lt', 're-la-th-lt', 'la-th-lt', 'la-th-rt', 're-la-th-rt', 'an-la-th2-rt', 'an-la-th2-lt'] },
+                { name: 'TTH-OB', keys: ['ir-th-rt', 'ir-th-lt', 'er-th-lt', 'er-th-rt', 'ir-sc-rt', 'ir-sc-lt', 'er-sc-lt', 'er-sc-rt'] },
+                { name: 'TLU-AP', keys: ['re-me-th3-lt', 're-me-th3-rt', 'an-me-lu1-rt', 'an-me-lu1-lt', 're-me-lu1-lt', 're-me-lu1-rt', 'an-me-lu2-rt', 'an-me-lu2-lt', 're-me-lu2-lt', 're-me-lu2-rt', 'an-me-lu3-rt', 'an-me-lu3-lt'] },
+                { name: 'TLU-LL', keys: ['an-la-lu1-rt', 'an-la-lu1-lt', 're-la-lu-lt', 're-la-lu-rt', 'an-la-lu2-rt', 'an-la-lu2-lt', 'la-lu-lt', 'la-lu-rt'] },
+                { name: 'TLU-OB', keys: ['ir-lu-p-rt', 'ir-lu-p-lt', 'er-lu-p-lt', 'er-lu-p-rt', 'ir-lu-rt', 'ir-lu-lt', 'er-lu-lt', 'er-lu-rt'] },
+                { name: 'TPV-AP', keys: ['an-me-pv1-rt', 'an-me-pv1-lt', 're-me-pv1-lt', 're-me-pv1-rt', 'an-me-pv2-rt', 'an-me-pv2-lt', 're-me-pv2-lt', 're-me-pv2-rt', 'an-me-pv3-rt', 'an-me-pv3-lt'] },
+                { name: 'TPV-LL', keys: ['an-la-pv1-rt', 'an-la-pv1-lt', 're-la-pv1-lt', 're-la-pv1-rt', 'an-la-pv2-rt', 'an-la-pv2-lt', 're-la-pv2-lt', 're-la-pv2-rt'] },
+                { name: 'TPV-OB', keys: ['ir-pv-p-rt', 'ir-pv-p-lt', 'ir-pv-rt', 'ir-pv-lt', 'er-pv-lt', 'er-pv-rt', 'er-pv-d-lt', 'er-pv-d-rt'] },
+                { name: 'TCP-AP', keys: ['an-me-cp1-rt', 'an-me-cp1-lt', 're-me-cp1-lt', 're-me-cp1-rt', 'an-me-cp2-rt', 'an-cp2-rt', 'an-cp2-lt', 'an-me-cp2-lt', 're-me-cp2-lt', 're-cp2-lt', 're-cp2-rt', 're-me-cp2-rt'] },
+                { name: 'TCP-LL', keys: ['an-la-cp1-rt', 'an-la-cp1-lt', 're-la-cp1-lt', 're-la-cp1-rt', 'an-la-cp2-rt', 'an-la-cp2-lt', 're-la-cp2-lt', 'la-cp2-lt', 'la-cp2-rt', 're-la-cp2-rt'] },
+                { name: 'TCP-OB', keys: ['ir-cp1-rt', 'ir-cp1-lt', 'er-cp1-lt', 'er-cp1-rt', 'ir-cp2-rt', 'ir-cp2-lt', 'er-cp2-lt', 'er-cp2-rt'] }
+            ] },
+            { title: 'Caterenies', columns: 3, guides: [
+                { name: 'AP', keys: [] },
+                { name: 'LL', keys: [] },
+                { name: 'OB', keys: [] }
+            ] },
+            { title: 'MFID PaVe', columns: 3, guides: [
+                { name: '肺部痛', keys: ['an-me-th1-lt', 'an-me-th1-rt', 'an-me-th2-lt', 'an-me-th2-rt','an-la-th1-lt', 'an-la-th1-rt', 'an-la-th2-lt', 'an-la-th2-rt', 'ir-sc-lt', 'ir-sc-rt', 're-me-th1-lt', 're-me-th1-rt', 're-la-th-lt', 're-la-th-rt', 'er-sc-lt', 'er-sc-rt'] },
+                { name: '心臟痛', keys: ['an-me-th2-lt', 'an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 're-me-th2-lt', 're-me-sc1-lt', 're-me-sc2-lt', 're-me-hu-lt'] },
+                { name: '心包痛', keys: ['an-la-th1-rt', 'ir-th-rt', 'ir-th-lt', 'an-la-th1-lt', 're-la-th-lt', 'er-th-lt', 'er-th-rt', 're-la-th-rt', 'an-la-th2-rt', 'an-me-th2-rt', 'an-me-th2-lt', 'an-la-th2-lt', 're-me-th2-lt', 're-me-th2-rt', 'an-me-th3-rt', 'an-me-th3-lt'] },
+                { name: '胃痛', keys: ['re-me-th3-lt', 'an-me-lu1-lt', 'an-la-lu1-lt', 're-la-lu-lt', 'ir-lu-lt', 'er-lu-lt'] },
+                { name: '肝臟/膽囊', keys: ['re-me-th3-rt', 'an-la-lu1-rt', 'an-me-lu1-rt', 're-la-lu-rt', 'ir-lu-rt', 'er-lu-rt'] },
+                { name: '腸躁症', keys: ['an-la-pv1-rt', 'an-me-pv1-rt', 'an-me-pv1-lt', 'an-la-pv1-lt', 're-la-pv1-lt', 're-me-pv1-lt', 're-me-pv1-rt', 're-la-pv1-rt', 'ir-pv-rt', 'ir-pv-lt', 'er-pv-lt', 'er-pv-rt'] },
+                { name: '膀胱疼痛', keys: ['an-la-pv2-rt', 'an-me-pv2-rt', 'ir-pv-rt', 'ir-pv-lt', 'an-me-pv2-lt', 'an-la-pv2-lt', 're-la-pv2-lt', 're-me-pv2-lt', 're-me-pv2-rt', 're-la-pv2-rt', 'er-pv-d-lt', 'er-pv-d-rt'] },
+                { name: '性腺痛', keys: ['an-la-pv2-rt', 'an-la-pv2-lt', 'an-me-pv3-rt', 'an-me-pv3-lt', 'ir-cx-rt', 'ir-cx-lt', 're-la-cx-lt', 're-me-cx-lt', 'er-cx-lt', 'er-cx-rt', 're-me-cx-rt', 're-la-cx-rt'] },
+                { name: '上牙痛', keys: ['la-cp2-lt', 'la-cp2-rt'] },
+                { name: '前額痛', keys: ['re-cp1-lt', 're-cp1-rt', 're-cp2-lt', 're-cp2-rt'] },
+                { name: '舌痛', keys: ['me-cp3-a'] },
+                { name: '唾液分泌障礙', keys: ['er-cp3-lt', 'er-cp3-rt'] },
+                { name: '顱骨/頭痛', keys: ['er-cp3-lt', 're-cp3-lt', 're-cp3-rt', 'er-cp3-rt'] }
+            ] }
+        ];
+        const guideSets = guideGroups.flatMap(group => group.guides);
+        const balanceRules = {
+            'an-cp1-lt': { rule1: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule2: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule3: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'] },
+            'an-cp1-rt': { rule1: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule2: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule3: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'] },
+            'an-cp2-lt': { rule1: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule2: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule3: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'] },
+            'an-cp2-rt': { rule1: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule2: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule3: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'] },
+            'an-cp3-lt': { rule1: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule2: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule3: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'] },
+            'an-cp3-rt': { rule1: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule2: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule3: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'] },
+            'an-cl-lt': { rule1: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule2: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule3: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'] },
+            'an-cl-rt': { rule1: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule2: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule3: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'] },
+            'an-th-lt': { rule1: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule2: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule3: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'] },
+            'an-th-rt': { rule1: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule2: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule3: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'] },
+            'an-lu-lt': { rule1: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule2: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule3: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'] },
+            'an-lu-rt': { rule1: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule2: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule3: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'] },
+            'an-pv-lt': { rule1: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule2: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule3: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'] },
+            'an-pv-rt': { rule1: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule2: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule3: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'] },
+            'an-cx-lt': { rule1: ['an-cx-lt', 'an-ge-lt', 'an-ta-lt', 'an-pe-lt'], rule2: ['re-cx-lt', 're-ge-lt', 're-ta-lt', 're-pe-lt'], rule3: [] },
+            'an-cx-rt': { rule1: ['an-cx-rt', 'an-ge-rt', 'an-ta-rt', 'an-pe-rt'], rule2: ['re-cx-rt', 're-ge-rt', 're-ta-rt', 're-pe-rt'], rule3: [] },
+            'an-ge-lt': { rule1: ['an-cx-lt', 'an-ge-lt', 'an-ta-lt', 'an-pe-lt'], rule2: ['re-cx-lt', 're-ge-lt', 're-ta-lt', 're-pe-lt'], rule3: [] },
+            'an-ge-rt': { rule1: ['an-cx-rt', 'an-ge-rt', 'an-ta-rt', 'an-pe-rt'], rule2: ['re-cx-rt', 're-ge-rt', 're-ta-rt', 're-pe-rt'], rule3: [] },
+            'an-ta-lt': { rule1: ['an-cx-lt', 'an-ge-lt', 'an-ta-lt', 'an-pe-lt'], rule2: ['re-cx-lt', 're-ge-lt', 're-ta-lt', 're-pe-lt'], rule3: [] },
+            'an-ta-rt': { rule1: ['an-cx-rt', 'an-ge-rt', 'an-ta-rt', 'an-pe-rt'], rule2: ['re-cx-rt', 're-ge-rt', 're-ta-rt', 're-pe-rt'], rule3: [] },
+            'an-pe-lt': { rule1: ['an-cx-lt', 'an-ge-lt', 'an-ta-lt', 'an-pe-lt'], rule2: ['re-cx-lt', 're-ge-lt', 're-ta-lt', 're-pe-lt'], rule3: [] },
+            'an-pe-rt': { rule1: ['an-cx-rt', 'an-ge-rt', 'an-ta-rt', 'an-pe-rt'], rule2: ['re-cx-rt', 're-ge-rt', 're-ta-rt', 're-pe-rt'], rule3: [] },
+            'an-sc-lt': { rule1: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule2: ['re-sc-lt', 're-hu-lt', 're-cu-lt', 're-ca-lt', 're-di-lt'], rule3: [] },
+            'an-sc-rt': { rule1: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule2: ['re-sc-rt', 're-hu-rt', 're-cu-rt', 're-ca-rt', 're-di-rt'], rule3: [] },
+            'an-hu-lt': { rule1: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule2: ['re-sc-lt', 're-hu-lt', 're-cu-lt', 're-ca-lt', 're-di-lt'], rule3: [] },
+            'an-hu-rt': { rule1: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule2: ['re-sc-rt', 're-hu-rt', 're-cu-rt', 're-ca-rt', 're-di-rt'], rule3: [] },
+            'an-cu-lt': { rule1: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule2: ['re-sc-lt', 're-hu-lt', 're-cu-lt', 're-ca-lt', 're-di-lt'], rule3: [] },
+            'an-cu-rt': { rule1: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule2: ['re-sc-rt', 're-hu-rt', 're-cu-rt', 're-ca-rt', 're-di-rt'], rule3: [] },
+            'an-ca-lt': { rule1: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule2: ['re-sc-lt', 're-hu-lt', 're-cu-lt', 're-ca-lt', 're-di-lt'], rule3: [] },
+            'an-ca-rt': { rule1: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule2: ['re-sc-rt', 're-hu-rt', 're-cu-rt', 're-ca-rt', 're-di-rt'], rule3: [] },
+            'an-di-lt': { rule1: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule2: ['re-sc-lt', 're-hu-lt', 're-cu-lt', 're-ca-lt', 're-di-lt'], rule3: [] },
+            'an-di-rt': { rule1: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule2: ['re-sc-rt', 're-hu-rt', 're-cu-rt', 're-ca-rt', 're-di-rt'], rule3: [] },
+            're-cp1-lt': { rule1: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule2: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule3: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'] },
+            're-cp1-rt': { rule1: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule2: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule3: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'] },
+            're-cp2-lt': { rule1: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule2: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule3: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'] },
+            're-cp2-rt': { rule1: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule2: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule3: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'] },
+            're-cp3-lt': { rule1: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule2: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule3: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'] },
+            're-cp3-rt': { rule1: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule2: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule3: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'] },
+            're-cl-lt': { rule1: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule2: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule3: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'] },
+            're-cl-rt': { rule1: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule2: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule3: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'] },
+            're-th-lt': { rule1: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule2: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule3: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'] },
+            're-th-rt': { rule1: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule2: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule3: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'] },
+            're-lu-lt': { rule1: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule2: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule3: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'] },
+            're-lu-rt': { rule1: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule2: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule3: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'] },
+            're-pv-lt': { rule1: ['re-cp1-lt', 're-cp2-lt', 're-cp3-lt', 're-cl-lt', 're-th-lt', 're-lu-lt', 're-pv-lt'], rule2: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'], rule3: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'] },
+            're-pv-rt': { rule1: ['re-cp1-rt', 're-cp2-rt', 're-cp3-rt', 're-cl-rt', 're-th-rt', 're-lu-rt', 're-pv-rt'], rule2: ['an-cp1-rt', 'an-cp2-rt', 'an-cp3-rt', 'an-cl-rt', 'an-th-rt', 'an-lu-rt', 'an-pv-rt'], rule3: ['an-cp1-lt', 'an-cp2-lt', 'an-cp3-lt', 'an-cl-lt', 'an-th-lt', 'an-lu-lt', 'an-pv-lt'] },
+            're-cx-lt': { rule1: ['re-cx-lt', 're-ge-lt', 're-ta-lt', 're-pe-lt'], rule2: ['an-cx-lt', 'an-ge-lt', 'an-ta-lt', 'an-pe-lt'], rule3: [] },
+            're-cx-rt': { rule1: ['re-cx-rt', 're-ge-rt', 're-ta-rt', 're-pe-rt'], rule2: ['an-cx-rt', 'an-ge-rt', 'an-ta-rt', 'an-pe-rt'], rule3: [] },
+            're-ge-lt': { rule1: ['re-cx-lt', 're-ge-lt', 're-ta-lt', 're-pe-lt'], rule2: ['an-cx-lt', 'an-ge-lt', 'an-ta-lt', 'an-pe-lt'], rule3: [] },
+            're-ge-rt': { rule1: ['re-cx-rt', 're-ge-rt', 're-ta-rt', 're-pe-rt'], rule2: ['an-cx-rt', 'an-ge-rt', 'an-ta-rt', 'an-pe-rt'], rule3: [] },
+            're-ta-lt': { rule1: ['re-cx-lt', 're-ge-lt', 're-ta-lt', 're-pe-lt'], rule2: ['an-cx-lt', 'an-ge-lt', 'an-ta-lt', 'an-pe-lt'], rule3: [] },
+            're-ta-rt': { rule1: ['re-cx-rt', 're-ge-rt', 're-ta-rt', 're-pe-rt'], rule2: ['an-cx-rt', 'an-ge-rt', 'an-ta-rt', 'an-pe-rt'], rule3: [] },
+            're-pe-lt': { rule1: ['re-cx-lt', 're-ge-lt', 're-ta-lt', 're-pe-lt'], rule2: ['an-cx-lt', 'an-ge-lt', 'an-ta-lt', 'an-pe-lt'], rule3: [] },
+            're-pe-rt': { rule1: ['re-cx-rt', 're-ge-rt', 're-ta-rt', 're-pe-rt'], rule2: ['an-cx-rt', 'an-ge-rt', 'an-ta-rt', 'an-pe-rt'], rule3: [] },
+            're-sc-lt': { rule1: ['re-di-lt', 're-ca-lt', 're-cu-lt', 're-hu-lt', 're-sc-lt'], rule2: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule3: [] },
+            're-sc-rt': { rule1: ['re-di-rt', 're-ca-rt', 're-cu-rt', 're-hu-rt', 're-sc-rt'], rule2: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule3: [] },
+            're-hu-lt': { rule1: ['re-di-lt', 're-ca-lt', 're-cu-lt', 're-hu-lt', 're-sc-lt'], rule2: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule3: [] },
+            're-hu-rt': { rule1: ['re-di-rt', 're-ca-rt', 're-cu-rt', 're-hu-rt', 're-sc-rt'], rule2: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule3: [] },
+            're-cu-lt': { rule1: ['re-di-lt', 're-ca-lt', 're-cu-lt', 're-hu-lt', 're-sc-lt'], rule2: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule3: [] },
+            're-cu-rt': { rule1: ['re-di-rt', 're-ca-rt', 're-cu-rt', 're-hu-rt', 're-sc-rt'], rule2: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule3: [] },
+            're-ca-lt': { rule1: ['re-di-lt', 're-ca-lt', 're-cu-lt', 're-hu-lt', 're-sc-lt'], rule2: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule3: [] },
+            're-ca-rt': { rule1: ['re-di-rt', 're-ca-rt', 're-cu-rt', 're-hu-rt', 're-sc-rt'], rule2: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule3: [] },
+            're-di-lt': { rule1: ['re-di-lt', 're-ca-lt', 're-cu-lt', 're-hu-lt', 're-sc-lt'], rule2: ['an-sc-lt', 'an-hu-lt', 'an-cu-lt', 'an-ca-lt', 'an-di-lt'], rule3: [] },
+            're-di-rt': { rule1: ['re-di-rt', 're-ca-rt', 're-cu-rt', 're-hu-rt', 're-sc-rt'], rule2: ['an-sc-rt', 'an-hu-rt', 'an-cu-rt', 'an-ca-rt', 'an-di-rt'], rule3: [] },
+            'me-cp1-lt': { rule1: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule2: ['la-cp1-lt'], rule3: ['me-cp1-rt'] },
+            'me-cp1-rt': { rule1: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule2: ['la-cp1-rt'], rule3: ['me-cp1-rt'] },
+            'me-cp2-a': { rule1: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule2: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule3: [] },
+            'me-cp2-r': { rule1: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule2: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule3: [] },
+            'me-cp3-a': { rule1: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule2: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule3: [] },
+            'me-cp3-r': { rule1: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule2: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule3: [] },
+            'me-cl-a': { rule1: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule2: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule3: [] },
+            'me-cl-r': { rule1: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule2: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule3: [] },
+            'me-th-a': { rule1: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule2: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule3: [] },
+            'me-th-r': { rule1: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule2: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule3: [] },
+            'me-lu-a': { rule1: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule2: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule3: [] },
+            'me-lu-r': { rule1: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule2: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule3: [] },
+            'me-pv-a': { rule1: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule2: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule3: [] },
+            'me-pv-r': { rule1: ['me-cp2-r', 'me-cp3-r', 'me-cl-r', 'me-th-r', 'me-lu-r', 'me-pv-r'], rule2: ['me-cp1-lt', 'me-cp1-rt', 'me-cp2-a', 'me-cp3-a', 'me-cl-a', 'me-th-a', 'me-lu-a', 'me-pv-a'], rule3: [] },
+            'me-cx-lt': { rule1: ['me-cx-lt', 'me-ge-lt', 'me-ta-lt', 'me-pe-lt'], rule2: ['la-cx-lt', 'la-ge-lt', 'la-ta-lt', 'la-pe-lt'], rule3: [] },
+            'me-cx-rt': { rule1: ['me-cx-rt', 'me-ge-rt', 'me-ta-rt', 'me-pe-rt'], rule2: ['la-cx-rt', 'la-ge-rt', 'la-ta-rt', 'la-pe-rt'], rule3: [] },
+            'me-ge-lt': { rule1: ['me-cx-lt', 'me-ge-lt', 'me-ta-lt', 'me-pe-lt'], rule2: ['la-cx-lt', 'la-ge-lt', 'la-ta-lt', 'la-pe-lt'], rule3: [] },
+            'me-ge-rt': { rule1: ['me-cx-rt', 'me-ge-rt', 'me-ta-rt', 'me-pe-rt'], rule2: ['la-cx-rt', 'la-ge-rt', 'la-ta-rt', 'la-pe-rt'], rule3: [] },
+            'me-ta-lt': { rule1: ['me-cx-lt', 'me-ge-lt', 'me-ta-lt', 'me-pe-lt'], rule2: ['la-cx-lt', 'la-ge-lt', 'la-ta-lt', 'la-pe-lt'], rule3: [] },
+            'me-ta-rt': { rule1: ['me-cx-rt', 'me-ge-rt', 'me-ta-rt', 'me-pe-rt'], rule2: ['la-cx-rt', 'la-ge-rt', 'la-ta-rt', 'la-pe-rt'], rule3: [] },
+            'me-pe-lt': { rule1: ['me-cx-lt', 'me-ge-lt', 'me-ta-lt', 'me-pe-lt'], rule2: ['la-cx-lt', 'la-ge-lt', 'la-ta-lt', 'la-pe-lt'], rule3: [] },
+            'me-pe-rt': { rule1: ['me-cx-rt', 'me-ge-rt', 'me-ta-rt', 'me-pe-rt'], rule2: ['la-cx-rt', 'la-ge-rt', 'la-ta-rt', 'la-pe-rt'], rule3: [] },
+            'me-sc-lt': { rule1: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule2: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule3: [] },
+            'me-sc-rt': { rule1: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule2: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule3: [] },
+            'me-hu-lt': { rule1: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule2: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule3: [] },
+            'me-hu-rt': { rule1: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule2: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule3: [] },
+            'me-cu-lt': { rule1: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule2: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule3: [] },
+            'me-cu-rt': { rule1: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule2: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule3: [] },
+            'me-ca-lt': { rule1: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule2: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule3: [] },
+            'me-ca-rt': { rule1: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule2: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule3: [] },
+            'me-di-lt': { rule1: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule2: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule3: [] },
+            'me-di-rt': { rule1: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule2: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule3: [] },
+            'la-cp1-lt': { rule1: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule2: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule3: [] },
+            'la-cp1-rt': { rule1: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule2: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule3: [] },
+            'la-cp2-lt': { rule1: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule2: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule3: [] },
+            'la-cp2-rt': { rule1: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule2: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule3: [] },
+            'la-cp3-lt': { rule1: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule2: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule3: [] },
+            'la-cp3-rt': { rule1: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule2: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule3: [] },
+            'la-cl-lt': { rule1: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule2: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule3: [] },
+            'la-cl-rt': { rule1: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule2: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule3: [] },
+            'la-th-lt': { rule1: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule2: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule3: [] },
+            'la-th-rt': { rule1: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule2: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule3: [] },
+            'la-lu-lt': { rule1: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule2: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule3: [] },
+            'la-lu-rt': { rule1: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule2: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule3: [] },
+            'la-pv-lt': { rule1: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule2: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule3: [] },
+            'la-pv-rt': { rule1: ['la-cp1-rt', 'la-cp2-rt', 'la-cp3-rt', 'la-cl-rt', 'la-th-rt', 'la-lu-rt', 'la-pv-rt'], rule2: ['la-cp1-lt', 'la-cp2-lt', 'la-cp3-lt', 'la-cl-lt', 'la-th-lt', 'la-lu-lt', 'la-pv-lt'], rule3: [] },
+            'la-cx-lt': { rule1: ['la-cx-lt', 'la-ge-lt', 'la-ta-lt', 'la-pe-lt'], rule2: ['me-cx-lt', 'me-ge-lt', 'me-ta-lt', 'me-pe-lt'], rule3: [] },
+            'la-cx-rt': { rule1: ['la-cx-rt', 'la-ge-rt', 'la-ta-rt', 'la-pe-rt'], rule2: ['me-cx-rt', 'me-ge-rt', 'me-ta-rt', 'me-pe-rt'], rule3: [] },
+            'la-ge-lt': { rule1: ['la-cx-lt', 'la-ge-lt', 'la-ta-lt', 'la-pe-lt'], rule2: ['me-cx-lt', 'me-ge-lt', 'me-ta-lt', 'me-pe-lt'], rule3: [] },
+            'la-ge-rt': { rule1: ['la-cx-rt', 'la-ge-rt', 'la-ta-rt', 'la-pe-rt'], rule2: ['me-cx-rt', 'me-ge-rt', 'me-ta-rt', 'me-pe-rt'], rule3: [] },
+            'la-ta-lt': { rule1: ['la-cx-lt', 'la-ge-lt', 'la-ta-lt', 'la-pe-lt'], rule2: ['me-cx-lt', 'me-ge-lt', 'me-ta-lt', 'me-pe-lt'], rule3: [] },
+            'la-ta-rt': { rule1: ['la-cx-rt', 'la-ge-rt', 'la-ta-rt', 'la-pe-rt'], rule2: ['me-cx-rt', 'me-ge-rt', 'me-ta-rt', 'me-pe-rt'], rule3: [] },
+            'la-pe-lt': { rule1: ['la-cx-lt', 'la-ge-lt', 'la-ta-lt', 'la-pe-lt'], rule2: ['me-cx-lt', 'me-ge-lt', 'me-ta-lt', 'me-pe-lt'], rule3: [] },
+            'la-pe-rt': { rule1: ['la-cx-rt', 'la-ge-rt', 'la-ta-rt', 'la-pe-rt'], rule2: ['me-cx-rt', 'me-ge-rt', 'me-ta-rt', 'me-pe-rt'], rule3: [] },
+            'la-sc-lt': { rule1: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule2: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule3: [] },
+            'la-sc-rt': { rule1: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule2: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule3: [] },
+            'la-hu-lt': { rule1: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule2: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule3: [] },
+            'la-hu-rt': { rule1: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule2: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule3: [] },
+            'la-cu-lt': { rule1: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule2: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule3: [] },
+            'la-cu-rt': { rule1: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule2: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule3: [] },
+            'la-ca-lt': { rule1: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule2: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule3: [] },
+            'la-ca-rt': { rule1: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule2: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule3: [] },
+            'la-di-lt': { rule1: ['la-sc-lt', 'la-hu-lt', 'la-cu-lt', 'la-ca-lt', 'la-di-lt'], rule2: ['me-sc-lt', 'me-hu-lt', 'me-cu-lt', 'me-ca-lt', 'me-di-lt'], rule3: [] },
+            'la-di-rt': { rule1: ['la-sc-rt', 'la-hu-rt', 'la-cu-rt', 'la-ca-rt', 'la-di-rt'], rule2: ['me-sc-rt', 'me-hu-rt', 'me-cu-rt', 'me-ca-rt', 'me-di-rt'], rule3: [] },
+            'ir-cp1-lt': { rule1: ['ir-cp1-lt', 'ir-cp2-lt', 'ir-cp3-lt', 'ir-cl-lt', 'ir-th-lt', 'ir-lu-lt', 'ir-pv-lt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'ir-cp1-rt': { rule1: ['ir-cp1-rt', 'ir-cp2-rt', 'ir-cp3-rt', 'ir-cl-rt', 'ir-th-rt', 'ir-lu-rt', 'ir-pv-rt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'ir-cp2-lt': { rule1: ['ir-cp1-lt', 'ir-cp2-lt', 'ir-cp3-lt', 'ir-cl-lt', 'ir-th-lt', 'ir-lu-lt', 'ir-pv-lt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'ir-cp2-rt': { rule1: ['ir-cp1-rt', 'ir-cp2-rt', 'ir-cp3-rt', 'ir-cl-rt', 'ir-th-rt', 'ir-lu-rt', 'ir-pv-rt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'ir-cp3-lt': { rule1: ['ir-cp1-lt', 'ir-cp2-lt', 'ir-cp3-lt', 'ir-cl-lt', 'ir-th-lt', 'ir-lu-lt', 'ir-pv-lt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'ir-cp3-rt': { rule1: ['ir-cp1-rt', 'ir-cp2-rt', 'ir-cp3-rt', 'ir-cl-rt', 'ir-th-rt', 'ir-lu-rt', 'ir-pv-rt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'ir-cl-lt': { rule1: ['ir-cp1-lt', 'ir-cp2-lt', 'ir-cp3-lt', 'ir-cl-lt', 'ir-th-lt', 'ir-lu-lt', 'ir-pv-lt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'ir-cl-rt': { rule1: ['ir-cp1-rt', 'ir-cp2-rt', 'ir-cp3-rt', 'ir-cl-rt', 'ir-th-rt', 'ir-lu-rt', 'ir-pv-rt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'ir-th-lt': { rule1: ['ir-cp1-lt', 'ir-cp2-lt', 'ir-cp3-lt', 'ir-cl-lt', 'ir-th-lt', 'ir-lu-lt', 'ir-pv-lt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'ir-th-rt': { rule1: ['ir-cp1-rt', 'ir-cp2-rt', 'ir-cp3-rt', 'ir-cl-rt', 'ir-th-rt', 'ir-lu-rt', 'ir-pv-rt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'ir-lu-p-lt': { rule1: [], rule2: [], rule3: [] },
+            'ir-lu-p-rt': { rule1: [], rule2: [], rule3: [] },
+            'ir-lu-lt': { rule1: ['ir-cp1-lt', 'ir-cp2-lt', 'ir-cp3-lt', 'ir-cl-lt', 'ir-th-lt', 'ir-lu-lt', 'ir-pv-lt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'ir-lu-rt': { rule1: ['ir-cp1-rt', 'ir-cp2-rt', 'ir-cp3-rt', 'ir-cl-rt', 'ir-th-rt', 'ir-lu-rt', 'ir-pv-rt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'ir-pv-p-lt': { rule1: [], rule2: [], rule3: [] },
+            'ir-pv-p-rt': { rule1: [], rule2: [], rule3: [] },
+            'ir-pv-lt': { rule1: ['ir-cp1-lt', 'ir-cp2-lt', 'ir-cp3-lt', 'ir-cl-lt', 'ir-th-lt', 'ir-lu-lt', 'ir-pv-lt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'ir-pv-rt': { rule1: ['ir-cp1-rt', 'ir-cp2-rt', 'ir-cp3-rt', 'ir-cl-rt', 'ir-th-rt', 'ir-lu-rt', 'ir-pv-rt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'ir-cx-lt': { rule1: ['ir-cx-lt', 'ir-ge-lt', 'ir-ta-lt', 'ir-pe-lt'], rule2: ['er-cx-lt', 'er-ge-lt', 'er-ta-lt', 'er-pe-lt'], rule3: [] },
+            'ir-cx-rt': { rule1: ['ir-cx-rt', 'ir-ge-rt', 'ir-ta-rt', 'ir-pe-rt'], rule2: ['er-cx-rt', 'er-ge-rt', 'er-ta-rt', 'er-pe-rt'], rule3: [] },
+            'ir-ge-lt': { rule1: ['ir-cx-lt', 'ir-ge-lt', 'ir-ta-lt', 'ir-pe-lt'], rule2: ['er-cx-lt', 'er-ge-lt', 'er-ta-lt', 'er-pe-lt'], rule3: [] },
+            'ir-ge-rt': { rule1: ['ir-cx-rt', 'ir-ge-rt', 'ir-ta-rt', 'ir-pe-rt'], rule2: ['er-cx-rt', 'er-ge-rt', 'er-ta-rt', 'er-pe-rt'], rule3: [] },
+            'ir-ta-lt': { rule1: ['ir-cx-lt', 'ir-ge-lt', 'ir-ta-lt', 'ir-pe-lt'], rule2: ['er-cx-lt', 'er-ge-lt', 'er-ta-lt', 'er-pe-lt'], rule3: [] },
+            'ir-ta-rt': { rule1: ['ir-cx-rt', 'ir-ge-rt', 'ir-ta-rt', 'ir-pe-rt'], rule2: ['er-cx-rt', 'er-ge-rt', 'er-ta-rt', 'er-pe-rt'], rule3: [] },
+            'ir-pe-lt': { rule1: ['ir-cx-lt', 'ir-ge-lt', 'ir-ta-lt', 'ir-pe-lt'], rule2: ['er-cx-lt', 'er-ge-lt', 'er-ta-lt', 'er-pe-lt'], rule3: [] },
+            'ir-pe-rt': { rule1: ['ir-cx-rt', 'ir-ge-rt', 'ir-ta-rt', 'ir-pe-rt'], rule2: ['er-cx-rt', 'er-ge-rt', 'er-ta-rt', 'er-pe-rt'], rule3: [] },
+            'ir-sc-lt': { rule1: ['ir-sc-lt', 'ir-hu-lt', 'ir-cu-lt', 'ir-ca-lt', 'ir-di-lt'], rule2: ['er-sc-lt', 'er-hu-lt', 'er-cu-lt', 'er-ca-lt', 'er-di-lt'], rule3: [] },
+            'ir-sc-rt': { rule1: ['ir-sc-rt', 'ir-hu-rt', 'ir-cu-rt', 'ir-ca-rt', 'ir-di-rt'], rule2: ['er-sc-rt', 'er-hu-rt', 'er-cu-rt', 'er-ca-rt', 'er-di-rt'], rule3: [] },
+            'ir-hu-lt': { rule1: ['ir-sc-lt', 'ir-hu-lt', 'ir-cu-lt', 'ir-ca-lt', 'ir-di-lt'], rule2: ['er-sc-lt', 'er-hu-lt', 'er-cu-lt', 'er-ca-lt', 'er-di-lt'], rule3: [] },
+            'ir-hu-rt': { rule1: ['ir-sc-rt', 'ir-hu-rt', 'ir-cu-rt', 'ir-ca-rt', 'ir-di-rt'], rule2: ['er-sc-rt', 'er-hu-rt', 'er-cu-rt', 'er-ca-rt', 'er-di-rt'], rule3: [] },
+            'ir-cu-lt': { rule1: ['ir-sc-lt', 'ir-hu-lt', 'ir-cu-lt', 'ir-ca-lt', 'ir-di-lt'], rule2: ['er-sc-lt', 'er-hu-lt', 'er-cu-lt', 'er-ca-lt', 'er-di-lt'], rule3: [] },
+            'ir-cu-rt': { rule1: ['ir-sc-rt', 'ir-hu-rt', 'ir-cu-rt', 'ir-ca-rt', 'ir-di-rt'], rule2: ['er-sc-rt', 'er-hu-rt', 'er-cu-rt', 'er-ca-rt', 'er-di-rt'], rule3: [] },
+            'ir-ca-lt': { rule1: ['ir-sc-lt', 'ir-hu-lt', 'ir-cu-lt', 'ir-ca-lt', 'ir-di-lt'], rule2: ['er-sc-lt', 'er-hu-lt', 'er-cu-lt', 'er-ca-lt', 'er-di-lt'], rule3: [] },
+            'ir-ca-rt': { rule1: ['ir-sc-rt', 'ir-hu-rt', 'ir-cu-rt', 'ir-ca-rt', 'ir-di-rt'], rule2: ['er-sc-rt', 'er-hu-rt', 'er-cu-rt', 'er-ca-rt', 'er-di-rt'], rule3: [] },
+            'ir-di-lt': { rule1: ['ir-sc-lt', 'ir-hu-lt', 'ir-cu-lt', 'ir-ca-lt', 'ir-di-lt'], rule2: ['er-sc-lt', 'er-hu-lt', 'er-cu-lt', 'er-ca-lt', 'er-di-lt'], rule3: [] },
+            'ir-di-rt': { rule1: ['ir-sc-rt', 'ir-hu-rt', 'ir-cu-rt', 'ir-ca-rt', 'ir-di-rt'], rule2: ['er-sc-rt', 'er-hu-rt', 'er-cu-rt', 'er-ca-rt', 'er-di-rt'], rule3: [] },
+            'er-cp1-lt': { rule1: ['er-cp1-lt', 'er-cp2-lt', 'er-cp3-lt', 'er-cl-lt', 'er-th-lt', 'er-lu-lt', 'er-pv-lt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'er-cp1-rt': { rule1: ['er-cp1-rt', 'er-cp2-rt', 'er-cp3-rt', 'er-cl-rt', 'er-th-rt', 'er-lu-rt', 'er-pv-rt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'er-cp2-lt': { rule1: ['er-cp1-lt', 'er-cp2-lt', 'er-cp3-lt', 'er-cl-lt', 'er-th-lt', 'er-lu-lt', 'er-pv-lt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'er-cp2-rt': { rule1: ['er-cp1-rt', 'er-cp2-rt', 'er-cp3-rt', 'er-cl-rt', 'er-th-rt', 'er-lu-rt', 'er-pv-rt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'er-cp3-lt': { rule1: ['er-cp1-lt', 'er-cp2-lt', 'er-cp3-lt', 'er-cl-lt', 'er-th-lt', 'er-lu-lt', 'er-pv-lt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'er-cp3-rt': { rule1: ['er-cp1-rt', 'er-cp2-rt', 'er-cp3-rt', 'er-cl-rt', 'er-th-rt', 'er-lu-rt', 'er-pv-rt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'er-cl-lt': { rule1: ['er-cp1-lt', 'er-cp2-lt', 'er-cp3-lt', 'er-cl-lt', 'er-th-lt', 'er-lu-lt', 'er-pv-lt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'er-cl-rt': { rule1: ['er-cp1-rt', 'er-cp2-rt', 'er-cp3-rt', 'er-cl-rt', 'er-th-rt', 'er-lu-rt', 'er-pv-rt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'er-th-lt': { rule1: ['er-cp1-lt', 'er-cp2-lt', 'er-cp3-lt', 'er-cl-lt', 'er-th-lt', 'er-lu-lt', 'er-pv-lt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'er-th-rt': { rule1: ['er-cp1-rt', 'er-cp2-rt', 'er-cp3-rt', 'er-cl-rt', 'er-th-rt', 'er-lu-rt', 'er-pv-rt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'er-lu-p-lt': { rule1: [], rule2: [], rule3: [] },
+            'er-lu-p-rt': { rule1: [], rule2: [], rule3: [] },
+            'er-lu-lt': { rule1: ['er-cp1-lt', 'er-cp2-lt', 'er-cp3-lt', 'er-cl-lt', 'er-th-lt', 'er-lu-lt', 'er-pv-lt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'er-lu-rt': { rule1: ['er-cp1-rt', 'er-cp2-rt', 'er-cp3-rt', 'er-cl-rt', 'er-th-rt', 'er-lu-rt', 'er-pv-rt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'er-pv-lt': { rule1: ['er-cp1-lt', 'er-cp2-lt', 'er-cp3-lt', 'er-cl-lt', 'er-th-lt', 'er-lu-lt', 'er-pv-lt'], rule2: ['ir-cp1-lt', 'er-cp1-rt', 'ir-cp2-lt', 'er-cp2-rt', 'ir-cp3-lt', 'er-cp3-rt', 'ir-cl-lt', 'er-cl-rt', 'ir-th-lt', 'er-th-rt', 'ir-lu-lt', 'er-lu-rt', 'ir-pv-lt', 'er-pv-rt'], rule3: [] },
+            'er-pv-rt': { rule1: ['er-cp1-rt', 'er-cp2-rt', 'er-cp3-rt', 'er-cl-rt', 'er-th-rt', 'er-lu-rt', 'er-pv-rt'], rule2: ['ir-cp1-rt', 'er-cp1-lt', 'ir-cp2-rt', 'er-cp2-lt', 'ir-cp3-rt', 'er-cp3-lt', 'ir-cl-rt', 'er-cl-lt', 'ir-th-rt', 'er-th-lt', 'ir-lu-rt', 'er-lu-lt', 'ir-pv-rt', 'er-pv-lt'], rule3: [] },
+            'er-pv-d-lt': { rule1: [], rule2: [], rule3: [] },
+            'er-pv-d-rt': { rule1: [], rule2: [], rule3: [] },
+            'er-cx-lt': { rule1: ['er-cx-lt', 'er-ge-lt', 'er-ta-lt', 'er-pe-lt'], rule2: ['ir-cx-lt', 'ir-ge-lt', 'ir-ta-lt', 'ir-pe-lt'], rule3: [] },
+            'er-cx-rt': { rule1: ['er-cx-rt', 'er-ge-rt', 'er-ta-rt', 'er-pe-rt'], rule2: ['ir-cx-rt', 'ir-ge-rt', 'ir-ta-rt', 'ir-pe-rt'], rule3: [] },
+            'er-ge-lt': { rule1: ['er-cx-lt', 'er-ge-lt', 'er-ta-lt', 'er-pe-lt'], rule2: ['ir-cx-lt', 'ir-ge-lt', 'ir-ta-lt', 'ir-pe-lt'], rule3: [] },
+            'er-ge-rt': { rule1: ['er-cx-rt', 'er-ge-rt', 'er-ta-rt', 'er-pe-rt'], rule2: ['ir-cx-rt', 'ir-ge-rt', 'ir-ta-rt', 'ir-pe-rt'], rule3: [] },
+            'er-ta-lt': { rule1: ['er-cx-lt', 'er-ge-lt', 'er-ta-lt', 'er-pe-lt'], rule2: ['ir-cx-lt', 'ir-ge-lt', 'ir-ta-lt', 'ir-pe-lt'], rule3: [] },
+            'er-ta-rt': { rule1: ['er-cx-rt', 'er-ge-rt', 'er-ta-rt', 'er-pe-rt'], rule2: ['ir-cx-rt', 'ir-ge-rt', 'ir-ta-rt', 'ir-pe-rt'], rule3: [] },
+            'er-pe-lt': { rule1: ['er-cx-lt', 'er-ge-lt', 'er-ta-lt', 'er-pe-lt'], rule2: ['ir-cx-lt', 'ir-ge-lt', 'ir-ta-lt', 'ir-pe-lt'], rule3: [] },
+            'er-pe-rt': { rule1: ['er-cx-rt', 'er-ge-rt', 'er-ta-rt', 'er-pe-rt'], rule2: ['ir-cx-rt', 'ir-ge-rt', 'ir-ta-rt', 'ir-pe-rt'], rule3: [] },
+            'er-sc-lt': { rule1: ['er-sc-lt', 'er-hu-lt', 'er-cu-lt', 'er-ca-lt', 'er-di-lt'], rule2: ['ir-sc-lt', 'ir-hu-lt', 'ir-cu-lt', 'ir-ca-lt', 'ir-di-lt'], rule3: [] },
+            'er-sc-rt': { rule1: ['er-sc-rt', 'er-hu-rt', 'er-cu-rt', 'er-ca-rt', 'er-di-rt'], rule2: ['ir-sc-rt', 'ir-hu-rt', 'ir-cu-rt', 'ir-ca-rt', 'ir-di-rt'], rule3: [] },
+            'er-hu-lt': { rule1: ['er-sc-lt', 'er-hu-lt', 'er-cu-lt', 'er-ca-lt', 'er-di-lt'], rule2: ['ir-sc-lt', 'ir-hu-lt', 'ir-cu-lt', 'ir-ca-lt', 'ir-di-lt'], rule3: [] },
+            'er-hu-rt': { rule1: ['er-sc-rt', 'er-hu-rt', 'er-cu-rt', 'er-ca-rt', 'er-di-rt'], rule2: ['ir-sc-rt', 'ir-hu-rt', 'ir-cu-rt', 'ir-ca-rt', 'ir-di-rt'], rule3: [] },
+            'er-cu-lt': { rule1: ['er-sc-lt', 'er-hu-lt', 'er-cu-lt', 'er-ca-lt', 'er-di-lt'], rule2: ['ir-sc-lt', 'ir-hu-lt', 'ir-cu-lt', 'ir-ca-lt', 'ir-di-lt'], rule3: [] },
+            'er-cu-rt': { rule1: ['er-sc-rt', 'er-hu-rt', 'er-cu-rt', 'er-ca-rt', 'er-di-rt'], rule2: ['ir-sc-rt', 'ir-hu-rt', 'ir-cu-rt', 'ir-ca-rt', 'ir-di-rt'], rule3: [] },
+            'er-ca-lt': { rule1: ['er-sc-lt', 'er-hu-lt', 'er-cu-lt', 'er-ca-lt', 'er-di-lt'], rule2: ['ir-sc-lt', 'ir-hu-lt', 'ir-cu-lt', 'ir-ca-lt', 'ir-di-lt'], rule3: [] },
+            'er-ca-rt': { rule1: ['er-sc-rt', 'er-hu-rt', 'er-cu-rt', 'er-ca-rt', 'er-di-rt'], rule2: ['ir-sc-rt', 'ir-hu-rt', 'ir-cu-rt', 'ir-ca-rt', 'ir-di-rt'], rule3: [] },
+            'er-di-lt': { rule1: ['er-sc-lt', 'er-hu-lt', 'er-cu-lt', 'er-ca-lt', 'er-di-lt'], rule2: ['ir-sc-lt', 'ir-hu-lt', 'ir-cu-lt', 'ir-ca-lt', 'ir-di-lt'], rule3: [] },
+            'er-di-rt': { rule1: ['er-sc-rt', 'er-hu-rt', 'er-cu-rt', 'er-ca-rt', 'er-di-rt'], rule2: ['ir-sc-rt', 'ir-hu-rt', 'ir-cu-rt', 'ir-ca-rt', 'ir-di-rt'], rule3: [] },
+            'an-me-cp1-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-cp1-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-cp2-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-cp2-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-cp3-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-cp3-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-cl-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-cl-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-th1-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-th1-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-th2-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-th2-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-th3-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-th3-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-lu1-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-lu1-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-lu2-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-lu2-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-lu3-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-lu3-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-pv1-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-pv1-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-pv2-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-pv2-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-pv3-lt': { rule1: ['an-me-cp1-lt', 'an-me-cp2-lt', 'an-me-cp3-lt', 'an-me-cl-lt', 'an-me-th1-lt', 'an-me-th2-lt', 'an-me-th3-lt', 'an-me-lu1-lt', 'an-me-lu2-lt', 'an-me-lu3-lt', 'an-me-pv1-lt', 'an-me-pv2-lt', 'an-me-pv3-lt'], rule2: [], rule3: [] },
+            'an-me-pv3-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-cx-lt': { rule1: ['an-me-cx-lt', 'an-me-ge1-lt', 'an-me-ge2-lt', 'an-me-ge3-lt', 'an-me-ta1-lt', 'an-me-ta2-lt', 'an-me-pe1-lt', 'an-me-pe2-lt', 'an-me-pe3-lt'], rule2: [], rule3: [] },
+            'an-me-cx-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-ge1-lt': { rule1: ['an-me-cx-lt', 'an-me-ge1-lt', 'an-me-ge2-lt', 'an-me-ge3-lt', 'an-me-ta1-lt', 'an-me-ta2-lt', 'an-me-pe1-lt', 'an-me-pe2-lt', 'an-me-pe3-lt'], rule2: [], rule3: [] },
+            'an-me-ge1-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-ge2-lt': { rule1: ['an-me-cx-lt', 'an-me-ge1-lt', 'an-me-ge2-lt', 'an-me-ge3-lt', 'an-me-ta1-lt', 'an-me-ta2-lt', 'an-me-pe1-lt', 'an-me-pe2-lt', 'an-me-pe3-lt'], rule2: [], rule3: [] },
+            'an-me-ge2-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-ge3-lt': { rule1: ['an-me-cx-lt', 'an-me-ge1-lt', 'an-me-ge2-lt', 'an-me-ge3-lt', 'an-me-ta1-lt', 'an-me-ta2-lt', 'an-me-pe1-lt', 'an-me-pe2-lt', 'an-me-pe3-lt'], rule2: [], rule3: [] },
+            'an-me-ge3-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-ta1-lt': { rule1: ['an-me-cx-lt', 'an-me-ge1-lt', 'an-me-ge2-lt', 'an-me-ge3-lt', 'an-me-ta1-lt', 'an-me-ta2-lt', 'an-me-pe1-lt', 'an-me-pe2-lt', 'an-me-pe3-lt'], rule2: [], rule3: [] },
+            'an-me-ta1-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-ta2-lt': { rule1: ['an-me-cx-lt', 'an-me-ge1-lt', 'an-me-ge2-lt', 'an-me-ge3-lt', 'an-me-ta1-lt', 'an-me-ta2-lt', 'an-me-pe1-lt', 'an-me-pe2-lt', 'an-me-pe3-lt'], rule2: [], rule3: [] },
+            'an-me-ta2-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-pe1-lt': { rule1: ['an-me-cx-lt', 'an-me-ge1-lt', 'an-me-ge2-lt', 'an-me-ge3-lt', 'an-me-ta1-lt', 'an-me-ta2-lt', 'an-me-pe1-lt', 'an-me-pe2-lt', 'an-me-pe3-lt'], rule2: [], rule3: [] },
+            'an-me-pe1-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-pe2-lt': { rule1: ['an-me-cx-lt', 'an-me-ge1-lt', 'an-me-ge2-lt', 'an-me-ge3-lt', 'an-me-ta1-lt', 'an-me-ta2-lt', 'an-me-pe1-lt', 'an-me-pe2-lt', 'an-me-pe3-lt'], rule2: [], rule3: [] },
+            'an-me-pe2-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-pe3-lt': { rule1: ['an-me-cx-lt', 'an-me-ge1-lt', 'an-me-ge2-lt', 'an-me-ge3-lt', 'an-me-ta1-lt', 'an-me-ta2-lt', 'an-me-pe1-lt', 'an-me-pe2-lt', 'an-me-pe3-lt'], rule2: [], rule3: [] },
+            'an-me-pe3-rt': { rule1: ['an-me-cx-rt', 'an-me-ge1-rt', 'an-me-ge2-rt', 'an-me-ge3-rt', 'an-me-ta1-rt', 'an-me-ta2-rt', 'an-me-pe1-rt', 'an-me-pe2-rt', 'an-me-pe3-rt'], rule2: [], rule3: [] },
+            'an-me-sc1-lt': { rule1: ['an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 'an-me-cu-lt', 'an-me-ca1-lt', 'an-me-ca2-lt', 'an-me-di1-lt', 'an-me-di2-lt'], rule2: [], rule3: [] },
+            'an-me-sc1-rt': { rule1: ['an-me-sc1-rt', 'an-me-sc2-rt', 'an-me-hu-rt', 'an-me-cu-rt', 'an-me-ca1-rt', 'an-me-ca2-rt', 'an-me-di1-rt', 'an-me-di2-rt'], rule2: [], rule3: [] },
+            'an-me-sc2-lt': { rule1: ['an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 'an-me-cu-lt', 'an-me-ca1-lt', 'an-me-ca2-lt', 'an-me-di1-lt', 'an-me-di2-lt'], rule2: [], rule3: [] },
+            'an-me-sc2-rt': { rule1: ['an-me-sc1-rt', 'an-me-sc2-rt', 'an-me-hu-rt', 'an-me-cu-rt', 'an-me-ca1-rt', 'an-me-ca2-rt', 'an-me-di1-rt', 'an-me-di2-rt'], rule2: [], rule3: [] },
+            'an-me-hu-lt': { rule1: ['an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 'an-me-cu-lt', 'an-me-ca1-lt', 'an-me-ca2-lt', 'an-me-di1-lt', 'an-me-di2-lt'], rule2: [], rule3: [] },
+            'an-me-hu-rt': { rule1: ['an-me-sc1-rt', 'an-me-sc2-rt', 'an-me-hu-rt', 'an-me-cu-rt', 'an-me-ca1-rt', 'an-me-ca2-rt', 'an-me-di1-rt', 'an-me-di2-rt'], rule2: [], rule3: [] },
+            'an-me-cu-lt': { rule1: ['an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 'an-me-cu-lt', 'an-me-ca1-lt', 'an-me-ca2-lt', 'an-me-di1-lt', 'an-me-di2-lt'], rule2: [], rule3: [] },
+            'an-me-cu-rt': { rule1: ['an-me-sc1-rt', 'an-me-sc2-rt', 'an-me-hu-rt', 'an-me-cu-rt', 'an-me-ca1-rt', 'an-me-ca2-rt', 'an-me-di1-rt', 'an-me-di2-rt'], rule2: [], rule3: [] },
+            'an-me-ca1-lt': { rule1: ['an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 'an-me-cu-lt', 'an-me-ca1-lt', 'an-me-ca2-lt', 'an-me-di1-lt', 'an-me-di2-lt'], rule2: [], rule3: [] },
+            'an-me-ca1-rt': { rule1: ['an-me-sc1-rt', 'an-me-sc2-rt', 'an-me-hu-rt', 'an-me-cu-rt', 'an-me-ca1-rt', 'an-me-ca2-rt', 'an-me-di1-rt', 'an-me-di2-rt'], rule2: [], rule3: [] },
+            'an-me-ca2-lt': { rule1: ['an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 'an-me-cu-lt', 'an-me-ca1-lt', 'an-me-ca2-lt', 'an-me-di1-lt', 'an-me-di2-lt'], rule2: [], rule3: [] },
+            'an-me-ca2-rt': { rule1: ['an-me-sc1-rt', 'an-me-sc2-rt', 'an-me-hu-rt', 'an-me-cu-rt', 'an-me-ca1-rt', 'an-me-ca2-rt', 'an-me-di1-rt', 'an-me-di2-rt'], rule2: [], rule3: [] },
+            'an-me-di1-lt': { rule1: ['an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 'an-me-cu-lt', 'an-me-ca1-lt', 'an-me-ca2-lt', 'an-me-di1-lt', 'an-me-di2-lt'], rule2: [], rule3: [] },
+            'an-me-di1-rt': { rule1: ['an-me-sc1-rt', 'an-me-sc2-rt', 'an-me-hu-rt', 'an-me-cu-rt', 'an-me-ca1-rt', 'an-me-ca2-rt', 'an-me-di1-rt', 'an-me-di2-rt'], rule2: [], rule3: [] },
+            'an-me-di2-lt': { rule1: ['an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 'an-me-cu-lt', 'an-me-ca1-lt', 'an-me-ca2-lt', 'an-me-di1-lt', 'an-me-di2-lt'], rule2: [], rule3: [] },
+            'an-me-di2-rt': { rule1: ['an-me-sc1-rt', 'an-me-sc2-rt', 'an-me-hu-rt', 'an-me-cu-rt', 'an-me-ca1-rt', 'an-me-ca2-rt', 'an-me-di1-rt', 'an-me-di2-rt'], rule2: [], rule3: [] },
+            'an-la-cp1-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cp1-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cp2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cp2-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cp3-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cp3-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cl-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cl-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-th1-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-th1-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-th2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-th2-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-lu1-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-lu1-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-lu2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-lu2-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-pv1-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-pv1-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-pv2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-pv2-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cx-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cx-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ge1-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ge1-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ge2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ge2-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ge3-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ge3-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ta1-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ta1-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ta2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ta2-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-pe1-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-pe1-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-pe2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-pe2-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-pe3-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-pe3-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-sc1-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-sc1-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-sc2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-sc2-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-hu-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-hu-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cu-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cu-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ca1-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ca1-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ca2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-ca2-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-di1-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-di1-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-di2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-di2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cp1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cp1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cp2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cp2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cp3-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cp3-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cl-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cl-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-th1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-th1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-th2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-th2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-th3-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-th3-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-lu1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-lu1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-lu2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-lu2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-pv1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-pv1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-pv2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-pv2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cx-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cx-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ge1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ge1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ge2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ge2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ta1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ta1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ta2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ta2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-pe1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-pe1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-pe2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-pe2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-pe3-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-pe3-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-sc1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-sc1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-sc2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-sc2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-hu-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-hu-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cu1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cu1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cu2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-cu2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ca1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ca1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ca2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-ca2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-di1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-di1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-me-di2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-me-di2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cp1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cp1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cp2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cp2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cp3-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cp3-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cl-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cl-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-th-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-th-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-lu-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-lu-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-pv1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-pv1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-pv2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-pv2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cx-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cx-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ge1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ge1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ge2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ge2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ta1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ta1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ta2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ta2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-pe1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-pe1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-pe2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-pe2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-pe3-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-pe3-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-sc1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-sc1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-sc2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-sc2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-hu-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-hu-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cu-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cu-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ca1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ca1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ca2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-ca2-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-di1-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-di1-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-di2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-di2-rt': { rule1: [], rule2: [], rule3: [] },
+        };
+        const sheet = document.getElementById('sheet');
+        const gestureOverlay = document.getElementById('gesture-overlay');
+        const gesturePointName = document.getElementById('gesture-point-name');
+        const stateDialog = document.getElementById('state-dialog');
+        const guideDialog = document.getElementById('guide-dialog');
+        const guideActions = document.getElementById('guide-actions');
+        const guideDialogTitle = document.getElementById('guide-dialog-title');
+        const historyDialog = document.getElementById('history-dialog');
+        const historyDialogTitle = document.getElementById('history-dialog-title');
+        const historyHoverValue = document.getElementById('history-hover-value');
+        const historyActions = document.getElementById('history-actions');
+        const treatmentResultDialog = document.getElementById('treatment-result-dialog');
+        const treatmentResultActions = document.getElementById('treatment-result-actions');
+        const treatmentNumberDialog = document.getElementById('treatment-number-dialog');
+        const treatmentNumberActions = document.getElementById('treatment-number-actions');
+        const patientDetailsDialog = document.getElementById('patient-details-dialog');
+        const separatorAfterRows = new Set(['CL', 'PV3D', 'PE3']);
+        const mergedMeRows = new Set(['CP2', 'CP3', 'CL', 'TH1', 'TH2', 'TH3', 'LU1P', 'LU2', 'LU3D', 'PV1P', 'PV2', 'PV3D']);
+        const firstMeColumn = 4;
+        let layoutId = location.hash === '#fmid' ? 'fmid' : 'fmmd';
+        let layout;
+        let headers;
+        let rows;
+        let activeGuide;
+        let activeHistoryLabel;
+        let activeTreatmentPoint;
+        let treatmentNumberButton;
+        let treatmentResultButton;
+        const storageKeys = { patients: 'fm-patient-record-patients', activePatient: 'fm-patient-record-active-patient', activeTreatment: 'fm-patient-record-active-treatment' };
+        let activeTreatmentNumber = '01';
+        let activePatientName = localStorage.getItem(storageKeys.activePatient) || '';
+
+        function getPatientStorageKey() { return storageKeys.patients; }
+        function loadPatients() { try { const patients = JSON.parse(localStorage.getItem(getPatientStorageKey())); return patients && typeof patients === 'object' && !Array.isArray(patients) ? patients : {}; } catch { return {}; } }
+        function savePatients(patients) { localStorage.setItem(getPatientStorageKey(), JSON.stringify(patients)); }
+        function currentPatient() { return loadPatients()[activePatientName] || { visits: {} }; }
+        function loadTreatments() { return currentPatient().visits || {}; }
+        function currentTreatment() { return loadTreatments()[activeTreatmentNumber] || {}; }
+        function updateCurrentTreatment(update) { if (!activePatientName) return; const patients = loadPatients(); const patient = patients[activePatientName] || { visits: {} }; patient.visits = { ...patient.visits, [activeTreatmentNumber]: { ...patient.visits[activeTreatmentNumber], ...update } }; patients[activePatientName] = patient; savePatients(patients); }
+        function refreshCurrentPatient() { activeGuide = undefined; buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); }
+        function createPatient(name) { const patientName = name.trim(); if (!patientName) throw new Error('Enter a patient name.'); const patients = loadPatients(); if (patients[patientName]) throw new Error('A patient with that name already exists.'); patients[patientName] = { visits: { '01': { patientDetails: {} } } }; savePatients(patients); activePatientName = patientName; activeTreatmentNumber = '01'; localStorage.setItem(storageKeys.activePatient, patientName); localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber); refreshCurrentPatient(); }
+        function loadPatient(name) { const patientName = name.trim(); if (!loadPatients()[patientName]) throw new Error('Patient not found.'); activePatientName = patientName; activeTreatmentNumber = '01'; localStorage.setItem(storageKeys.activePatient, patientName); localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber); refreshCurrentPatient(); }
+        function renamePatient(name) { const patientName = name.trim(); if (!patientName) throw new Error('Enter a patient name.'); if (patientName === activePatientName) return; const patients = loadPatients(); if (patients[patientName]) throw new Error('A patient with that name already exists.'); const patient = patients[activePatientName]; if (!patient) throw new Error('Load or create a patient first.'); delete patients[activePatientName]; patients[patientName] = patient; savePatients(patients); activePatientName = patientName; localStorage.setItem(storageKeys.activePatient, patientName); }
+        function pointKey(rowName, header, columnIndex, isMergedMe) {
+            const aliases = { AL: 'an-la', AM: 'an-me', RL: 're-la', RM: 're-me' };
+            const [side, pointName] = header.includes('|') ? header.split('|') : [undefined, header];
+            const prefix = aliases[pointName] || pointName.toLowerCase();
+            const treatmentRow = rowName.toLowerCase().replace(/^(lu|pv)(\d+)[pd]$/, '$1$2');
+            const rowAliases = { LU1P: 'lu-p', LU2: 'lu', LU3D: 'lu-d', PV1P: 'pv-p', PV2: 'pv', PV3D: 'pv-d' };
+            const row = ['AL', 'AM', 'RL', 'RM'].includes(pointName) ? treatmentRow : ['IR', 'ER'].includes(pointName) && rowAliases[rowName] ? rowAliases[rowName] : rowName.toLowerCase();
+            const numberless = ['AN', 'RE', 'ME', 'LA', 'IR', 'ER'].includes(pointName) && !/^cp[123]$/i.test(rowName);
+            const cuAlias = ['AL', 'AM', 'RL'].includes(pointName) && /^CU\d+$/i.test(rowName);
+            const rlThOrLu = pointName === 'RL' && /^(TH|LU)/i.test(rowName);
+            const keyRow = numberless || cuAlias || rlThOrLu ? row.replace(/\d+$/, '') : row;
+            if (pointName === 'ME') {
+                if (isMergedMe) return `${prefix}-${keyRow}-a`;
+                if (columnIndex === layout.rightMeColumn) return `${prefix}-${keyRow}-r`;
+                return `${prefix}-${keyRow}-${side === 'L' ? 'lt' : 'rt'}`;
+            }
+            if (side) return `${prefix}-${keyRow}-${side === 'L' ? 'lt' : 'rt'}`;
+            const matching = headers.map((value, index) => value.split('|').at(-1) === pointName ? index : -1).filter(index => index >= 0);
+            return matching.length === 1 ? `${prefix}-${keyRow}` : `${prefix}-${keyRow}-${matching.indexOf(columnIndex) === 0 ? 'lt' : 'rt'}`;
+        }
+        function populateColumnLabel(label, header) {
+            const [side, name] = header.includes('|') ? header.split('|') : ['', header];
+            const sideLabel = document.createElement('span'); sideLabel.className = `column-side ${side === 'L' ? 'left' : side === 'R' ? 'right' : ''}`; sideLabel.textContent = side;
+            const nameLabel = document.createElement('span'); nameLabel.className = 'column-name'; nameLabel.textContent = name;
+            label.replaceChildren(sideLabel, nameLabel);
+        }
+        function loadPalpationSequence() { return new Set(currentTreatment().locationMarks || []); }
+        function applyPalpationSequenceMark(locationKey) { const isSelectedForPalpation = loadPalpationSequence().has(locationKey); document.querySelectorAll('.column-label[data-location-key]').forEach(label => { if (label.dataset.locationKey === locationKey) label.classList.toggle('location-marked', isSelectedForPalpation); }); }
+        function bindPalpationSequenceLabel(label, header) { label.dataset.locationKey = header; applyPalpationSequenceMark(header); label.addEventListener('click', () => { const palpationSequence = loadPalpationSequence(); palpationSequence.has(header) ? palpationSequence.delete(header) : palpationSequence.add(header); updateCurrentTreatment({ locationMarks: [...palpationSequence] }); applyPalpationSequenceMark(header); }); }
+        function treatmentResultMark(value) { return ({ '+++': '+3', '++': '+2', '+': '+1', NC: 'NC', X: 'X', '-': '-1', '--': '-2', '---': '-3' })[value] || ''; }
+        function applyVisual(point, palpation = point.dataset.palpation, movement = point.dataset.movement, treated = point.dataset.treated || '') {
+            point.classList.remove('palpation-grey', 'palpation-yellow', 'palpation-green', 'palpation-red', 'movement-grey', 'movement-yellow', 'movement-green', 'movement-red');
+            if (palpation !== 'clear') point.classList.add(`palpation-${palpation}`);
+            if (movement !== 'clear') point.classList.add(`movement-${movement}`);
+            point.dataset.treated = palpation !== 'clear' ? treated : '';
+            point.querySelector('.point-treatment-result').textContent = treatmentResultMark(point.dataset.treated);
+        }
+        function serializeState() {
+            const levels = { grey: 0, yellow: 1, green: 2, red: 3 };
+            return Object.fromEntries([...document.querySelectorAll('.point')].filter(point => point.dataset.palpation !== 'clear' || point.dataset.movement !== 'clear' || point.dataset.treated).map(point => [point.dataset.key, { palpation: point.dataset.palpation === 'clear' ? null : levels[point.dataset.palpation], movement: point.dataset.movement === 'clear' ? null : levels[point.dataset.movement], treated: point.dataset.treated || null }]));
+        }
+        function saveState() { updateCurrentTreatment({ points: serializeState() }); }
+        function loadBodyHistory() { return currentTreatment().painHistory || {}; }
+        function saveBodyHistory(history) { updateCurrentTreatment({ painHistory: history }); }
+        function bodyHistoryKey(label) { return `${label.dataset.historyEdge === 'right' ? 'posterior' : 'anterior'}:${label.dataset.rowName}`; }
+        function historyColor(age) {
+            const ageIndex = bodyHistoryAges.indexOf(age);
+            const lightness = 66 - ageIndex * 3.2;
+            const saturation = 48 + ageIndex * 3.8;
+            return `hsl(198 ${saturation}% ${lightness}% / 0.9)`;
+        }
+        function populateHistoryLabel(label) {
+            const name = document.createElement('span'); name.className = 'history-label-name'; name.textContent = label.dataset.rowName;
+            const age = document.createElement('span'); age.className = 'history-label-age';
+            label.replaceChildren(name, age);
+        }
+        function applyHistoryLabel(label) {
+            const selection = loadBodyHistory()[bodyHistoryKey(label)];
+            if (!label.querySelector('.history-label-name')) populateHistoryLabel(label);
+            label.querySelector('.history-label-age').textContent = selection?.age || '';
+            label.style.removeProperty('--history-left'); label.style.removeProperty('--history-right');
+            label.classList.remove('history-marked', 'history-sipa-left', 'history-sipa-right', 'history-paconc-left', 'history-paconc-right');
+            const isRightEdge = label.dataset.historyEdge === 'right';
+            const validSelection = ['SiPa', 'PaConc', 'PaPrev'].includes(selection?.type) && ['LT', 'RT', 'BI'].includes(selection?.side) && bodyHistoryAges.includes(selection?.age);
+            if (!validSelection) { label.classList.remove('history-marked'); return; }
+            const markLeft = selection.side === 'BI' || selection.side === (isRightEdge ? 'LT' : 'RT');
+            const markRight = selection.side === 'BI' || selection.side === (isRightEdge ? 'RT' : 'LT');
+            const color = historyColor(selection.age);
+            if (markLeft) label.style.setProperty('--history-left', color);
+            if (markRight) label.style.setProperty('--history-right', color);
+            const type = selection.type.toLocaleLowerCase();
+            if (selection.type !== 'PaPrev' && markLeft) label.classList.add(`history-${type}-left`);
+            if (selection.type !== 'PaPrev' && markRight) label.classList.add(`history-${type}-right`);
+            label.classList.add('history-marked');
+        }
+        function selectBodyHistory(side, age, type) {
+            if (!activeHistoryLabel) return;
+            const history = loadBodyHistory();
+            const selectedAge = bodyHistoryAges.includes(age) ? age : bodyHistoryAges[age];
+            const selectedType = typeof type === 'string' ? type : historyDialog.querySelector('.history-target')?.dataset.historyType;
+            if (!selectedAge || !selectedType) return;
+            history[bodyHistoryKey(activeHistoryLabel)] = { type: selectedType, side, age: selectedAge };
+            saveBodyHistory(history); applyHistoryLabel(activeHistoryLabel); historyDialog.close();
+        }
+        function clearBodyHistory() {
+            if (!activeHistoryLabel) return;
+            const history = loadBodyHistory();
+            delete history[bodyHistoryKey(activeHistoryLabel)];
+            saveBodyHistory(history); applyHistoryLabel(activeHistoryLabel); historyDialog.close();
+        }
+        function clearAllBodyHistory() {
+            updateCurrentTreatment({ painHistory: {}, bodyHistory: undefined });
+            document.querySelectorAll('.row-label[data-row-name]').forEach(applyHistoryLabel);
+        }
+        function clearCurrentVisit() {
+            if (!activePatientName) return;
+            const patients = loadPatients(); const patient = patients[activePatientName];
+            delete patient.visits[activeTreatmentNumber]; savePatients(patients); refreshCurrentPatient();
+        }
+        function clearAllVisits() {
+            if (!activePatientName) return;
+            const patients = loadPatients(); patients[activePatientName].visits = {}; savePatients(patients);
+            activeTreatmentNumber = 1;
+            localStorage.setItem(storageKeys.activeTreatment, String(activeTreatmentNumber));
+            refreshCurrentPatient();
+        }
+        function orderHistorySideButtons(fromRight) {
+            const sideOrder = fromRight ? ['LT', 'RT', 'BI'] : ['RT', 'LT', 'BI'];
+            const buttons = [...historyActions.querySelectorAll('button[data-history-side]')];
+            for (let index = 0; index < buttons.length; index += 3) {
+                const group = buttons.slice(index, index + 3);
+                sideOrder.forEach(side => historyActions.appendChild(group.find(button => button.dataset.historySide === side)));
+            }
+        }
+        function historyHoverText(button) {
+            if (!button?.dataset.historySide || !activeHistoryLabel) return '';
+            return button.textContent;
+        }
+        function updateHistoryDialogTitle(label) {
+            const position = label.dataset.historyEdge === 'left' ? 'A' : 'P';
+            historyDialogTitle.textContent = `${label.dataset.rowName}-${position}`;
+        }
+        function bindBodyHistoryGesture(label) {
+            let startY; let pointerId; let opened = false;
+            const targetAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-history-side], #clear-body-history');
+            const updateTarget = (x, y) => { const target = targetAt(x, y); historyDialog.querySelectorAll('button[data-history-side], #clear-body-history').forEach(button => button.classList.toggle('history-target', button === target)); historyHoverValue.textContent = historyHoverText(target); return target; };
+            const clearGesture = () => { pointerId = undefined; opened = false; label.classList.remove('history-active'); historyDialog.querySelectorAll('.history-target').forEach(button => button.classList.remove('history-target')); };
+            label.addEventListener('pointerdown', event => { startY = event.clientY; pointerId = event.pointerId; opened = false; label.setPointerCapture(pointerId); });
+            label.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (opened) { updateTarget(event.clientX, event.clientY); return; } if (Math.abs(event.clientY - startY) < 12) return; opened = true; activeHistoryLabel = label; label.classList.add('history-active'); updateHistoryDialogTitle(label); historyHoverValue.textContent = ''; historyDialog.classList.toggle('history-from-right', label.dataset.historyEdge === 'right'); orderHistorySideButtons(label.dataset.historyEdge === 'right'); historyDialog.showModal(); updateTarget(event.clientX, event.clientY); });
+            label.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; if (!opened) { clearGesture(); return; } const target = updateTarget(event.clientX, event.clientY); if (target?.id === 'clear-body-history') clearBodyHistory(); else if (target) selectBodyHistory(target.dataset.historySide, target.dataset.historyAge, target.dataset.historyActive === 'true'); else historyDialog.close(); clearGesture(); });
+            label.addEventListener('pointercancel', () => { if (opened) historyDialog.close(); clearGesture(); });
+        }
+        function selectedGreyPointKeys() {
+            return [...document.querySelectorAll('.point')].filter(point => point.dataset.palpation === 'grey').map(point => point.dataset.key);
+        }
+        function restoreSelectedGreyPoints(keys) {
+            if (!Array.isArray(keys) || !keys.every(key => typeof key === 'string')) throw new Error('Expected an array of point names.');
+            const selectedKeys = new Set(keys);
+            document.querySelectorAll('.point').forEach(point => {
+                if (point.dataset.palpation !== 'grey') return;
+                point.dataset.palpation = selectedKeys.has(point.dataset.key) ? 'grey' : 'clear';
+                applyVisual(point);
+            });
+            saveState();
+        }
+        function selectedPointKeys(state) {
+            return [...document.querySelectorAll('.point')].filter(point => point.dataset.palpation === state).map(point => point.dataset.key);
+        }
+        function restoreSelectedColoredPoints(state, keys) {
+            if (!['yellow', 'green', 'red'].includes(state)) throw new Error('Expected a colored point state.');
+            if (!Array.isArray(keys) || !keys.every(key => typeof key === 'string')) throw new Error('Expected an array of point names.');
+            const selectedKeys = new Set(keys);
+            document.querySelectorAll('.point').forEach(point => {
+                if (point.dataset.palpation === state) {
+                    point.dataset.palpation = 'clear';
+                    applyVisual(point);
+                }
+                if (selectedKeys.has(point.dataset.key)) {
+                    point.dataset.palpation = state;
+                    applyVisual(point);
+                }
+            });
+            refreshGuide(); saveState();
+        }
+        function restoreState(saved) {
+            if (!saved || typeof saved !== 'object') throw new Error('Expected a point map JSON object.');
+            document.querySelectorAll('.point').forEach(point => {
+                point.dataset.palpation = 'clear'; point.dataset.movement = 'clear';
+                const value = saved[point.dataset.key];
+                if (value) {
+                    const states = ['grey', 'yellow', 'green', 'red'];
+                    point.dataset.palpation = states[Number.isInteger(value.palpation) ? value.palpation : value.level] || 'clear';
+                    point.dataset.movement = states[value.movement] || 'clear';
+                    applyVisual(point, point.dataset.palpation, point.dataset.movement, typeof value.treated === 'string' && treatmentResultValues.includes(value.treated) ? value.treated : value.treated ? 'X' : '');
+                } else applyVisual(point);
+            });
+            refreshGuide(); saveState();
+        }
+        function loadState() { restoreState(currentTreatment().points || {}); }
+        function updatePoint(point, check, state) {
+            if (check === 'both') {
+                point.dataset.palpation = state;
+                point.dataset.movement = state;
+                point.dataset.treated = '';
+            } else {
+                point.dataset[check] = state;
+                if (check === 'palpation' && state === 'clear') point.dataset.treated = '';
+            }
+            applyVisual(point); saveState(); refreshGuide();
+        }
+        function showGestureOverlay(point, result) {
+            gestureOverlay.className = `gesture-overlay visible ${result?.check || ''} ${result?.state || ''}`;
+            gesturePointName.textContent = point.dataset.key;
+        }
+        function hideGestureOverlay() { gestureOverlay.className = 'gesture-overlay'; gesturePointName.textContent = ''; }
+        function guideKeys(guide) {
+            if (guide?.rule !== 'cc-cf-balance') return guide?.keys || [];
+            const points = [...document.querySelectorAll('.point')]; const keys = new Set();
+            points.filter(point => point.dataset.treated).forEach(point => {
+                Object.values(balanceRules[point.dataset.key] || {}).flat().forEach(key => keys.add(key));
+            });
+            return [...keys];
+        }
+        function selectGuide(guide, persist = true) {
+            activeGuide = guide; const keys = new Set(guideKeys(guide));
+            document.querySelectorAll('.point').forEach(point => point.classList.toggle('guided', keys.has(point.dataset.key)));
+            guideDialogTitle.textContent = `Assistance`;
+            guideActions.querySelectorAll('button[data-guide-name]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.guideName === guide?.name)));
+            if (persist) updateCurrentTreatment({ guideName: guide?.name || '' });
+        }
+        function refreshGuide() { if (activeGuide) selectGuide(activeGuide); }
+        const patientDetailsDefaults = {
+            history: 'SiPa: \nPaConc:\nExtremit: \nPaPrev:\nSurgery:\nTrauma: \nFractures: ',
+            trauma: 'Investigations: \nMedications: \nFMID:\nPostura:\nOveruse:\nComment: '
+        };
+        function patientDetailsFields() { return [...document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea')]; }
+        function serializePatientDetails() { return Object.fromEntries(patientDetailsFields().filter(field => field.id !== 'patient_name').map(field => [field.id, field.value])); }
+        function normalizePatientDetails(details) { const validFields = new Set(patientDetailsFields().filter(field => field.id !== 'patient_name').map(field => field.id)); return Object.fromEntries(Object.entries(details || {}).filter(([key]) => validFields.has(key))); }
+        function normalizeTreatmentNumber(number) { return String(Math.min(10, Math.max(1, Number(number) || 1))).padStart(2, '0'); }
+        function validatePainHistory(history) { if (history === undefined) return {}; if (!history || typeof history !== 'object' || Array.isArray(history)) throw new Error('Expected painHistory to be a location map.'); return Object.fromEntries(Object.entries(history).map(([location, selection]) => { if (!/^(anterior|posterior):.+$/.test(location) || !selection || typeof selection !== 'object' || !['SiPa', 'PaConc', 'PaPrev'].includes(selection.type) || !['LT', 'RT', 'BI'].includes(selection.side) || !bodyHistoryAges.includes(selection.age)) throw new Error(`Invalid painHistory entry: ${location}`); return [location, { type: selection.type, side: selection.side, age: selection.age }]; })); }
+        function normalizeTreatments(treatments) { return Object.fromEntries(Object.entries(treatments || {}).map(([number, treatment]) => { if (!treatment || typeof treatment !== 'object' || Array.isArray(treatment) || 'bodyHistory' in treatment) throw new Error(`Invalid visit: ${number}`); return [normalizeTreatmentNumber(number), { ...treatment, painHistory: validatePainHistory(treatment.painHistory), patientDetails: normalizePatientDetails(treatment.patientDetails) }]; })); }
+        function normalizePatients(patients) { return Object.fromEntries(Object.entries(patients || {}).filter(([name, patient]) => name.trim() && patient && typeof patient === 'object' && !Array.isArray(patient)).map(([name, patient]) => [name, { ...patient, visits: normalizeTreatments(patient.visits) }])); }
+        function migrateStoredPainHistory(history) { const legacyTypes = { previous: 'PaPrev', main: 'SiPa', secondary: 'PaConc' }; return Object.fromEntries(Object.entries(history || {}).map(([location, selection]) => { if (selection?.type) return [location, selection]; const [legacyType, legacySelection] = Object.entries(legacyTypes).map(([legacyName, type]) => [type, selection?.[legacyName]]).find(([, value]) => value); if (!legacySelection) throw new Error(`Invalid stored painHistory entry: ${location}`); return [location, { type: legacyType, side: legacySelection.side, age: legacySelection.age }]; })); }
+        function migrateStoredPatients() { const patients = loadPatients(); const migratedPatients = Object.fromEntries(Object.entries(patients).map(([name, patient]) => [name, { ...patient, visits: Object.fromEntries(Object.entries(patient.visits || {}).map(([number, visit]) => [number, { ...visit, painHistory: migrateStoredPainHistory(visit.painHistory) }])) }])); if (JSON.stringify(patients) !== JSON.stringify(migratedPatients)) savePatients(migratedPatients); }
+        function loadPatientDetails() { return currentTreatment().patientDetails || {}; }
+        function applyPatientDetails() { const details = loadPatientDetails(); patientDetailsFields().forEach(field => { field.value = field.id === 'patient_name' ? activePatientName : details[field.id] || patientDetailsDefaults[field.id] || ''; }); }
+        function savePatientDetails() { updateCurrentTreatment({ patientDetails: serializePatientDetails() }); }
+        function applyTreatmentNumber() {
+            if (!treatmentNumberButton) return;
+            treatmentNumberButton.textContent = activeTreatmentNumber;
+            treatmentNumberButton.title = `Visit number: ${activeTreatmentNumber}. Drag up to change.`;
+            treatmentNumberButton.setAttribute('aria-label', treatmentNumberButton.title);
+            treatmentNumberActions.querySelectorAll('button[data-treatment-number]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.treatmentNumber === activeTreatmentNumber)));
+        }
+        function selectTreatmentNumber(number) {
+            saveState();
+            activeTreatmentNumber = normalizeTreatmentNumber(number);
+            localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber);
+            applyTreatmentNumber();
+            treatmentNumberDialog.close();
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                activeGuide = undefined;
+                buildSheet();
+                applyPatientDetails();
+                selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false);
+                applyTreatmentNumber();
+            }));
+        }
+        function createTreatmentNumberButton() {
+            const button = document.createElement('button'); button.type = 'button'; button.className = 'treatment-number-button'; treatmentNumberButton = button; applyTreatmentNumber();
+            let startX; let startY; let pointerId; let pickerOpened = false; let suppressClick = false;
+            const targetAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-treatment-number]');
+            const updateTarget = (x, y) => { const target = targetAt(x, y); treatmentNumberActions.querySelectorAll('button[data-treatment-number]').forEach(action => action.classList.toggle('treatment-number-target', action === target)); return target; };
+            const clearGesture = () => { pointerId = undefined; pickerOpened = false; treatmentNumberActions.querySelectorAll('.treatment-number-target').forEach(action => action.classList.remove('treatment-number-target')); };
+            button.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; pickerOpened = false; button.setPointerCapture(pointerId); });
+            button.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (pickerOpened) { updateTarget(event.clientX, event.clientY); return; } const deltaX = event.clientX - startX; const deltaY = event.clientY - startY; if (deltaY > -4 || Math.abs(deltaX) > 24) return; pickerOpened = true; suppressClick = true; treatmentNumberDialog.showModal(); updateTarget(event.clientX, event.clientY); });
+            button.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; if (!pickerOpened) { clearGesture(); return; } const target = updateTarget(event.clientX, event.clientY); if (target) selectTreatmentNumber(Number(target.dataset.treatmentNumber)); else treatmentNumberDialog.close(); clearGesture(); });
+            button.addEventListener('pointercancel', () => { if (pickerOpened) treatmentNumberDialog.close(); clearGesture(); });
+            button.addEventListener('lostpointercapture', () => { if (pickerOpened) treatmentNumberDialog.close(); clearGesture(); });
+            button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } treatmentNumberDialog.showModal(); });
+            return button;
+        }
+        function selectTreatmentResult(value) {
+            if (!activeTreatmentPoint) { const result = value === 'clear' ? '' : value; updateCurrentTreatment({ treatmentResult: result }); applyTreatmentResult(result); treatmentResultDialog.close(); return; }
+            activeTreatmentPoint.dataset.treated = value === 'clear' ? '' : value;
+            applyVisual(activeTreatmentPoint); saveState(); refreshGuide(); treatmentResultDialog.close(); activeTreatmentPoint = undefined;
+        }
+        function openTreatmentResultDialog(point, activatePoint = true, alignRight = false) {
+            activeTreatmentPoint = activatePoint ? point : undefined;
+            treatmentResultActions.querySelectorAll('button[data-treatment-result]').forEach(button => { button.hidden = !activatePoint && button.dataset.treatmentResult === 'X'; });
+            if (alignRight) { treatmentResultDialog.style.right = '8px'; treatmentResultDialog.style.bottom = '8px'; treatmentResultDialog.style.left = 'auto'; treatmentResultDialog.style.top = 'auto'; treatmentResultDialog.showModal(); return; }
+            const rect = point.getBoundingClientRect();
+            const width = Math.min(260, window.innerWidth - 32);
+            const height = Math.min(440, window.innerHeight - 16);
+            const showAbove = rect.bottom + height > window.innerHeight && rect.top >= height;
+            const left = alignRight ? rect.right - width : rect.left + rect.width / 2 - width / 2;
+            treatmentResultDialog.style.right = 'auto';
+            treatmentResultDialog.style.bottom = 'auto';
+            treatmentResultDialog.style.left = `${Math.max(8, Math.min(left, window.innerWidth - width - 8))}px`;
+            treatmentResultDialog.style.top = `${showAbove ? Math.max(8, rect.top - height - 8) : Math.min(window.innerHeight - height - 8, rect.bottom + 8)}px`;
+            treatmentResultDialog.showModal();
+        }
+        function loadTreatmentResult() { const value = currentTreatment().treatmentResult; return treatmentResultValues.includes(value) && value !== 'clear' ? value : ''; }
+        function applyTreatmentResult(value) { if (!treatmentResultButton) return; treatmentResultButton.textContent = value; treatmentResultButton.title = value ? `Treatment result: ${value}. Drag up to change.` : 'Drag up to choose an overall treatment result.'; treatmentResultButton.setAttribute('aria-label', treatmentResultButton.title); }
+        function createTreatmentResultButton() {
+            const button = document.createElement('button'); button.type = 'button'; button.className = 'treatment-result-button'; treatmentResultButton = button; applyTreatmentResult(loadTreatmentResult());
+            let startX; let startY; let pointerId; let pickerOpened = false; let suppressClick = false;
+            const targetAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-treatment-result]');
+            const updateTarget = (x, y) => { const target = targetAt(x, y); treatmentResultActions.querySelectorAll('button[data-treatment-result]').forEach(action => action.classList.toggle('treatment-target', action === target)); return target; };
+            const clearGesture = () => { pointerId = undefined; pickerOpened = false; treatmentResultActions.querySelectorAll('.treatment-target').forEach(action => action.classList.remove('treatment-target')); };
+            button.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; pickerOpened = false; button.setPointerCapture(pointerId); });
+            button.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (pickerOpened) { updateTarget(event.clientX, event.clientY); return; } const deltaX = event.clientX - startX; const deltaY = event.clientY - startY; if (deltaY > -4 || Math.abs(deltaX) > 24) return; pickerOpened = true; suppressClick = true; openTreatmentResultDialog(button, false, true); updateTarget(event.clientX, event.clientY); });
+            button.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; if (!pickerOpened) { clearGesture(); return; } const target = updateTarget(event.clientX, event.clientY); if (target) selectTreatmentResult(target.dataset.treatmentResult); else treatmentResultDialog.close(); clearGesture(); });
+            button.addEventListener('pointercancel', () => { if (pickerOpened) treatmentResultDialog.close(); clearGesture(); });
+            button.addEventListener('lostpointercapture', () => { if (pickerOpened) treatmentResultDialog.close(); clearGesture(); });
+            button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } openTreatmentResultDialog(button, false, true); });
+            return button;
+        }
+        function createPatientDetailsButton() {
+            const button = document.createElement('button'); button.type = 'button'; button.className = 'patient-details-button'; button.textContent = 'i'; button.title = 'Patient details'; button.setAttribute('aria-label', button.title);
+            button.addEventListener('click', () => patientDetailsDialog.showModal());
+            return button;
+        }
+        function renderPoint(cell, rowName, header, columnIndex, isMergedMe) {
+            const point = document.createElement('button'); point.type = 'button'; point.className = 'point'; point.dataset.key = pointKey(rowName, header, columnIndex, isMergedMe); point.dataset.columnIndex = columnIndex; point.dataset.palpation = 'clear'; point.dataset.movement = 'clear'; point.setAttribute('aria-label', `${rowName} ${header}`);
+            const key = document.createElement('span'); key.className = 'point-key'; key.textContent = point.dataset.key; const resultMark = document.createElement('span'); resultMark.className = 'point-treatment-result'; const gesture = document.createElement('span'); gesture.className = 'gesture-preview'; point.append(key, resultMark, gesture);
+            let startX; let startY; let pointerId; let preview; let wasTreated;
+            const clearPreview = () => { preview = undefined; pointerId = undefined; gesture.textContent = ''; point.classList.remove('active', 'preview-red', 'preview-green', 'preview-yellow', 'preview-grey', 'preview-clear'); applyVisual(point, point.dataset.palpation, point.dataset.movement, wasTreated); };
+            const swipe = (x, y) => { if (Math.hypot(x, y) < 12) return undefined; const angle = Math.atan2(-y, Math.abs(x)) * 180 / Math.PI; const check = angle < -72 ? 'both' : x >= 0 ? 'palpation' : 'movement'; const state = angle >= 60 ? 'red' : angle >= 30 ? 'green' : angle >= 0 ? 'yellow' : angle >= -36 ? 'grey' : 'clear'; return { check, state }; };
+            const previewGesture = result => { const id = result ? `${result.check}-${result.state}` : ''; if (id === preview) return; preview = id; showGestureOverlay(point, result); point.classList.remove('preview-red', 'preview-green', 'preview-yellow', 'preview-grey', 'preview-clear'); if (!result) { applyVisual(point, point.dataset.palpation, point.dataset.movement, wasTreated); return; } point.classList.add(`preview-${result.state}`); applyVisual(point, result.check === 'movement' ? point.dataset.palpation : result.state, result.check === 'palpation' ? point.dataset.movement : result.state, wasTreated); };
+            point.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; wasTreated = point.dataset.treated; point.classList.add('active'); showGestureOverlay(point); point.setPointerCapture(pointerId); });
+            point.addEventListener('pointermove', event => { if (event.pointerId === pointerId) previewGesture(swipe(event.clientX - startX, event.clientY - startY)); });
+            point.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; const result = swipe(event.clientX - startX, event.clientY - startY); if (result) { updatePoint(point, result.check, result.state); clearPreview(); } else { clearPreview(); if (point.dataset.palpation !== 'clear') openTreatmentResultDialog(point); } hideGestureOverlay(); });
+            point.addEventListener('pointercancel', () => { clearPreview(); hideGestureOverlay(); });
+            point.addEventListener('lostpointercapture', event => { if (event.pointerId === pointerId) { clearPreview(); hideGestureOverlay(); } });
+            point.addEventListener('contextmenu', event => event.preventDefault());
+            cell.appendChild(point);
+        }
+        function createCrossButton(fromRight = false) {
+            const button = document.createElement('button'); button.type = 'button'; button.className = 'clear-button'; button.textContent = '×'; button.title = 'Tap for point data. Drag down for assistance.';
+            let startX; let startY; let pointerId; let guideOpened = false; let suppressClick = false;
+            const guideAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-guide-name], button[data-guide-action], button[data-layout]');
+            const updateGuideTarget = (x, y) => { const target = guideAt(x, y); guideDialog.querySelectorAll('button[data-guide-name], button[data-guide-action], button[data-layout]').forEach(action => action.classList.toggle('guide-target', action === target)); return target; };
+            button.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; guideOpened = false; button.setPointerCapture(pointerId); });
+            button.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (guideOpened) { updateGuideTarget(event.clientX, event.clientY); return; } const deltaX = event.clientX - startX; const deltaY = event.clientY - startY; if (deltaY < 12 || Math.abs(deltaX) > deltaY) return; guideOpened = true; suppressClick = true; guideDialog.classList.toggle('guide-from-right', fromRight); guideDialog.showModal(); updateGuideTarget(event.clientX, event.clientY); });
+            button.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; pointerId = undefined; if (!guideOpened) return; const target = updateGuideTarget(event.clientX, event.clientY); const guide = guideSets.find(candidate => candidate.name === target?.dataset.guideName); if (target?.dataset.layout && target.dataset.layout !== layoutId) { saveState(); layoutId = target.dataset.layout; location.hash = layoutId; buildSheet(); guideDialog.close(); } else if (guide) { selectGuide(guide); guideDialog.close(); } else if (target?.dataset.guideAction === 'clear') { selectGuide(); guideDialog.close(); } guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
+            button.addEventListener('pointercancel', () => { pointerId = undefined; guideOpened = false; guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
+            button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } stateDialog.showModal(); });
+            return button;
+        }
+        function buildSheet() {
+            layout = layouts[layoutId]; document.title = 'Patient Record'; sheet.replaceChildren(); sheet.classList.remove('show-point-keys');
+            const [headerLine, ...dataLines] = layout.csv.trim().split('\n'); headers = headerLine.split(',').slice(1); rows = dataLines.map(line => line.trim().split(','));
+            if (layout.moveRightMeToRe) { const move = new Set(['GE1', 'TA1', 'PE1', 'SC1', 'HU', 'CU1', 'CA1', 'DI1']); rows.forEach(row => { if (move.has(row[0])) { row[layout.rightMeColumn + 1] = ''; row[layout.rightMeColumn + 2] = 'x'; } }); rows.find(row => row[0] === 'CX')[layout.rightMeColumn + 1] = ''; }
+            const corner = document.createElement('div'); corner.className = 'corner'; corner.appendChild(createCrossButton()); sheet.appendChild(corner);
+            headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); populateColumnLabel(label, header); bindPalpationSequenceLabel(label, header); sheet.appendChild(label); });
+            const rightCorner = document.createElement('div'); rightCorner.className = 'corner'; rightCorner.appendChild(createPatientDetailsButton()); sheet.appendChild(rightCorner);
+            rows.forEach(([rowName, ...marks]) => { const label = document.createElement('div'); label.className = 'row-label'; label.dataset.rowName = rowName; label.dataset.historyEdge = 'left'; if (separatorAfterRows.has(rowName)) label.classList.add('separator-bottom'); label.textContent = rowName; applyHistoryLabel(label); let historyStartY; let historyPointerId; let historyOpened = false; const historyTargetAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-history-side], #clear-body-history'); const updateHistoryTarget = (x, y) => { const target = historyTargetAt(x, y); historyDialog.querySelectorAll('button[data-history-side], #clear-body-history').forEach(button => button.classList.toggle('history-target', button === target)); return target; }; const clearHistoryGesture = () => { historyPointerId = undefined; historyOpened = false; label.classList.remove('history-active'); historyDialog.querySelectorAll('.history-target').forEach(button => button.classList.remove('history-target')); }; label.addEventListener('pointerdown', event => { historyStartY = event.clientY; historyPointerId = event.pointerId; historyOpened = false; label.setPointerCapture(event.pointerId); }); label.addEventListener('pointermove', event => { if (event.pointerId !== historyPointerId) return; if (historyOpened) { updateHistoryTarget(event.clientX, event.clientY); return; } if (Math.abs(event.clientY - historyStartY) < 12) return; historyOpened = true; activeHistoryLabel = label; label.classList.add('history-active'); historyDialogTitle.textContent = rowName; historyDialog.showModal(); updateHistoryTarget(event.clientX, event.clientY); }); label.addEventListener('pointerup', event => { if (event.pointerId !== historyPointerId) return; if (!historyOpened) { clearHistoryGesture(); return; } const target = updateHistoryTarget(event.clientX, event.clientY); if (target?.id === 'clear-body-history') clearBodyHistory(); else if (target) selectBodyHistory(target.dataset.historySide, Number(target.dataset.historyAge), target.dataset.historyActive === 'true'); else historyDialog.close(); clearHistoryGesture(); }); label.addEventListener('pointercancel', () => { if (historyOpened) historyDialog.close(); clearHistoryGesture(); }); sheet.appendChild(label); headers.forEach((header, index) => { if (mergedMeRows.has(rowName) && index === firstMeColumn + 1) return; const cell = document.createElement('div'); cell.className = 'cell'; if (layout.separatorColumns.includes(index)) cell.classList.add('separator-right'); if (separatorAfterRows.has(rowName)) cell.classList.add('separator-bottom'); const merged = mergedMeRows.has(rowName) && index === firstMeColumn; if (merged) { cell.classList.add('merged-me'); cell.style.gridColumn = 'span 2'; } const hasPoint = merged ? marks.slice(firstMeColumn, firstMeColumn + 2).some(mark => mark?.trim().toLowerCase() === 'x') : marks[index]?.trim().toLowerCase() === 'x'; if (hasPoint) renderPoint(cell, rowName, header, index, merged); sheet.appendChild(cell); }); const rightLabel = document.createElement('div'); rightLabel.className = 'row-label row-label-right'; rightLabel.dataset.rowName = rowName; rightLabel.dataset.historyEdge = 'right'; if (separatorAfterRows.has(rowName)) rightLabel.classList.add('separator-bottom'); rightLabel.textContent = rowName; applyHistoryLabel(rightLabel); bindBodyHistoryGesture(rightLabel); sheet.appendChild(rightLabel); });
+            const bottomCorner = document.createElement('div'); bottomCorner.className = 'corner'; bottomCorner.appendChild(createTreatmentNumberButton()); sheet.appendChild(bottomCorner);
+            headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label column-label-bottom'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); populateColumnLabel(label, header); bindPalpationSequenceLabel(label, header); sheet.appendChild(label); });
+            const bottomRightCorner = document.createElement('div'); bottomRightCorner.className = 'corner'; bottomRightCorner.appendChild(createTreatmentResultButton()); sheet.appendChild(bottomRightCorner);
+            loadState(); document.querySelectorAll('[data-layout]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layout === layoutId)));
+        }
+        const clearGuide = document.createElement('button'); clearGuide.type = 'button'; clearGuide.className = 'clear-guide-button'; clearGuide.dataset.guideAction = 'clear'; clearGuide.textContent = 'Clear guide'; clearGuide.addEventListener('click', () => { selectGuide(); guideDialog.close(); }); guideActions.appendChild(clearGuide);
+        guideGroups.forEach(group => { const section = document.createElement('section'); section.className = 'guide-group'; if (group.title) { const title = document.createElement('div'); title.className = 'guide-group-title'; title.textContent = group.title; section.appendChild(title); } const grid = document.createElement('div'); grid.className = group.columns ? `guide-grid columns-${group.columns}` : 'guide-grid'; group.guides.forEach(guide => { const button = document.createElement('button'); button.type = 'button'; button.dataset.guideName = guide.name; button.textContent = guide.name; button.addEventListener('click', () => { selectGuide(guide); guideDialog.close(); }); grid.appendChild(button); }); section.appendChild(grid); guideActions.appendChild(section); });
+        const bodyHistoryAges = ['1m', '3m', '6m', '1y', '2y', '3y', '4y', '5y', '7y', '10y', '15y', '20y', '25y', '30y'];
+        const bodyHistoryTypes = [{ name: 'PaPrev', label: 'PaPrev' }, { name: 'SiPa', label: 'SiPa' }, { name: 'PaConc', label: 'PaConc' }];
+        const treatmentResultValues = ['+++', '++', '+', 'NC', 'X', '-', '--', '---', 'clear'];
+        const treatmentNumbers = Array.from({ length: 10 }, (_, index) => String(10 - index).padStart(2, '0'));
+        bodyHistoryAges.forEach((age, ageIndex) => bodyHistoryTypes.forEach(type => ['RT', 'LT', 'BI'].forEach(side => { const button = document.createElement('button'); button.type = 'button'; button.dataset.historySide = side; button.dataset.historyAge = ageIndex; button.dataset.historyType = type.name; button.classList.add(`history-${type.name.toLocaleLowerCase()}`); button.textContent = `${side} ${age}`; button.title = `${side} ${age}: ${type.label}`; button.setAttribute('aria-label', button.title); button.addEventListener('click', () => selectBodyHistory(side, ageIndex, type.name)); historyActions.appendChild(button); })));
+        treatmentResultValues.forEach(value => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentResult = value; button.textContent = value; button.addEventListener('click', () => selectTreatmentResult(value)); treatmentResultActions.appendChild(button); });
+        treatmentNumbers.forEach(number => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentNumber = number; button.textContent = number; button.setAttribute('aria-pressed', 'false'); button.addEventListener('click', () => selectTreatmentNumber(number)); treatmentNumberActions.appendChild(button); });
+        document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea').forEach(field => {
+            if (field.id === 'patient_name') { field.addEventListener('change', () => { try { renamePatient(field.value); } catch (error) { alert(`Unable to rename patient: ${error.message}`); applyPatientDetails(); } }); return; }
+            field.addEventListener('input', savePatientDetails);
+            field.addEventListener('touchstart', event => {
+                if (document.activeElement === field) return;
+                event.preventDefault();
+                field.focus({ preventScroll: true });
+            }, { passive: false });
+        });
+        historyActions.addEventListener('pointerover', event => { const button = event.target.closest('button[data-history-side]'); if (button) historyHoverValue.textContent = historyHoverText(button); });
+        historyActions.addEventListener('pointerleave', () => { historyHoverValue.textContent = ''; });
+        document.addEventListener('pointermove', event => { if (!historyDialog.open) return; const button = document.elementFromPoint(event.clientX, event.clientY)?.closest('button[data-history-side]'); historyHoverValue.textContent = historyHoverText(button); });
+        historyDialog.addEventListener('toggle', () => { if (historyDialog.open && activeHistoryLabel) updateHistoryDialogTitle(activeHistoryLabel); });
+        historyDialog.addEventListener('close', () => { historyDialog.classList.remove('history-from-right'); orderHistorySideButtons(false); });
+        document.getElementById('clear-body-history').addEventListener('click', clearBodyHistory);
+        document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; buildSheet(); guideDialog.close(); }));
+        const patientSearch = document.getElementById('patient-search');
+        const patientSearchOptions = document.getElementById('patient-search-options');
+        function selectPatient(name) { try { saveCurrentPatient(); loadPatient(name); patientSearch.value = ''; patientSearchOptions.hidden = true; stateDialog.close(); } catch (error) { alert(`Unable to load patient: ${error.message}`); } }
+        function updatePatientSearchOptions() { const query = patientSearch.value.trim(); let expression; try { expression = query ? new RegExp(query, 'i') : undefined; } catch { patientSearchOptions.replaceChildren(); patientSearchOptions.hidden = true; return; } const matches = Object.keys(loadPatients()).filter(name => !expression || expression.test(name)).sort((left, right) => left.localeCompare(right)); patientSearchOptions.replaceChildren(...matches.map(name => { const button = document.createElement('button'); button.type = 'button'; button.role = 'option'; button.textContent = name; button.addEventListener('pointerup', event => { if (event.pointerType !== 'touch') return; event.preventDefault(); selectPatient(name); }); button.addEventListener('click', () => selectPatient(name)); return button; })); patientSearchOptions.hidden = !matches.length; }
+        function saveCurrentPatient() { saveState(); savePatientDetails(); }
+        patientSearch.addEventListener('input', updatePatientSearchOptions);
+        patientSearch.addEventListener('focus', updatePatientSearchOptions);
+        document.getElementById('create-patient').addEventListener('click', () => { try { createPatient(patientSearch.value); patientSearch.value = ''; updatePatientSearchOptions(); stateDialog.close(); } catch (error) { alert(`Unable to create patient: ${error.message}`); } });
+        document.getElementById('remove-patient').addEventListener('click', () => { if (!activePatientName || !confirm(`Remove ${activePatientName} and all visits?`)) return; const patients = loadPatients(); delete patients[activePatientName]; savePatients(patients); activePatientName = ''; localStorage.removeItem(storageKeys.activePatient); refreshCurrentPatient(); patientSearch.value = ''; updatePatientSearchOptions(); stateDialog.close(); });
+        document.getElementById('import-json').addEventListener('click', async () => { try { const imported = normalizePatients(JSON.parse(await navigator.clipboard.readText())); const entries = Object.entries(imported); if (entries.length !== 1) throw new Error('Expected a JSON map containing one patient.'); const [patientName, patient] = entries[0]; const patients = loadPatients(); patients[patientName] = patient; savePatients(patients); activePatientName = patientName; activeTreatmentNumber = '01'; localStorage.setItem(storageKeys.activePatient, patientName); localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber); refreshCurrentPatient(); stateDialog.close(); } catch (error) { alert(`Unable to import patient JSON: ${error.message}`); } });
+        document.getElementById('export-json').addEventListener('click', async () => { try { if (!activePatientName) throw new Error('Load or create a patient first.'); saveCurrentPatient(); await navigator.clipboard.writeText(JSON.stringify({ [activePatientName]: currentPatient() }, null, 2)); stateDialog.close(); } catch (error) { alert(`Unable to export patient JSON: ${error.message}`); } });
+        document.getElementById('import-all-json').addEventListener('click', async () => { try { const imported = JSON.parse(await navigator.clipboard.readText()); const patients = normalizePatients(imported[getPatientStorageKey()]); if (!Object.keys(patients).length) throw new Error('Expected a storage JSON export.'); const importedPatientName = imported[storageKeys.activePatient]; const importedTreatmentNumber = imported[storageKeys.activeTreatment]; savePatients(patients); activePatientName = patients[importedPatientName] ? importedPatientName : Object.keys(patients)[0]; activeTreatmentNumber = patients[activePatientName].visits?.[importedTreatmentNumber] ? importedTreatmentNumber : '01'; localStorage.setItem(storageKeys.activePatient, activePatientName); localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber); refreshCurrentPatient(); stateDialog.close(); } catch (error) { alert(`Unable to import storage JSON: ${error.message}`); } });
+        document.getElementById('export-all-json').addEventListener('click', async () => { try { saveCurrentPatient(); await navigator.clipboard.writeText(JSON.stringify({ [getPatientStorageKey()]: loadPatients(), [storageKeys.activePatient]: activePatientName, [storageKeys.activeTreatment]: activeTreatmentNumber }, null, 2)); stateDialog.close(); } catch (error) { alert(`Unable to export storage JSON: ${error.message}`); } });
+        document.getElementById('import-grey-points').addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedGreyPoints(JSON.parse(text.replace(/'/g, '"'))); stateDialog.close(); } catch (error) { alert(`Unable to import grey points: ${error.message}`); } });
+        document.getElementById('export-grey-points').addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedGreyPointKeys().map(key => `'${key}'`).join(', ')}]`); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export grey points: ${error.message}`); } });
+        ['yellow', 'green', 'red'].forEach(state => {
+            document.getElementById(`import-${state}-points`).addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedColoredPoints(state, JSON.parse(text.replace(/'/g, '"'))); stateDialog.close(); } catch (error) { alert(`Unable to import ${state} points: ${error.message}`); } });
+            document.getElementById(`export-${state}-points`).addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedPointKeys(state).map(key => `'${key}'`).join(', ')}]`); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export ${state} points: ${error.message}`); } });
+        });
+        document.getElementById('clear-current').addEventListener('click', () => { if (activePatientName && confirm(`Clear visit ${activeTreatmentNumber} for ${activePatientName}?`)) { clearCurrentVisit(); stateDialog.close(); } });
+        document.getElementById('clear-all-visits').addEventListener('click', () => { if (activePatientName && confirm(`Clear all visits for ${activePatientName}?`)) { clearAllVisits(); stateDialog.close(); } });
+        document.getElementById('clear-all-patient-info').addEventListener('click', () => { if (!activePatientName || !confirm(`Clear all patient information for ${activePatientName}?`)) return; const patients = loadPatients(); const patient = patients[activePatientName]; patient.visits = Object.fromEntries(Object.entries(patient.visits || {}).map(([number, visit]) => [number, { ...visit, patientDetails: {} }])); savePatients(patients); applyPatientDetails(); stateDialog.close(); });
+        document.getElementById('toggle-point-keys').addEventListener('click', event => { const visible = sheet.classList.toggle('show-point-keys'); event.currentTarget.setAttribute('aria-pressed', String(visible)); stateDialog.close(); });
+        document.getElementById('close-patient-details').addEventListener('click', () => patientDetailsDialog.close());
+        stateDialog.addEventListener('toggle', () => { if (stateDialog.open) { patientSearch.value = activePatientName; patientSearchOptions.hidden = true; } });
+        stateDialog.addEventListener('click', event => { if (event.target === stateDialog) stateDialog.close(); }); guideDialog.addEventListener('click', event => { if (event.target === guideDialog) guideDialog.close(); }); historyDialog.addEventListener('click', event => { if (event.target === historyDialog) historyDialog.close(); }); treatmentResultDialog.addEventListener('click', event => { if (event.target === treatmentResultDialog) treatmentResultDialog.close(); }); treatmentNumberDialog.addEventListener('click', event => { if (event.target === treatmentNumberDialog) treatmentNumberDialog.close(); }); patientDetailsDialog.addEventListener('click', event => { if (event.target === patientDetailsDialog) patientDetailsDialog.close(); });
+        migrateStoredPatients();
+        activeTreatmentNumber = normalizeTreatmentNumber(localStorage.getItem(storageKeys.activeTreatment));
+        window.addEventListener('pagehide', saveCurrentPatient); buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); if (!activePatientName) stateDialog.showModal();
+    </script>
+</body>
+</html>
