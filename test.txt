@@ -1,0 +1,28 @@
+{
+  "1": {
+    "points": {
+      "an-cp1-lt": {
+        "palpation": 1,
+        "movement": null,
+        "treated": "NC"
+      }
+    },
+    "bodyHistory": {
+      "left:CP1": {
+        "previous": {
+          "side": "RT",
+          "age": "1m"
+        }
+      }
+    },
+    "patientDetails": {
+      "patient_name": "",
+      "patient_age_gender": "",
+      "record_date": "",
+      "occupation": "",
+      "sport_frequency": "",
+      "history": "SiPa: \nPaConc:\nExtremit: \nPaPrev:\nSurgery:\nTrauma: \nFractures: ",
+      "trauma": "Investigations: \nMedications: \nFMID:\nPostura:\nOveruse:\nComment: "
+    }
+  }
+}

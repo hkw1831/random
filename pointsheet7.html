@@ -43,7 +43,7 @@
         .point.movement-grey::after { border-color: #9ca3af; box-shadow: 0 0 5px #9ca3af66; }
         .point.movement-green::after { border-color: #16a34a; box-shadow: 0 0 5px #22c55e99; }
         .point.movement-red::after { border-color: #dc2626; box-shadow: 0 0 5px #ef444499; }
-        .point.treated::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M24 24L76 76M76 24L24 76' fill='none' stroke='%23101010' stroke-width='15' stroke-linecap='round'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 72%; }
+        .point-treatment-result { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; color: #101010; font: 700 clamp(7px, 1.8vw, 12px)/1 Arial, sans-serif; pointer-events: none; text-shadow: 0 1px 1px #ffffffaa; }
         .point.active::before { outline: 2px dashed #e5e7eb; outline-offset: 2px; }
         .point.preview-red::before, .point.preview-red::after { outline-color: #f87171; } .point.preview-green::before, .point.preview-green::after { outline-color: #4ade80; } .point.preview-yellow::before, .point.preview-yellow::after { outline-color: #facc15; } .point.preview-grey::before, .point.preview-grey::after { outline-color: #9ca3af; }
         .point.preview-clear::before, .point.preview-clear::after { opacity: .3; outline-color: #e5e7eb; }
@@ -56,7 +56,6 @@
         .gesture-overlay.palpation.grey .gesture-dot::before { background: #6b7280; border-color: #9ca3af; box-shadow: 0 0 18px #9ca3af66; }
         .gesture-overlay.palpation.green .gesture-dot::before { background: #22c55e; border-color: #16a34a; box-shadow: 0 0 18px #22c55e99; }
         .gesture-overlay.palpation.red .gesture-dot::before { background: #ef4444; border-color: #dc2626; box-shadow: 0 0 18px #ef444499; }
-        .gesture-overlay.treated .gesture-dot::after { position: absolute; inset: 12%; z-index: 1; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M24 24L76 76M76 24L24 76' fill='none' stroke='%23101010' stroke-width='15' stroke-linecap='round'/%3E%3C/svg%3E") center/72% no-repeat; content: ""; }
         .gesture-overlay.movement.yellow .gesture-dot { border-color: #facc15; box-shadow: 0 0 18px #fde68a99; }
         .gesture-overlay.movement.grey .gesture-dot { border-color: #9ca3af; box-shadow: 0 0 18px #9ca3af66; }
         .gesture-overlay.movement.green .gesture-dot { border-color: #16a34a; box-shadow: 0 0 18px #22c55e99; }
@@ -120,10 +119,10 @@
         .history-grid button.history-main { border: 3px solid #ef4444; }
         .history-grid button.history-secondary { border: 3px solid #facc15; }
         .history-grid button:hover, .history-grid button:focus-visible, .history-grid button.history-target { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
-        #treatment-result-dialog { position: fixed; top: auto; right: 8px; bottom: 8px; left: auto; width: min(320px, calc(100vw - 32px)); margin: 0; padding: 12px; }
+        #treatment-result-dialog { position: fixed; top: auto; right: auto; bottom: auto; left: auto; width: min(460px, calc(100vw - 16px)); margin: 0; padding: 8px; }
         #treatment-result-dialog h2 { margin-bottom: 10px; }
-        .treatment-result-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
-        .treatment-result-grid button { min-height: 42px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 18px/1 Arial, sans-serif; }
+        .treatment-result-grid { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 3px; }
+        .treatment-result-grid button { min-width: 0; min-height: 38px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 clamp(11px, 4vw, 18px)/1 Arial, sans-serif; }
         .treatment-result-grid button:hover, .treatment-result-grid button:focus-visible, .treatment-result-grid button.treatment-target { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
         .treatment-result-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; }
         #treatment-number-dialog { position: fixed; top: auto; right: auto; bottom: 8px; left: 8px; width: min(260px, calc(100vw - 32px)); margin: 0; padding: 12px; }
@@ -799,7 +798,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         let rows;
         let activeGuide;
         let activeHistoryLabel;
-        let treatmentResultButton;
+        let activeTreatmentPoint;
         let treatmentNumberButton;
         let activeTreatmentNumber = 1;
 
@@ -836,26 +835,37 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         function loadPalpationSequence() { return new Set(currentTreatment().locationMarks || []); }
         function applyPalpationSequenceMark(locationKey) { const isSelectedForPalpation = loadPalpationSequence().has(locationKey); document.querySelectorAll('.column-label[data-location-key]').forEach(label => { if (label.dataset.locationKey === locationKey) label.classList.toggle('location-marked', isSelectedForPalpation); }); }
         function bindPalpationSequenceLabel(label, header) { label.dataset.locationKey = header; applyPalpationSequenceMark(header); label.addEventListener('click', () => { const palpationSequence = loadPalpationSequence(); palpationSequence.has(header) ? palpationSequence.delete(header) : palpationSequence.add(header); updateCurrentTreatment({ locationMarks: [...palpationSequence] }); applyPalpationSequenceMark(header); }); }
-        function applyVisual(point, palpation = point.dataset.palpation, movement = point.dataset.movement, treated = false) {
+        function treatmentResultMark(value) { return ({ '+++': '+3', '++': '+2', '+': '+1', NC: 'NC', X: 'X', '-': '-1', '--': '-2', '---': '-3' })[value] || ''; }
+        function applyVisual(point, palpation = point.dataset.palpation, movement = point.dataset.movement, treated = point.dataset.treated || '') {
             point.classList.remove('palpation-grey', 'palpation-yellow', 'palpation-green', 'palpation-red', 'movement-grey', 'movement-yellow', 'movement-green', 'movement-red');
             if (palpation !== 'clear') point.classList.add(`palpation-${palpation}`);
             if (movement !== 'clear') point.classList.add(`movement-${movement}`);
-            point.classList.toggle('treated', palpation !== 'clear' && treated);
+            point.dataset.treated = palpation !== 'clear' ? treated : '';
+            point.querySelector('.point-treatment-result').textContent = treatmentResultMark(point.dataset.treated);
         }
         function serializeState() {
             const levels = { grey: 0, yellow: 1, green: 2, red: 3 };
-            return Object.fromEntries([...document.querySelectorAll('.point')].filter(point => point.dataset.palpation !== 'clear' || point.dataset.movement !== 'clear').map(point => [point.dataset.key, { palpation: point.dataset.palpation === 'clear' ? null : levels[point.dataset.palpation], movement: point.dataset.movement === 'clear' ? null : levels[point.dataset.movement], treated: point.classList.contains('treated') }]));
+            return Object.fromEntries([...document.querySelectorAll('.point')].filter(point => point.dataset.palpation !== 'clear' || point.dataset.movement !== 'clear' || point.dataset.treated).map(point => [point.dataset.key, { palpation: point.dataset.palpation === 'clear' ? null : levels[point.dataset.palpation], movement: point.dataset.movement === 'clear' ? null : levels[point.dataset.movement], treated: point.dataset.treated || null }]));
         }
         function saveState() { updateCurrentTreatment({ points: serializeState() }); }
+        function normalizeBodyHistorySelection(selection) {
+            if (!selection || typeof selection !== 'object') return undefined;
+            const age = bodyHistoryAges.includes(selection.age) ? selection.age : bodyHistoryAges[selection.ageIndex];
+            return age ? { side: selection.side, age } : undefined;
+        }
         function normalizeBodyHistoryEntry(value) {
             if (!value || typeof value !== 'object') return {};
-            if (['previous', 'main', 'secondary'].some(segment => value[segment])) return value;
-            return { [value.active ? 'main' : 'previous']: { side: value.side, ageIndex: value.ageIndex } };
+            const segments = ['previous', 'main', 'secondary'];
+            if (segments.some(segment => value[segment])) return Object.fromEntries(segments.map(segment => [segment, normalizeBodyHistorySelection(value[segment])]).filter(([, selection]) => selection));
+            const selection = normalizeBodyHistorySelection(value);
+            return selection ? { [value.active ? 'main' : 'previous']: selection } : {};
         }
-        function loadBodyHistory() { const saved = currentTreatment().bodyHistory || {}; return Object.fromEntries(Object.entries(saved).map(([key, value]) => [key.includes(':') ? key : `left:${key}`, normalizeBodyHistoryEntry(value)])); }
-        function saveBodyHistory(history) { updateCurrentTreatment({ bodyHistory: history }); }
-        function bodyHistoryKey(label) { return `${label.dataset.historyEdge}:${label.dataset.rowName}`; }
-        function historyColor(ageIndex) {
+        function normalizePainHistory(history) { return Object.fromEntries(Object.entries(history || {}).map(([key, value]) => { const [edge, rowName] = key.includes(':') ? key.split(':', 2) : ['left', key]; const canonicalEdge = edge === 'right' ? 'posterior' : edge === 'posterior' ? 'posterior' : 'anterior'; return [`${canonicalEdge}:${rowName}`, normalizeBodyHistoryEntry(value)]; })); }
+        function loadBodyHistory() { return normalizePainHistory(currentTreatment().painHistory || currentTreatment().bodyHistory); }
+        function saveBodyHistory(history) { updateCurrentTreatment({ painHistory: normalizePainHistory(history), bodyHistory: undefined }); }
+        function bodyHistoryKey(label) { return `${label.dataset.historyEdge === 'right' ? 'posterior' : 'anterior'}:${label.dataset.rowName}`; }
+        function historyColor(age) {
+            const ageIndex = bodyHistoryAges.indexOf(age);
             const lightness = 66 - ageIndex * 3.2;
             const saturation = 48 + ageIndex * 3.8;
             return `hsl(198 ${saturation}% ${lightness}% / 0.9)`;
@@ -869,19 +879,19 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             const selections = loadBodyHistory()[bodyHistoryKey(label)] || {};
             const displayedSelection = selections.main || selections.secondary || selections.previous;
             if (!label.querySelector('.history-label-name')) populateHistoryLabel(label);
-            label.querySelector('.history-label-age').textContent = bodyHistoryAges[displayedSelection?.ageIndex] || '';
+            label.querySelector('.history-label-age').textContent = displayedSelection?.age || '';
             label.style.removeProperty('--history-left'); label.style.removeProperty('--history-right');
             label.classList.remove('history-marked', 'history-main-left', 'history-main-right', 'history-secondary-left', 'history-secondary-right');
             const isRightEdge = label.dataset.historyEdge === 'right';
             let marked = false;
             ['previous', 'main', 'secondary'].forEach(segment => {
                 const selection = selections[segment];
-                const validSelection = ['LT', 'RT', 'BI'].includes(selection?.side) && Number.isInteger(selection?.ageIndex) && selection.ageIndex >= 0 && selection.ageIndex < 14;
+                const validSelection = ['LT', 'RT', 'BI'].includes(selection?.side) && bodyHistoryAges.includes(selection?.age);
                 if (!validSelection) return;
                 marked = true;
                 const markLeft = selection.side === 'BI' || selection.side === (isRightEdge ? 'LT' : 'RT');
                 const markRight = selection.side === 'BI' || selection.side === (isRightEdge ? 'RT' : 'LT');
-                const color = historyColor(selection.ageIndex);
+                const color = historyColor(selection.age);
                 if (markLeft) label.style.setProperty('--history-left', color);
                 if (markRight) label.style.setProperty('--history-right', color);
                 if (segment !== 'previous' && markLeft) label.classList.add(`history-${segment}-left`);
@@ -889,10 +899,12 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             });
             label.classList.toggle('history-marked', marked);
         }
-        function selectBodyHistory(side, ageIndex, active, segment = historyDialog.querySelector('.history-target')?.dataset.historySegment || (active ? 'main' : 'previous')) {
+        function selectBodyHistory(side, age, active, segment = historyDialog.querySelector('.history-target')?.dataset.historySegment || (active ? 'main' : 'previous')) {
             if (!activeHistoryLabel) return;
             const history = loadBodyHistory();
-            history[bodyHistoryKey(activeHistoryLabel)] = { ...history[bodyHistoryKey(activeHistoryLabel)], [segment]: { side, ageIndex } };
+            const selectedAge = bodyHistoryAges.includes(age) ? age : bodyHistoryAges[age];
+            if (!selectedAge) return;
+            history[bodyHistoryKey(activeHistoryLabel)] = { ...history[bodyHistoryKey(activeHistoryLabel)], [segment]: { side, age: selectedAge } };
             saveBodyHistory(history); applyHistoryLabel(activeHistoryLabel); historyDialog.close();
         }
         function clearBodyHistory() {
@@ -902,7 +914,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             saveBodyHistory(history); applyHistoryLabel(activeHistoryLabel); historyDialog.close();
         }
         function clearAllBodyHistory() {
-            updateCurrentTreatment({ bodyHistory: {} });
+            updateCurrentTreatment({ painHistory: {}, bodyHistory: undefined });
             document.querySelectorAll('.row-label[data-row-name]').forEach(applyHistoryLabel);
         }
         function clearCurrentVisit() {
@@ -946,7 +958,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             const clearGesture = () => { pointerId = undefined; opened = false; label.classList.remove('history-active'); historyDialog.querySelectorAll('.history-target').forEach(button => button.classList.remove('history-target')); };
             label.addEventListener('pointerdown', event => { startY = event.clientY; pointerId = event.pointerId; opened = false; label.setPointerCapture(pointerId); });
             label.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (opened) { updateTarget(event.clientX, event.clientY); return; } if (Math.abs(event.clientY - startY) < 12) return; opened = true; activeHistoryLabel = label; label.classList.add('history-active'); updateHistoryDialogTitle(label); historyHoverValue.textContent = ''; historyDialog.classList.toggle('history-from-right', label.dataset.historyEdge === 'right'); orderHistorySideButtons(label.dataset.historyEdge === 'right'); historyDialog.showModal(); updateTarget(event.clientX, event.clientY); });
-            label.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; if (!opened) { clearGesture(); return; } const target = updateTarget(event.clientX, event.clientY); if (target?.id === 'clear-body-history') clearBodyHistory(); else if (target) selectBodyHistory(target.dataset.historySide, Number(target.dataset.historyAge), target.dataset.historyActive === 'true'); else historyDialog.close(); clearGesture(); });
+            label.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; if (!opened) { clearGesture(); return; } const target = updateTarget(event.clientX, event.clientY); if (target?.id === 'clear-body-history') clearBodyHistory(); else if (target) selectBodyHistory(target.dataset.historySide, target.dataset.historyAge, target.dataset.historyActive === 'true'); else historyDialog.close(); clearGesture(); });
             label.addEventListener('pointercancel', () => { if (opened) historyDialog.close(); clearGesture(); });
         }
         function selectedGreyPointKeys() {
@@ -990,7 +1002,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
                     const states = ['grey', 'yellow', 'green', 'red'];
                     point.dataset.palpation = states[Number.isInteger(value.palpation) ? value.palpation : value.level] || 'clear';
                     point.dataset.movement = states[value.movement] || 'clear';
-                    applyVisual(point, point.dataset.palpation, point.dataset.movement, Boolean(value.treated));
+                    applyVisual(point, point.dataset.palpation, point.dataset.movement, typeof value.treated === 'string' && treatmentResultValues.includes(value.treated) ? value.treated : value.treated ? 'X' : '');
                 } else applyVisual(point);
             });
             refreshGuide(); saveState();
@@ -1000,22 +1012,22 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             if (check === 'both') {
                 point.dataset.palpation = state;
                 point.dataset.movement = state;
-                point.classList.remove('treated');
+                point.dataset.treated = '';
             } else {
                 point.dataset[check] = state;
-                if (check === 'palpation' && state === 'clear') point.classList.remove('treated');
+                if (check === 'palpation' && state === 'clear') point.dataset.treated = '';
             }
-            applyVisual(point, point.dataset.palpation, point.dataset.movement, point.classList.contains('treated')); saveState(); refreshGuide();
+            applyVisual(point); saveState(); refreshGuide();
         }
         function showGestureOverlay(point, result) {
-            gestureOverlay.className = `gesture-overlay visible ${point.classList.contains('treated') ? 'treated' : ''} ${result?.check || ''} ${result?.state || ''}`;
+            gestureOverlay.className = `gesture-overlay visible ${result?.check || ''} ${result?.state || ''}`;
             gesturePointName.textContent = point.dataset.key;
         }
         function hideGestureOverlay() { gestureOverlay.className = 'gesture-overlay'; gesturePointName.textContent = ''; }
         function guideKeys(guide) {
             if (guide?.rule !== 'cc-cf-balance') return guide?.keys || [];
             const points = [...document.querySelectorAll('.point')]; const keys = new Set();
-            points.filter(point => point.classList.contains('treated')).forEach(point => {
+            points.filter(point => point.dataset.treated).forEach(point => {
                 Object.values(balanceRules[point.dataset.key] || {}).flat().forEach(key => keys.add(key));
             });
             return [...keys];
@@ -1035,7 +1047,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         function patientDetailsFields() { return [...document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea')]; }
         function serializePatientDetails() { return Object.fromEntries(patientDetailsFields().map(field => [field.id, field.value])); }
         function normalizePatientDetails(details) { const validFields = new Set(patientDetailsFields().map(field => field.id)); return Object.fromEntries(Object.entries(details || {}).filter(([key]) => validFields.has(key))); }
-        function normalizeTreatments(treatments) { return Object.fromEntries(Object.entries(treatments).map(([number, treatment]) => [number, { ...treatment, patientDetails: normalizePatientDetails(treatment.patientDetails) }])); }
+        function normalizeTreatments(treatments) { return Object.fromEntries(Object.entries(treatments).map(([number, treatment]) => { const { bodyHistory, painHistory, ...rest } = treatment; return [number, { ...rest, painHistory: normalizePainHistory(painHistory || bodyHistory), patientDetails: normalizePatientDetails(treatment.patientDetails) }]; })); }
         function loadPatientDetails() { return currentTreatment().patientDetails || {}; }
         function applyPatientDetails() { const details = loadPatientDetails(); patientDetailsFields().forEach(field => { field.value = details[field.id] || patientDetailsDefaults[field.id] || ''; }); }
         function savePatientDetails() { updateCurrentTreatment({ patientDetails: serializePatientDetails() }); }
@@ -1074,33 +1086,20 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } treatmentNumberDialog.showModal(); });
             return button;
         }
-        function loadTreatmentResult() {
-            const value = currentTreatment().treatmentResult;
-            return treatmentResultValues.includes(value) && value !== 'clear' ? value : '';
-        }
-        function applyTreatmentResult(value) {
-            if (!treatmentResultButton) return;
-            treatmentResultButton.textContent = value;
-            treatmentResultButton.title = value ? `Treatment result: ${value}` : 'Drag up to choose a treatment result.';
-            treatmentResultButton.setAttribute('aria-label', treatmentResultButton.title);
-        }
         function selectTreatmentResult(value) {
-            const result = value === 'clear' ? '' : value;
-            updateCurrentTreatment({ treatmentResult: result });
-            applyTreatmentResult(result); treatmentResultDialog.close();
+            if (!activeTreatmentPoint) return;
+            activeTreatmentPoint.dataset.treated = value === 'clear' ? '' : value;
+            applyVisual(activeTreatmentPoint); saveState(); refreshGuide(); treatmentResultDialog.close(); activeTreatmentPoint = undefined;
         }
-        function createTreatmentResultButton() {
-            const button = document.createElement('button'); button.type = 'button'; button.className = 'treatment-result-button'; treatmentResultButton = button; applyTreatmentResult(loadTreatmentResult());
-            let startX; let startY; let pointerId; let pickerOpened = false; let suppressClick = false;
-            const targetAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-treatment-result]');
-            const updateTarget = (x, y) => { const target = targetAt(x, y); treatmentResultActions.querySelectorAll('button[data-treatment-result]').forEach(action => action.classList.toggle('treatment-target', action === target)); return target; };
-            const clearGesture = () => { pointerId = undefined; pickerOpened = false; treatmentResultActions.querySelectorAll('.treatment-target').forEach(action => action.classList.remove('treatment-target')); };
-            button.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; pickerOpened = false; button.setPointerCapture(pointerId); });
-            button.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (pickerOpened) { updateTarget(event.clientX, event.clientY); return; } const deltaX = event.clientX - startX; const deltaY = event.clientY - startY; if (deltaY > -12 || Math.abs(deltaX) > -deltaY) return; pickerOpened = true; suppressClick = true; treatmentResultDialog.showModal(); updateTarget(event.clientX, event.clientY); });
-            button.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; if (!pickerOpened) { clearGesture(); return; } const target = updateTarget(event.clientX, event.clientY); if (target) selectTreatmentResult(target.dataset.treatmentResult); else treatmentResultDialog.close(); clearGesture(); });
-            button.addEventListener('pointercancel', () => { if (pickerOpened) treatmentResultDialog.close(); clearGesture(); });
-            button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } treatmentResultDialog.showModal(); });
-            return button;
+        function openTreatmentResultDialog(point) {
+            activeTreatmentPoint = point;
+            const rect = point.getBoundingClientRect();
+            const width = Math.min(460, window.innerWidth - 16);
+            const height = 96;
+            const showAbove = rect.bottom + height > window.innerHeight && rect.top >= height;
+            treatmentResultDialog.style.left = `${Math.max(8, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - 8))}px`;
+            treatmentResultDialog.style.top = `${showAbove ? Math.max(8, rect.top - height - 8) : Math.min(window.innerHeight - height - 8, rect.bottom + 8)}px`;
+            treatmentResultDialog.showModal();
         }
         function createPatientDetailsButton() {
             const button = document.createElement('button'); button.type = 'button'; button.className = 'patient-details-button'; button.textContent = 'i'; button.title = 'Patient details'; button.setAttribute('aria-label', button.title);
@@ -1109,14 +1108,14 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         }
         function renderPoint(cell, rowName, header, columnIndex, isMergedMe) {
             const point = document.createElement('button'); point.type = 'button'; point.className = 'point'; point.dataset.key = pointKey(rowName, header, columnIndex, isMergedMe); point.dataset.columnIndex = columnIndex; point.dataset.palpation = 'clear'; point.dataset.movement = 'clear'; point.setAttribute('aria-label', `${rowName} ${header}`);
-            const key = document.createElement('span'); key.className = 'point-key'; key.textContent = point.dataset.key; const gesture = document.createElement('span'); gesture.className = 'gesture-preview'; point.append(key, gesture);
+            const key = document.createElement('span'); key.className = 'point-key'; key.textContent = point.dataset.key; const resultMark = document.createElement('span'); resultMark.className = 'point-treatment-result'; const gesture = document.createElement('span'); gesture.className = 'gesture-preview'; point.append(key, resultMark, gesture);
             let startX; let startY; let pointerId; let preview; let wasTreated;
             const clearPreview = () => { preview = undefined; pointerId = undefined; gesture.textContent = ''; point.classList.remove('active', 'preview-red', 'preview-green', 'preview-yellow', 'preview-grey', 'preview-clear'); applyVisual(point, point.dataset.palpation, point.dataset.movement, wasTreated); };
             const swipe = (x, y) => { if (Math.hypot(x, y) < 12) return undefined; const angle = Math.atan2(-y, Math.abs(x)) * 180 / Math.PI; const check = angle < -72 ? 'both' : x >= 0 ? 'palpation' : 'movement'; const state = angle >= 60 ? 'red' : angle >= 30 ? 'green' : angle >= 0 ? 'yellow' : angle >= -36 ? 'grey' : 'clear'; return { check, state }; };
             const previewGesture = result => { const id = result ? `${result.check}-${result.state}` : ''; if (id === preview) return; preview = id; showGestureOverlay(point, result); point.classList.remove('preview-red', 'preview-green', 'preview-yellow', 'preview-grey', 'preview-clear'); if (!result) { applyVisual(point, point.dataset.palpation, point.dataset.movement, wasTreated); return; } point.classList.add(`preview-${result.state}`); applyVisual(point, result.check === 'movement' ? point.dataset.palpation : result.state, result.check === 'palpation' ? point.dataset.movement : result.state, wasTreated); };
-            point.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; wasTreated = point.classList.contains('treated'); point.classList.add('active'); showGestureOverlay(point); point.setPointerCapture(pointerId); });
+            point.addEventListener('pointerdown', event => { startX = event.clientX; startY = event.clientY; pointerId = event.pointerId; wasTreated = point.dataset.treated; point.classList.add('active'); showGestureOverlay(point); point.setPointerCapture(pointerId); });
             point.addEventListener('pointermove', event => { if (event.pointerId === pointerId) previewGesture(swipe(event.clientX - startX, event.clientY - startY)); });
-            point.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; const result = swipe(event.clientX - startX, event.clientY - startY); if (result) { updatePoint(point, result.check, result.state); clearPreview(); } else { clearPreview(); if (point.dataset.palpation !== 'clear') { point.classList.toggle('treated'); saveState(); refreshGuide(); } } hideGestureOverlay(); });
+            point.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; const result = swipe(event.clientX - startX, event.clientY - startY); if (result) { updatePoint(point, result.check, result.state); clearPreview(); } else { clearPreview(); if (point.dataset.palpation !== 'clear') openTreatmentResultDialog(point); } hideGestureOverlay(); });
             point.addEventListener('pointercancel', () => { clearPreview(); hideGestureOverlay(); });
             point.addEventListener('lostpointercapture', event => { if (event.pointerId === pointerId) { clearPreview(); hideGestureOverlay(); } });
             point.addEventListener('contextmenu', event => event.preventDefault());
@@ -1144,14 +1143,14 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             rows.forEach(([rowName, ...marks]) => { const label = document.createElement('div'); label.className = 'row-label'; label.dataset.rowName = rowName; label.dataset.historyEdge = 'left'; if (separatorAfterRows.has(rowName)) label.classList.add('separator-bottom'); label.textContent = rowName; applyHistoryLabel(label); let historyStartY; let historyPointerId; let historyOpened = false; const historyTargetAt = (x, y) => document.elementFromPoint(x, y)?.closest('button[data-history-side], #clear-body-history'); const updateHistoryTarget = (x, y) => { const target = historyTargetAt(x, y); historyDialog.querySelectorAll('button[data-history-side], #clear-body-history').forEach(button => button.classList.toggle('history-target', button === target)); return target; }; const clearHistoryGesture = () => { historyPointerId = undefined; historyOpened = false; label.classList.remove('history-active'); historyDialog.querySelectorAll('.history-target').forEach(button => button.classList.remove('history-target')); }; label.addEventListener('pointerdown', event => { historyStartY = event.clientY; historyPointerId = event.pointerId; historyOpened = false; label.setPointerCapture(event.pointerId); }); label.addEventListener('pointermove', event => { if (event.pointerId !== historyPointerId) return; if (historyOpened) { updateHistoryTarget(event.clientX, event.clientY); return; } if (Math.abs(event.clientY - historyStartY) < 12) return; historyOpened = true; activeHistoryLabel = label; label.classList.add('history-active'); historyDialogTitle.textContent = rowName; historyDialog.showModal(); updateHistoryTarget(event.clientX, event.clientY); }); label.addEventListener('pointerup', event => { if (event.pointerId !== historyPointerId) return; if (!historyOpened) { clearHistoryGesture(); return; } const target = updateHistoryTarget(event.clientX, event.clientY); if (target?.id === 'clear-body-history') clearBodyHistory(); else if (target) selectBodyHistory(target.dataset.historySide, Number(target.dataset.historyAge), target.dataset.historyActive === 'true'); else historyDialog.close(); clearHistoryGesture(); }); label.addEventListener('pointercancel', () => { if (historyOpened) historyDialog.close(); clearHistoryGesture(); }); sheet.appendChild(label); headers.forEach((header, index) => { if (mergedMeRows.has(rowName) && index === firstMeColumn + 1) return; const cell = document.createElement('div'); cell.className = 'cell'; if (layout.separatorColumns.includes(index)) cell.classList.add('separator-right'); if (separatorAfterRows.has(rowName)) cell.classList.add('separator-bottom'); const merged = mergedMeRows.has(rowName) && index === firstMeColumn; if (merged) { cell.classList.add('merged-me'); cell.style.gridColumn = 'span 2'; } const hasPoint = merged ? marks.slice(firstMeColumn, firstMeColumn + 2).some(mark => mark?.trim().toLowerCase() === 'x') : marks[index]?.trim().toLowerCase() === 'x'; if (hasPoint) renderPoint(cell, rowName, header, index, merged); sheet.appendChild(cell); }); const rightLabel = document.createElement('div'); rightLabel.className = 'row-label row-label-right'; rightLabel.dataset.rowName = rowName; rightLabel.dataset.historyEdge = 'right'; if (separatorAfterRows.has(rowName)) rightLabel.classList.add('separator-bottom'); rightLabel.textContent = rowName; applyHistoryLabel(rightLabel); bindBodyHistoryGesture(rightLabel); sheet.appendChild(rightLabel); });
             const bottomCorner = document.createElement('div'); bottomCorner.className = 'corner'; bottomCorner.appendChild(createTreatmentNumberButton()); sheet.appendChild(bottomCorner);
             headers.forEach((header, index) => { const label = document.createElement('div'); label.className = 'column-label column-label-bottom'; if (layout.separatorColumns.includes(index)) label.classList.add('separator-right'); populateColumnLabel(label, header); bindPalpationSequenceLabel(label, header); sheet.appendChild(label); });
-            const bottomRightCorner = document.createElement('div'); bottomRightCorner.className = 'corner'; bottomRightCorner.appendChild(createTreatmentResultButton()); sheet.appendChild(bottomRightCorner);
+            const bottomRightCorner = document.createElement('div'); bottomRightCorner.className = 'corner'; sheet.appendChild(bottomRightCorner);
             loadState(); document.querySelectorAll('[data-layout]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layout === layoutId)));
         }
         const clearGuide = document.createElement('button'); clearGuide.type = 'button'; clearGuide.className = 'clear-guide-button'; clearGuide.dataset.guideAction = 'clear'; clearGuide.textContent = 'Clear guide'; clearGuide.addEventListener('click', () => { selectGuide(); guideDialog.close(); }); guideActions.appendChild(clearGuide);
         guideGroups.forEach(group => { const section = document.createElement('section'); section.className = 'guide-group'; if (group.title) { const title = document.createElement('div'); title.className = 'guide-group-title'; title.textContent = group.title; section.appendChild(title); } const grid = document.createElement('div'); grid.className = group.columns ? `guide-grid columns-${group.columns}` : 'guide-grid'; group.guides.forEach(guide => { const button = document.createElement('button'); button.type = 'button'; button.dataset.guideName = guide.name; button.textContent = guide.name; button.addEventListener('click', () => { selectGuide(guide); guideDialog.close(); }); grid.appendChild(button); }); section.appendChild(grid); guideActions.appendChild(section); });
         const bodyHistoryAges = ['1m', '3m', '6m', '1y', '2y', '3y', '4y', '5y', '7y', '10y', '15y', '20y', '25y', '30y'];
         const bodyHistorySegments = [{ name: 'previous', active: false, label: 'previous pain' }, { name: 'main', active: true, label: 'main pain' }, { name: 'secondary', active: true, label: 'secondary pain' }];
-        const treatmentResultValues = ['+++', '++', '+', 'NC', '-', '--', '---', 'clear'];
+        const treatmentResultValues = ['+++', '++', '+', 'NC', 'X', '-', '--', '---', 'clear'];
         const treatmentNumbers = Array.from({ length: 10 }, (_, index) => 10 - index);
         bodyHistoryAges.forEach((age, ageIndex) => bodyHistorySegments.forEach(segment => ['RT', 'LT', 'BI'].forEach(side => { const button = document.createElement('button'); button.type = 'button'; button.dataset.historySide = side; button.dataset.historyAge = ageIndex; button.dataset.historyActive = String(segment.active); button.dataset.historySegment = segment.name; button.classList.add(`history-${segment.name}`); button.classList.toggle('history-current-choice', segment.active); button.textContent = `${side} ${age}`; button.title = `${side} ${age}: ${segment.label}`; button.setAttribute('aria-label', button.title); button.addEventListener('click', () => selectBodyHistory(side, ageIndex, segment.active, segment.name)); historyActions.appendChild(button); })));
         treatmentResultValues.forEach(value => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentResult = value; button.textContent = value; button.addEventListener('click', () => selectTreatmentResult(value)); treatmentResultActions.appendChild(button); });
