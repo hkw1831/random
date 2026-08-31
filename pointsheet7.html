@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pointsheet</title>
+    <title>Patient Record</title>
     <style>
         :root { --label-width: 32px; --header-height: 28px; }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -71,7 +71,7 @@
         .state-dialog-actions .danger-button { color: #fecaca; }
         .state-data-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .state-data-actions .full-span { grid-column: 1 / -1; }
-        .state-data-actions input { min-width: 0; min-height: 38px; padding: 6px 8px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 700 13px Arial, sans-serif; }
+        .state-data-actions input, .patient-actions input { min-width: 0; min-height: 38px; padding: 6px 8px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 700 13px Arial, sans-serif; }
         .patient-search-group { position: relative; min-width: 0; }
         .patient-search-group input { width: 100%; }
         .patient-actions { display: grid; grid-template-columns: minmax(0, 1fr) 38px 38px; gap: 8px; }
@@ -126,10 +126,10 @@
         .history-grid button.history-sipa { border: 3px solid #ef4444; }
         .history-grid button.history-paconc { border: 3px solid #facc15; }
         .history-grid button:hover, .history-grid button:focus-visible, .history-grid button.history-target { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
-        #treatment-result-dialog { position: fixed; top: auto; right: auto; bottom: auto; left: auto; width: min(460px, calc(100vw - 16px)); margin: 0; padding: 8px; }
+        #treatment-result-dialog { position: fixed; top: auto; right: auto; bottom: auto; left: auto; width: min(260px, calc(100vw - 32px)); max-height: calc(100dvh - 16px); margin: 0; overflow-y: auto; padding: 12px; }
         #treatment-result-dialog h2 { margin-bottom: 10px; }
-        .treatment-result-grid { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 3px; }
-        .treatment-result-grid button { min-width: 0; min-height: 38px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 clamp(11px, 4vw, 18px)/1 Arial, sans-serif; }
+        .treatment-result-grid { display: grid; grid-template-columns: 1fr; gap: 2px; }
+        .treatment-result-grid button { min-width: 0; min-height: 42px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 18px/1 Arial, sans-serif; }
         .treatment-result-grid button:hover, .treatment-result-grid button:focus-visible, .treatment-result-grid button.treatment-target { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
         .treatment-result-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; }
         #treatment-number-dialog { position: fixed; top: auto; right: auto; bottom: 8px; left: 8px; width: min(260px, calc(100vw - 32px)); margin: 0; padding: 12px; }
@@ -156,7 +156,7 @@
     </style>
 </head>
 <body>
-    <main id="sheet" aria-label="Pointsheet"></main>
+    <main id="sheet" aria-label="Patient record"></main>
     <div id="gesture-overlay" class="gesture-overlay" aria-live="polite"><span class="gesture-dot"></span></div>
     <span id="gesture-point-name" class="gesture-point-name"></span>
     <dialog id="state-dialog" class="state-dialog" aria-label="Patient administration">
@@ -174,8 +174,8 @@
                 <button id="export-json" type="button">Export patient JSON</button>
             </div>
             <div class="state-data-actions">
-                <button id="import-all-json" type="button">Import all patients JSON</button>
-                <button id="export-all-json" type="button">Export all patients JSON</button>
+                <button id="import-all-json" type="button">Import storage JSON</button>
+                <button id="export-all-json" type="button">Export storage JSON</button>
             </div>
             <div class="state-data-actions">
                 <button id="clear-current" class="danger-button" type="button">Clear current visit</button>
@@ -820,10 +820,11 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         let activeTreatmentPoint;
         let treatmentNumberButton;
         let treatmentResultButton;
+        const storageKeys = { patients: 'fm-patient-record-patients', activePatient: 'fm-patient-record-active-patient', activeTreatment: 'fm-patient-record-active-treatment' };
         let activeTreatmentNumber = '01';
-        let activePatientName = localStorage.getItem('pointsheet7-active-patient') || '';
+        let activePatientName = localStorage.getItem(storageKeys.activePatient) || '';
 
-        function getPatientStorageKey() { return 'pointsheet7-patients'; }
+        function getPatientStorageKey() { return storageKeys.patients; }
         function loadPatients() { try { const patients = JSON.parse(localStorage.getItem(getPatientStorageKey())); return patients && typeof patients === 'object' && !Array.isArray(patients) ? patients : {}; } catch { return {}; } }
         function savePatients(patients) { localStorage.setItem(getPatientStorageKey(), JSON.stringify(patients)); }
         function currentPatient() { return loadPatients()[activePatientName] || { visits: {} }; }
@@ -831,9 +832,9 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         function currentTreatment() { return loadTreatments()[activeTreatmentNumber] || {}; }
         function updateCurrentTreatment(update) { if (!activePatientName) return; const patients = loadPatients(); const patient = patients[activePatientName] || { visits: {} }; patient.visits = { ...patient.visits, [activeTreatmentNumber]: { ...patient.visits[activeTreatmentNumber], ...update } }; patients[activePatientName] = patient; savePatients(patients); }
         function refreshCurrentPatient() { activeGuide = undefined; buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); }
-        function createPatient(name) { const patientName = name.trim(); if (!patientName) throw new Error('Enter a patient name.'); const patients = loadPatients(); if (patients[patientName]) throw new Error('A patient with that name already exists.'); patients[patientName] = { visits: { '01': { patientDetails: {} } } }; savePatients(patients); activePatientName = patientName; activeTreatmentNumber = '01'; localStorage.setItem('pointsheet7-active-patient', patientName); localStorage.setItem('pointsheet7-active-treatment', activeTreatmentNumber); refreshCurrentPatient(); }
-        function loadPatient(name) { const patientName = name.trim(); if (!loadPatients()[patientName]) throw new Error('Patient not found.'); activePatientName = patientName; activeTreatmentNumber = '01'; localStorage.setItem('pointsheet7-active-patient', patientName); localStorage.setItem('pointsheet7-active-treatment', activeTreatmentNumber); refreshCurrentPatient(); }
-        function renamePatient(name) { const patientName = name.trim(); if (!patientName) throw new Error('Enter a patient name.'); if (patientName === activePatientName) return; const patients = loadPatients(); if (patients[patientName]) throw new Error('A patient with that name already exists.'); const patient = patients[activePatientName]; if (!patient) throw new Error('Load or create a patient first.'); delete patients[activePatientName]; patients[patientName] = patient; savePatients(patients); activePatientName = patientName; localStorage.setItem('pointsheet7-active-patient', patientName); }
+        function createPatient(name) { const patientName = name.trim(); if (!patientName) throw new Error('Enter a patient name.'); const patients = loadPatients(); if (patients[patientName]) throw new Error('A patient with that name already exists.'); patients[patientName] = { visits: { '01': { patientDetails: {} } } }; savePatients(patients); activePatientName = patientName; activeTreatmentNumber = '01'; localStorage.setItem(storageKeys.activePatient, patientName); localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber); refreshCurrentPatient(); }
+        function loadPatient(name) { const patientName = name.trim(); if (!loadPatients()[patientName]) throw new Error('Patient not found.'); activePatientName = patientName; activeTreatmentNumber = '01'; localStorage.setItem(storageKeys.activePatient, patientName); localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber); refreshCurrentPatient(); }
+        function renamePatient(name) { const patientName = name.trim(); if (!patientName) throw new Error('Enter a patient name.'); if (patientName === activePatientName) return; const patients = loadPatients(); if (patients[patientName]) throw new Error('A patient with that name already exists.'); const patient = patients[activePatientName]; if (!patient) throw new Error('Load or create a patient first.'); delete patients[activePatientName]; patients[patientName] = patient; savePatients(patients); activePatientName = patientName; localStorage.setItem(storageKeys.activePatient, patientName); }
         function pointKey(rowName, header, columnIndex, isMergedMe) {
             const aliases = { AL: 'an-la', AM: 'an-me', RL: 're-la', RM: 're-me' };
             const [side, pointName] = header.includes('|') ? header.split('|') : [undefined, header];
@@ -937,7 +938,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             if (!activePatientName) return;
             const patients = loadPatients(); patients[activePatientName].visits = {}; savePatients(patients);
             activeTreatmentNumber = 1;
-            localStorage.setItem('pointsheet7-active-treatment', String(activeTreatmentNumber));
+            localStorage.setItem(storageKeys.activeTreatment, String(activeTreatmentNumber));
             refreshCurrentPatient();
         }
         function orderHistorySideButtons(fromRight) {
@@ -1071,7 +1072,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         function selectTreatmentNumber(number) {
             saveState();
             activeTreatmentNumber = normalizeTreatmentNumber(number);
-            localStorage.setItem('pointsheet7-active-treatment', activeTreatmentNumber);
+            localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber);
             applyTreatmentNumber();
             treatmentNumberDialog.close();
             requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -1103,11 +1104,15 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         }
         function openTreatmentResultDialog(point, activatePoint = true, alignRight = false) {
             activeTreatmentPoint = activatePoint ? point : undefined;
+            treatmentResultActions.querySelectorAll('button[data-treatment-result]').forEach(button => { button.hidden = !activatePoint && button.dataset.treatmentResult === 'X'; });
+            if (alignRight) { treatmentResultDialog.style.right = '8px'; treatmentResultDialog.style.bottom = '8px'; treatmentResultDialog.style.left = 'auto'; treatmentResultDialog.style.top = 'auto'; treatmentResultDialog.showModal(); return; }
             const rect = point.getBoundingClientRect();
-            const width = Math.min(460, window.innerWidth - 16);
-            const height = 96;
+            const width = Math.min(260, window.innerWidth - 32);
+            const height = Math.min(440, window.innerHeight - 16);
             const showAbove = rect.bottom + height > window.innerHeight && rect.top >= height;
             const left = alignRight ? rect.right - width : rect.left + rect.width / 2 - width / 2;
+            treatmentResultDialog.style.right = 'auto';
+            treatmentResultDialog.style.bottom = 'auto';
             treatmentResultDialog.style.left = `${Math.max(8, Math.min(left, window.innerWidth - width - 8))}px`;
             treatmentResultDialog.style.top = `${showAbove ? Math.max(8, rect.top - height - 8) : Math.min(window.innerHeight - height - 8, rect.bottom + 8)}px`;
             treatmentResultDialog.showModal();
@@ -1130,7 +1135,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         }
         function createPatientDetailsButton() {
             const button = document.createElement('button'); button.type = 'button'; button.className = 'patient-details-button'; button.textContent = 'i'; button.title = 'Patient details'; button.setAttribute('aria-label', button.title);
-            button.addEventListener('click', () => patientDetailsDialog.show());
+            button.addEventListener('click', () => patientDetailsDialog.showModal());
             return button;
         }
         function renderPoint(cell, rowName, header, columnIndex, isMergedMe) {
@@ -1161,7 +1166,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             return button;
         }
         function buildSheet() {
-            layout = layouts[layoutId]; document.title = `Pointsheet ${layout.name}`; sheet.replaceChildren(); sheet.classList.remove('show-point-keys');
+            layout = layouts[layoutId]; document.title = 'Patient Record'; sheet.replaceChildren(); sheet.classList.remove('show-point-keys');
             const [headerLine, ...dataLines] = layout.csv.trim().split('\n'); headers = headerLine.split(',').slice(1); rows = dataLines.map(line => line.trim().split(','));
             if (layout.moveRightMeToRe) { const move = new Set(['GE1', 'TA1', 'PE1', 'SC1', 'HU', 'CU1', 'CA1', 'DI1']); rows.forEach(row => { if (move.has(row[0])) { row[layout.rightMeColumn + 1] = ''; row[layout.rightMeColumn + 2] = 'x'; } }); rows.find(row => row[0] === 'CX')[layout.rightMeColumn + 1] = ''; }
             const corner = document.createElement('div'); corner.className = 'corner'; corner.appendChild(createCrossButton()); sheet.appendChild(corner);
@@ -1200,16 +1205,17 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; buildSheet(); guideDialog.close(); }));
         const patientSearch = document.getElementById('patient-search');
         const patientSearchOptions = document.getElementById('patient-search-options');
-        function updatePatientSearchOptions() { const query = patientSearch.value.trim().toLocaleLowerCase(); const matches = Object.keys(loadPatients()).filter(name => !query || name.toLocaleLowerCase().includes(query)).sort((left, right) => left.localeCompare(right)); patientSearchOptions.replaceChildren(...matches.map(name => { const button = document.createElement('button'); button.type = 'button'; button.role = 'option'; button.textContent = name; button.addEventListener('click', () => { try { saveCurrentPatient(); loadPatient(name); patientSearch.value = ''; patientSearchOptions.hidden = true; stateDialog.close(); } catch (error) { alert(`Unable to load patient: ${error.message}`); } }); return button; })); patientSearchOptions.hidden = !matches.length; }
+        function selectPatient(name) { try { saveCurrentPatient(); loadPatient(name); patientSearch.value = ''; patientSearchOptions.hidden = true; stateDialog.close(); } catch (error) { alert(`Unable to load patient: ${error.message}`); } }
+        function updatePatientSearchOptions() { const query = patientSearch.value.trim(); let expression; try { expression = query ? new RegExp(query, 'i') : undefined; } catch { patientSearchOptions.replaceChildren(); patientSearchOptions.hidden = true; return; } const matches = Object.keys(loadPatients()).filter(name => !expression || expression.test(name)).sort((left, right) => left.localeCompare(right)); patientSearchOptions.replaceChildren(...matches.map(name => { const button = document.createElement('button'); button.type = 'button'; button.role = 'option'; button.textContent = name; button.addEventListener('pointerup', event => { if (event.pointerType !== 'touch') return; event.preventDefault(); selectPatient(name); }); button.addEventListener('click', () => selectPatient(name)); return button; })); patientSearchOptions.hidden = !matches.length; }
         function saveCurrentPatient() { saveState(); savePatientDetails(); }
         patientSearch.addEventListener('input', updatePatientSearchOptions);
         patientSearch.addEventListener('focus', updatePatientSearchOptions);
         document.getElementById('create-patient').addEventListener('click', () => { try { createPatient(patientSearch.value); patientSearch.value = ''; updatePatientSearchOptions(); stateDialog.close(); } catch (error) { alert(`Unable to create patient: ${error.message}`); } });
-        document.getElementById('remove-patient').addEventListener('click', () => { if (!activePatientName || !confirm(`Remove ${activePatientName} and all visits?`)) return; const patients = loadPatients(); delete patients[activePatientName]; savePatients(patients); activePatientName = ''; localStorage.removeItem('pointsheet7-active-patient'); refreshCurrentPatient(); patientSearch.value = ''; updatePatientSearchOptions(); stateDialog.close(); });
-        document.getElementById('import-json').addEventListener('click', async () => { try { const imported = normalizePatients(JSON.parse(await navigator.clipboard.readText())); const entries = Object.entries(imported); if (entries.length !== 1) throw new Error('Expected a JSON map containing one patient.'); const [patientName, patient] = entries[0]; const patients = loadPatients(); patients[patientName] = patient; savePatients(patients); activePatientName = patientName; activeTreatmentNumber = '01'; localStorage.setItem('pointsheet7-active-patient', patientName); localStorage.setItem('pointsheet7-active-treatment', activeTreatmentNumber); refreshCurrentPatient(); stateDialog.close(); } catch (error) { alert(`Unable to import patient JSON: ${error.message}`); } });
+        document.getElementById('remove-patient').addEventListener('click', () => { if (!activePatientName || !confirm(`Remove ${activePatientName} and all visits?`)) return; const patients = loadPatients(); delete patients[activePatientName]; savePatients(patients); activePatientName = ''; localStorage.removeItem(storageKeys.activePatient); refreshCurrentPatient(); patientSearch.value = ''; updatePatientSearchOptions(); stateDialog.close(); });
+        document.getElementById('import-json').addEventListener('click', async () => { try { const imported = normalizePatients(JSON.parse(await navigator.clipboard.readText())); const entries = Object.entries(imported); if (entries.length !== 1) throw new Error('Expected a JSON map containing one patient.'); const [patientName, patient] = entries[0]; const patients = loadPatients(); patients[patientName] = patient; savePatients(patients); activePatientName = patientName; activeTreatmentNumber = '01'; localStorage.setItem(storageKeys.activePatient, patientName); localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber); refreshCurrentPatient(); stateDialog.close(); } catch (error) { alert(`Unable to import patient JSON: ${error.message}`); } });
         document.getElementById('export-json').addEventListener('click', async () => { try { if (!activePatientName) throw new Error('Load or create a patient first.'); saveCurrentPatient(); await navigator.clipboard.writeText(JSON.stringify({ [activePatientName]: currentPatient() }, null, 2)); stateDialog.close(); } catch (error) { alert(`Unable to export patient JSON: ${error.message}`); } });
-        document.getElementById('import-all-json').addEventListener('click', async () => { try { const patients = normalizePatients(JSON.parse(await navigator.clipboard.readText())); if (!Object.keys(patients).length) throw new Error('Expected a patient JSON map.'); savePatients(patients); activePatientName = Object.keys(patients)[0]; activeTreatmentNumber = '01'; localStorage.setItem('pointsheet7-active-patient', activePatientName); localStorage.setItem('pointsheet7-active-treatment', activeTreatmentNumber); refreshCurrentPatient(); stateDialog.close(); } catch (error) { alert(`Unable to import all patients JSON: ${error.message}`); } });
-        document.getElementById('export-all-json').addEventListener('click', async () => { try { saveCurrentPatient(); await navigator.clipboard.writeText(JSON.stringify(loadPatients(), null, 2)); stateDialog.close(); } catch (error) { alert(`Unable to export all patients JSON: ${error.message}`); } });
+        document.getElementById('import-all-json').addEventListener('click', async () => { try { const imported = JSON.parse(await navigator.clipboard.readText()); const patients = normalizePatients(imported[getPatientStorageKey()]); if (!Object.keys(patients).length) throw new Error('Expected a storage JSON export.'); const importedPatientName = imported[storageKeys.activePatient]; const importedTreatmentNumber = imported[storageKeys.activeTreatment]; savePatients(patients); activePatientName = patients[importedPatientName] ? importedPatientName : Object.keys(patients)[0]; activeTreatmentNumber = patients[activePatientName].visits?.[importedTreatmentNumber] ? importedTreatmentNumber : '01'; localStorage.setItem(storageKeys.activePatient, activePatientName); localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber); refreshCurrentPatient(); stateDialog.close(); } catch (error) { alert(`Unable to import storage JSON: ${error.message}`); } });
+        document.getElementById('export-all-json').addEventListener('click', async () => { try { saveCurrentPatient(); await navigator.clipboard.writeText(JSON.stringify({ [getPatientStorageKey()]: loadPatients(), [storageKeys.activePatient]: activePatientName, [storageKeys.activeTreatment]: activeTreatmentNumber }, null, 2)); stateDialog.close(); } catch (error) { alert(`Unable to export storage JSON: ${error.message}`); } });
         document.getElementById('import-grey-points').addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedGreyPoints(JSON.parse(text.replace(/'/g, '"'))); stateDialog.close(); } catch (error) { alert(`Unable to import grey points: ${error.message}`); } });
         document.getElementById('export-grey-points').addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedGreyPointKeys().map(key => `'${key}'`).join(', ')}]`); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export grey points: ${error.message}`); } });
         ['yellow', 'green', 'red'].forEach(state => {
@@ -1224,7 +1230,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         stateDialog.addEventListener('toggle', () => { if (stateDialog.open) { patientSearch.value = activePatientName; patientSearchOptions.hidden = true; } });
         stateDialog.addEventListener('click', event => { if (event.target === stateDialog) stateDialog.close(); }); guideDialog.addEventListener('click', event => { if (event.target === guideDialog) guideDialog.close(); }); historyDialog.addEventListener('click', event => { if (event.target === historyDialog) historyDialog.close(); }); treatmentResultDialog.addEventListener('click', event => { if (event.target === treatmentResultDialog) treatmentResultDialog.close(); }); treatmentNumberDialog.addEventListener('click', event => { if (event.target === treatmentNumberDialog) treatmentNumberDialog.close(); }); patientDetailsDialog.addEventListener('click', event => { if (event.target === patientDetailsDialog) patientDetailsDialog.close(); });
         migrateStoredPatients();
-        activeTreatmentNumber = normalizeTreatmentNumber(localStorage.getItem('pointsheet7-active-treatment'));
+        activeTreatmentNumber = normalizeTreatmentNumber(localStorage.getItem(storageKeys.activeTreatment));
         window.addEventListener('pagehide', saveCurrentPatient); buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); if (!activePatientName) stateDialog.showModal();
     </script>
 </body>
