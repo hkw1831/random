@@ -71,6 +71,15 @@
         .state-dialog-actions .danger-button { color: #fecaca; }
         .state-data-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .state-data-actions .full-span { grid-column: 1 / -1; }
+        .state-data-actions input { min-width: 0; min-height: 38px; padding: 6px 8px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 700 13px Arial, sans-serif; }
+        .patient-search-group { position: relative; min-width: 0; }
+        .patient-search-group input { width: 100%; }
+        .patient-actions { display: grid; grid-template-columns: 38px minmax(0, 1fr) 38px; gap: 8px; }
+        .patient-actions button { min-width: 38px; padding: 0; font-size: 20px; }
+        .patient-search-options { position: absolute; top: calc(100% + 3px); right: 0; left: 0; z-index: 4; display: grid; max-height: 154px; overflow-y: auto; border: 1px solid #737373; border-radius: 3px; background: #1c1c1c; box-shadow: 0 4px 12px #00000099; }
+        .patient-search-options[hidden] { display: none; }
+        .patient-search-options button { min-height: 32px; padding: 6px 8px; border: 0; border-radius: 0; border-bottom: 1px solid #575757; background: #303030; color: inherit; cursor: pointer; font: 700 13px Arial, sans-serif; text-align: left; }
+        .patient-search-options button:last-child { border-bottom: 0; }
         .grey-point-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .guide-actions button[aria-pressed="true"] { border-color: #22d3ee; background: #155e75; }
         .guide-actions button.guide-target { border-color: #a5f3fc; background: #454545; }
@@ -153,16 +162,29 @@
     <div id="gesture-overlay" class="gesture-overlay" aria-live="polite"><span class="gesture-dot"></span></div>
     <span id="gesture-point-name" class="gesture-point-name"></span>
     <dialog id="state-dialog" class="state-dialog" aria-labelledby="state-dialog-title">
-        <h2 id="state-dialog-title">Admin</h2>
+        <h2 id="state-dialog-title">Patient name:</h2>
         <div class="state-dialog-actions">
+            <div class="patient-actions">
+                <button id="create-patient" type="button" autofocus aria-label="Create patient" title="Create patient">+</button>
+                <div class="patient-search-group">
+                    <input id="patient-search" type="search" placeholder="patient name" aria-label="Patient name" autocomplete="off">
+                    <div id="patient-search-options" class="patient-search-options" role="listbox" aria-label="Matching patients" hidden></div>
+                </div>
+                <button id="remove-patient" class="danger-button" type="button" aria-label="Remove current patient" title="Remove current patient">×</button>
+            </div>
             <div class="state-data-actions">
-                <button id="import-json" type="button">Import from JSON</button>
-                <button id="export-json" type="button">Export to JSON</button>
+                <button id="import-json" type="button">Import patient JSON</button>
+                <button id="export-json" type="button">Export patient JSON</button>
+            </div>
+            <div class="state-data-actions">
+                <button id="import-all-json" type="button">Import all patients JSON</button>
+                <button id="export-all-json" type="button">Export all patients JSON</button>
             </div>
             <div class="state-data-actions">
                 <button id="clear-current" class="danger-button" type="button">Clear current visit</button>
                 <button id="clear-all-visits" class="danger-button" type="button">Clear all visits</button>
             </div>
+            <div class="state-data-actions"><button id="clear-all-patient-info" class="danger-button full-span" type="button">Clear all patient info</button></div>
             <div class="state-data-actions"><button id="toggle-point-keys" class="full-span" type="button" aria-pressed="false">Show JSON field names</button></div>
             <div class="grey-point-actions">
                 <button id="import-grey-points" type="button">Import grey points</button>
@@ -801,11 +823,18 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         let activeTreatmentPoint;
         let treatmentNumberButton;
         let activeTreatmentNumber = 1;
+        let activePatientName = localStorage.getItem('pointsheet7-active-patient') || '';
 
-        function getTreatmentStorageKey() { return 'pointsheet7-treatments'; }
-        function loadTreatments() { try { return JSON.parse(localStorage.getItem(getTreatmentStorageKey())) || {}; } catch { return {}; } }
+        function getPatientStorageKey() { return 'pointsheet7-patients'; }
+        function loadPatients() { try { const patients = JSON.parse(localStorage.getItem(getPatientStorageKey())); return patients && typeof patients === 'object' && !Array.isArray(patients) ? patients : {}; } catch { return {}; } }
+        function savePatients(patients) { localStorage.setItem(getPatientStorageKey(), JSON.stringify(patients)); }
+        function currentPatient() { return loadPatients()[activePatientName] || { visits: {} }; }
+        function loadTreatments() { return currentPatient().visits || {}; }
         function currentTreatment() { return loadTreatments()[activeTreatmentNumber] || {}; }
-        function updateCurrentTreatment(update) { const treatments = loadTreatments(); treatments[activeTreatmentNumber] = { ...treatments[activeTreatmentNumber], ...update }; localStorage.setItem(getTreatmentStorageKey(), JSON.stringify(treatments)); }
+        function updateCurrentTreatment(update) { if (!activePatientName) return; const patients = loadPatients(); const patient = patients[activePatientName] || { visits: {} }; patient.visits = { ...patient.visits, [activeTreatmentNumber]: { ...patient.visits[activeTreatmentNumber], ...update } }; patients[activePatientName] = patient; savePatients(patients); }
+        function refreshCurrentPatient() { activeGuide = undefined; buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); }
+        function createPatient(name) { const patientName = name.trim(); if (!patientName) throw new Error('Enter a patient name.'); const patients = loadPatients(); if (patients[patientName]) throw new Error('A patient with that name already exists.'); patients[patientName] = { visits: { 1: { patientDetails: { patient_name: patientName } } } }; savePatients(patients); activePatientName = patientName; activeTreatmentNumber = 1; localStorage.setItem('pointsheet7-active-patient', patientName); localStorage.setItem('pointsheet7-active-treatment', '1'); refreshCurrentPatient(); }
+        function loadPatient(name) { const patientName = name.trim(); if (!loadPatients()[patientName]) throw new Error('Patient not found.'); activePatientName = patientName; activeTreatmentNumber = 1; localStorage.setItem('pointsheet7-active-patient', patientName); localStorage.setItem('pointsheet7-active-treatment', '1'); refreshCurrentPatient(); }
         function pointKey(rowName, header, columnIndex, isMergedMe) {
             const aliases = { AL: 'an-la', AM: 'an-me', RL: 're-la', RM: 're-me' };
             const [side, pointName] = header.includes('|') ? header.split('|') : [undefined, header];
@@ -918,22 +947,16 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             document.querySelectorAll('.row-label[data-row-name]').forEach(applyHistoryLabel);
         }
         function clearCurrentVisit() {
-            const treatments = loadTreatments();
-            delete treatments[activeTreatmentNumber];
-            localStorage.setItem(getTreatmentStorageKey(), JSON.stringify(treatments));
-            activeGuide = undefined;
-            buildSheet();
-            applyPatientDetails();
-            applyTreatmentNumber();
+            if (!activePatientName) return;
+            const patients = loadPatients(); const patient = patients[activePatientName];
+            delete patient.visits[activeTreatmentNumber]; savePatients(patients); refreshCurrentPatient();
         }
         function clearAllVisits() {
-            localStorage.removeItem(getTreatmentStorageKey());
+            if (!activePatientName) return;
+            const patients = loadPatients(); patients[activePatientName].visits = {}; savePatients(patients);
             activeTreatmentNumber = 1;
             localStorage.setItem('pointsheet7-active-treatment', String(activeTreatmentNumber));
-            activeGuide = undefined;
-            buildSheet();
-            applyPatientDetails();
-            applyTreatmentNumber();
+            refreshCurrentPatient();
         }
         function orderHistorySideButtons(fromRight) {
             const sideOrder = fromRight ? ['LT', 'RT', 'BI'] : ['RT', 'LT', 'BI'];
@@ -1047,7 +1070,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         function patientDetailsFields() { return [...document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea')]; }
         function serializePatientDetails() { return Object.fromEntries(patientDetailsFields().map(field => [field.id, field.value])); }
         function normalizePatientDetails(details) { const validFields = new Set(patientDetailsFields().map(field => field.id)); return Object.fromEntries(Object.entries(details || {}).filter(([key]) => validFields.has(key))); }
-        function normalizeTreatments(treatments) { return Object.fromEntries(Object.entries(treatments).map(([number, treatment]) => { const { bodyHistory, painHistory, ...rest } = treatment; return [number, { ...rest, painHistory: normalizePainHistory(painHistory || bodyHistory), patientDetails: normalizePatientDetails(treatment.patientDetails) }]; })); }
+        function normalizeTreatments(treatments) { return Object.fromEntries(Object.entries(treatments || {}).map(([number, treatment]) => [number, { ...treatment, painHistory: normalizePainHistory(treatment.painHistory), patientDetails: normalizePatientDetails(treatment.patientDetails) }])); }
+        function normalizePatients(patients) { return Object.fromEntries(Object.entries(patients || {}).filter(([name, patient]) => name.trim() && patient && typeof patient === 'object' && !Array.isArray(patient)).map(([name, patient]) => [name, { ...patient, visits: normalizeTreatments(patient.visits) }])); }
         function loadPatientDetails() { return currentTreatment().patientDetails || {}; }
         function applyPatientDetails() { const details = loadPatientDetails(); patientDetailsFields().forEach(field => { field.value = details[field.id] || patientDetailsDefaults[field.id] || ''; }); }
         function savePatientDetails() { updateCurrentTreatment({ patientDetails: serializePatientDetails() }); }
@@ -1170,21 +1194,33 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         historyDialog.addEventListener('close', () => { historyDialog.classList.remove('history-from-right'); orderHistorySideButtons(false); });
         document.getElementById('clear-body-history').addEventListener('click', clearBodyHistory);
         document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.layout; if (next === layoutId) return; saveState(); layoutId = next; location.hash = next; buildSheet(); guideDialog.close(); }));
-        document.getElementById('import-json').addEventListener('click', async () => { try { const treatments = JSON.parse(await navigator.clipboard.readText()); if (!treatments || typeof treatments !== 'object' || Array.isArray(treatments)) throw new Error('Expected a treatments JSON object.'); localStorage.setItem(getTreatmentStorageKey(), JSON.stringify(normalizeTreatments(treatments))); activeGuide = undefined; buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); stateDialog.close(); } catch (error) { alert(`Unable to import JSON: ${error.message}`); } });
-        document.getElementById('export-json').addEventListener('click', async () => { try { saveState(); savePatientDetails(); await navigator.clipboard.writeText(JSON.stringify(loadTreatments(), null, 2)); stateDialog.close(); } catch (error) { alert(`Unable to export JSON: ${error.message}`); } });
+        const patientSearch = document.getElementById('patient-search');
+        const patientSearchOptions = document.getElementById('patient-search-options');
+        function updatePatientAdminTitle() { document.getElementById('state-dialog-title').textContent = `Patient name: ${activePatientName}`; }
+        function updatePatientSearchOptions() { const query = patientSearch.value.trim().toLocaleLowerCase(); const matches = query ? Object.keys(loadPatients()).filter(name => name.toLocaleLowerCase().includes(query)).sort((left, right) => left.localeCompare(right)) : []; patientSearchOptions.replaceChildren(...matches.map(name => { const button = document.createElement('button'); button.type = 'button'; button.role = 'option'; button.textContent = name; button.addEventListener('click', () => { try { saveCurrentPatient(); loadPatient(name); patientSearch.value = ''; patientSearchOptions.hidden = true; stateDialog.close(); } catch (error) { alert(`Unable to load patient: ${error.message}`); } }); return button; })); patientSearchOptions.hidden = !matches.length; }
+        function saveCurrentPatient() { saveState(); savePatientDetails(); }
+        patientSearch.addEventListener('input', updatePatientSearchOptions);
+        document.getElementById('create-patient').addEventListener('click', () => { try { createPatient(patientSearch.value); patientSearch.value = ''; patientSearchOptions.hidden = true; stateDialog.close(); } catch (error) { alert(`Unable to create patient: ${error.message}`); } });
+        document.getElementById('remove-patient').addEventListener('click', () => { if (!activePatientName || !confirm(`Remove ${activePatientName} and all visits?`)) return; const patients = loadPatients(); delete patients[activePatientName]; savePatients(patients); activePatientName = ''; localStorage.removeItem('pointsheet7-active-patient'); refreshCurrentPatient(); patientSearch.value = ''; stateDialog.close(); });
+        document.getElementById('import-json').addEventListener('click', async () => { try { const imported = normalizePatients(JSON.parse(await navigator.clipboard.readText())); const entries = Object.entries(imported); if (entries.length !== 1) throw new Error('Expected a JSON map containing one patient.'); const [patientName, patient] = entries[0]; const patients = loadPatients(); patients[patientName] = patient; savePatients(patients); activePatientName = patientName; activeTreatmentNumber = 1; localStorage.setItem('pointsheet7-active-patient', patientName); localStorage.setItem('pointsheet7-active-treatment', '1'); refreshCurrentPatient(); stateDialog.close(); } catch (error) { alert(`Unable to import patient JSON: ${error.message}`); } });
+        document.getElementById('export-json').addEventListener('click', async () => { try { if (!activePatientName) throw new Error('Load or create a patient first.'); saveCurrentPatient(); await navigator.clipboard.writeText(JSON.stringify({ [activePatientName]: currentPatient() }, null, 2)); stateDialog.close(); } catch (error) { alert(`Unable to export patient JSON: ${error.message}`); } });
+        document.getElementById('import-all-json').addEventListener('click', async () => { try { const patients = normalizePatients(JSON.parse(await navigator.clipboard.readText())); if (!Object.keys(patients).length) throw new Error('Expected a patient JSON map.'); savePatients(patients); activePatientName = Object.keys(patients)[0]; activeTreatmentNumber = 1; localStorage.setItem('pointsheet7-active-patient', activePatientName); localStorage.setItem('pointsheet7-active-treatment', '1'); refreshCurrentPatient(); stateDialog.close(); } catch (error) { alert(`Unable to import all patients JSON: ${error.message}`); } });
+        document.getElementById('export-all-json').addEventListener('click', async () => { try { saveCurrentPatient(); await navigator.clipboard.writeText(JSON.stringify(loadPatients(), null, 2)); stateDialog.close(); } catch (error) { alert(`Unable to export all patients JSON: ${error.message}`); } });
         document.getElementById('import-grey-points').addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedGreyPoints(JSON.parse(text.replace(/'/g, '"'))); stateDialog.close(); } catch (error) { alert(`Unable to import grey points: ${error.message}`); } });
         document.getElementById('export-grey-points').addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedGreyPointKeys().map(key => `'${key}'`).join(', ')}]`); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export grey points: ${error.message}`); } });
         ['yellow', 'green', 'red'].forEach(state => {
             document.getElementById(`import-${state}-points`).addEventListener('click', async () => { try { const text = await navigator.clipboard.readText(); restoreSelectedColoredPoints(state, JSON.parse(text.replace(/'/g, '"'))); stateDialog.close(); } catch (error) { alert(`Unable to import ${state} points: ${error.message}`); } });
             document.getElementById(`export-${state}-points`).addEventListener('click', async () => { try { await navigator.clipboard.writeText(`[${selectedPointKeys(state).map(key => `'${key}'`).join(', ')}]`); saveState(); stateDialog.close(); } catch (error) { alert(`Unable to export ${state} points: ${error.message}`); } });
         });
-        document.getElementById('clear-current').addEventListener('click', () => { clearCurrentVisit(); stateDialog.close(); });
-        document.getElementById('clear-all-visits').addEventListener('click', () => { clearAllVisits(); stateDialog.close(); });
+        document.getElementById('clear-current').addEventListener('click', () => { if (activePatientName && confirm(`Clear visit ${activeTreatmentNumber} for ${activePatientName}?`)) { clearCurrentVisit(); stateDialog.close(); } });
+        document.getElementById('clear-all-visits').addEventListener('click', () => { if (activePatientName && confirm(`Clear all visits for ${activePatientName}?`)) { clearAllVisits(); stateDialog.close(); } });
+        document.getElementById('clear-all-patient-info').addEventListener('click', () => { if (!activePatientName || !confirm(`Clear all patient information for ${activePatientName}?`)) return; const patients = loadPatients(); const patient = patients[activePatientName]; patient.visits = Object.fromEntries(Object.entries(patient.visits || {}).map(([number, visit]) => [number, { ...visit, patientDetails: {} }])); savePatients(patients); applyPatientDetails(); stateDialog.close(); });
         document.getElementById('toggle-point-keys').addEventListener('click', event => { const visible = sheet.classList.toggle('show-point-keys'); event.currentTarget.setAttribute('aria-pressed', String(visible)); stateDialog.close(); });
         document.getElementById('close-patient-details').addEventListener('click', () => patientDetailsDialog.close());
+        stateDialog.addEventListener('toggle', () => { if (stateDialog.open) { updatePatientAdminTitle(); patientSearch.value = ''; patientSearchOptions.hidden = true; } });
         stateDialog.addEventListener('click', event => { if (event.target === stateDialog) stateDialog.close(); }); guideDialog.addEventListener('click', event => { if (event.target === guideDialog) guideDialog.close(); }); historyDialog.addEventListener('click', event => { if (event.target === historyDialog) historyDialog.close(); }); treatmentResultDialog.addEventListener('click', event => { if (event.target === treatmentResultDialog) treatmentResultDialog.close(); }); treatmentNumberDialog.addEventListener('click', event => { if (event.target === treatmentNumberDialog) treatmentNumberDialog.close(); }); patientDetailsDialog.addEventListener('click', event => { if (event.target === patientDetailsDialog) patientDetailsDialog.close(); });
         activeTreatmentNumber = Number(localStorage.getItem('pointsheet7-active-treatment')) || 1;
-        window.addEventListener('pagehide', saveState); buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber();
+        window.addEventListener('pagehide', saveCurrentPatient); buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); if (!activePatientName) stateDialog.showModal();
     </script>
 </body>
 </html>
