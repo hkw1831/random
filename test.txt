@@ -1,28 +1,68 @@
 {
-  "1": {
-    "points": {
-      "an-cp1-lt": {
-        "palpation": 1,
-        "movement": null,
-        "treated": "NC"
-      }
-    },
-    "bodyHistory": {
-      "left:CP1": {
-        "previous": {
-          "side": "RT",
-          "age": "1m"
+  "adb": {
+    "visits": {
+      "01": {
+        "patientDetails": {
+          "patient_age_gender": "",
+          "record_date": "",
+          "occupation": "",
+          "sport_frequency": "",
+          "history": "SiPa: \nPaConc:\nExtremit: \nPaPrev:\nSurgery:\nTrauma: \nFractures: ",
+          "trauma": "Investigations: \nMedications: \nFMID:\nPostura:\nOveruse:\nComment: "
+        },
+        "points": {
+          "re-cp2-lt": {
+            "palpation": 1,
+            "movement": null,
+            "treated": "+"
+          },
+          "re-cl-lt": {
+            "palpation": 1,
+            "movement": null,
+            "treated": null
+          }
+        },
+        "painHistory": {}
+      },
+      "02": {
+        "points": {
+          "re-cp3-lt": {
+            "palpation": 3,
+            "movement": null,
+            "treated": "NC"
+          },
+          "an-th-rt": {
+            "palpation": 3,
+            "movement": null,
+            "treated": "++"
+          }
+        },
+        "painHistory": {
+          "anterior:CP3": {
+            "type": "PaPrev",
+            "side": "LT",
+            "age": "6m"
+          },
+          "posterior:TH2": {
+            "type": "PaConc",
+            "side": "RT",
+            "age": "2y"
+          },
+          "anterior:TH1": {
+            "type": "SiPa",
+            "side": "RT",
+            "age": "6m"
+          }
+        },
+        "patientDetails": {
+          "patient_age_gender": "",
+          "record_date": "",
+          "occupation": "",
+          "sport_frequency": "",
+          "history": "SiPa: \nPaConc:\nExtremit: \nPaPrev:\nSurgery:\nTrauma: \nFractures: ",
+          "trauma": "Investigations: \nMedications: \nFMID:\nPostura:\nOveruse:\nComment: "
         }
       }
-    },
-    "patientDetails": {
-      "patient_name": "",
-      "patient_age_gender": "",
-      "record_date": "",
-      "occupation": "",
-      "sport_frequency": "",
-      "history": "SiPa: \nPaConc:\nExtremit: \nPaPrev:\nSurgery:\nTrauma: \nFractures: ",
-      "trauma": "Investigations: \nMedications: \nFMID:\nPostura:\nOveruse:\nComment: "
     }
   }
 }
