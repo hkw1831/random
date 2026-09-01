@@ -1115,7 +1115,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             const rect = point.getBoundingClientRect();
             const width = Math.min(480, window.innerWidth - 16);
             const height = 58;
-            const showAbove = rect.bottom + height > window.innerHeight && rect.top >= height;
+            const showAbove = rect.top >= height + 8;
             const left = alignRight ? rect.right - width : rect.left + rect.width / 2 - width / 2;
             treatmentResultDialog.style.right = 'auto';
             treatmentResultDialog.style.bottom = 'auto';
