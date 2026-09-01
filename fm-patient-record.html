@@ -131,6 +131,10 @@
         .treatment-result-grid { display: grid; grid-template-columns: 1fr; gap: 2px; }
         .treatment-result-grid button { min-width: 0; min-height: 42px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 18px/1 Arial, sans-serif; }
         .treatment-result-grid button:hover, .treatment-result-grid button:focus-visible, .treatment-result-grid button.treatment-target { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
+        #treatment-result-dialog.point-result-dialog { width: min(480px, calc(100vw - 16px)); overflow: hidden; padding: 8px; }
+        #treatment-result-dialog.point-result-dialog h2 { display: none; }
+        .point-result-dialog .treatment-result-grid { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+        .point-result-dialog .treatment-result-grid button { min-height: 42px; font-size: clamp(12px, 4vw, 18px); }
         .treatment-result-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; }
         #treatment-number-dialog { position: fixed; top: auto; right: auto; bottom: 8px; left: 8px; width: min(260px, calc(100vw - 32px)); margin: 0; padding: 12px; }
         #treatment-number-dialog h2 { margin-bottom: 10px; }
@@ -835,6 +839,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         function createPatient(name) { const patientName = name.trim(); if (!patientName) throw new Error('Enter a patient name.'); const patients = loadPatients(); if (patients[patientName]) throw new Error('A patient with that name already exists.'); patients[patientName] = { visits: { '01': { patientDetails: {} } } }; savePatients(patients); activePatientName = patientName; activeTreatmentNumber = '01'; localStorage.setItem(storageKeys.activePatient, patientName); localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber); refreshCurrentPatient(); }
         function loadPatient(name) { const patientName = name.trim(); if (!loadPatients()[patientName]) throw new Error('Patient not found.'); activePatientName = patientName; activeTreatmentNumber = '01'; localStorage.setItem(storageKeys.activePatient, patientName); localStorage.setItem(storageKeys.activeTreatment, activeTreatmentNumber); refreshCurrentPatient(); }
         function renamePatient(name) { const patientName = name.trim(); if (!patientName) throw new Error('Enter a patient name.'); if (patientName === activePatientName) return; const patients = loadPatients(); if (patients[patientName]) throw new Error('A patient with that name already exists.'); const patient = patients[activePatientName]; if (!patient) throw new Error('Load or create a patient first.'); delete patients[activePatientName]; patients[patientName] = patient; savePatients(patients); activePatientName = patientName; localStorage.setItem(storageKeys.activePatient, patientName); }
+        function openStateDialog() { patientSearch.value = activePatientName; patientSearchOptions.hidden = true; stateDialog.showModal(); }
         function pointKey(rowName, header, columnIndex, isMergedMe) {
             const aliases = { AL: 'an-la', AM: 'an-me', RL: 're-la', RM: 're-me' };
             const [side, pointName] = header.includes('|') ? header.split('|') : [undefined, header];
@@ -1104,11 +1109,12 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         }
         function openTreatmentResultDialog(point, activatePoint = true, alignRight = false) {
             activeTreatmentPoint = activatePoint ? point : undefined;
+            treatmentResultDialog.classList.toggle('point-result-dialog', activatePoint);
             treatmentResultActions.querySelectorAll('button[data-treatment-result]').forEach(button => { button.hidden = !activatePoint && button.dataset.treatmentResult === 'X'; });
             if (alignRight) { treatmentResultDialog.style.right = '8px'; treatmentResultDialog.style.bottom = '8px'; treatmentResultDialog.style.left = 'auto'; treatmentResultDialog.style.top = 'auto'; treatmentResultDialog.showModal(); return; }
             const rect = point.getBoundingClientRect();
-            const width = Math.min(260, window.innerWidth - 32);
-            const height = Math.min(440, window.innerHeight - 16);
+            const width = Math.min(480, window.innerWidth - 16);
+            const height = 58;
             const showAbove = rect.bottom + height > window.innerHeight && rect.top >= height;
             const left = alignRight ? rect.right - width : rect.left + rect.width / 2 - width / 2;
             treatmentResultDialog.style.right = 'auto';
@@ -1162,7 +1168,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             button.addEventListener('pointermove', event => { if (event.pointerId !== pointerId) return; if (guideOpened) { updateGuideTarget(event.clientX, event.clientY); return; } const deltaX = event.clientX - startX; const deltaY = event.clientY - startY; if (deltaY < 12 || Math.abs(deltaX) > deltaY) return; guideOpened = true; suppressClick = true; guideDialog.classList.toggle('guide-from-right', fromRight); guideDialog.showModal(); updateGuideTarget(event.clientX, event.clientY); });
             button.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; pointerId = undefined; if (!guideOpened) return; const target = updateGuideTarget(event.clientX, event.clientY); const guide = guideSets.find(candidate => candidate.name === target?.dataset.guideName); if (target?.dataset.layout && target.dataset.layout !== layoutId) { saveState(); layoutId = target.dataset.layout; location.hash = layoutId; buildSheet(); guideDialog.close(); } else if (guide) { selectGuide(guide); guideDialog.close(); } else if (target?.dataset.guideAction === 'clear') { selectGuide(); guideDialog.close(); } guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
             button.addEventListener('pointercancel', () => { pointerId = undefined; guideOpened = false; guideDialog.querySelectorAll('.guide-target').forEach(action => action.classList.remove('guide-target')); });
-            button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } stateDialog.showModal(); });
+            button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } openStateDialog(); });
             return button;
         }
         function buildSheet() {
@@ -1231,7 +1237,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         stateDialog.addEventListener('click', event => { if (event.target === stateDialog) stateDialog.close(); }); guideDialog.addEventListener('click', event => { if (event.target === guideDialog) guideDialog.close(); }); historyDialog.addEventListener('click', event => { if (event.target === historyDialog) historyDialog.close(); }); treatmentResultDialog.addEventListener('click', event => { if (event.target === treatmentResultDialog) treatmentResultDialog.close(); }); treatmentNumberDialog.addEventListener('click', event => { if (event.target === treatmentNumberDialog) treatmentNumberDialog.close(); }); patientDetailsDialog.addEventListener('click', event => { if (event.target === patientDetailsDialog) patientDetailsDialog.close(); });
         migrateStoredPatients();
         activeTreatmentNumber = normalizeTreatmentNumber(localStorage.getItem(storageKeys.activeTreatment));
-        window.addEventListener('pagehide', saveCurrentPatient); buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); if (!activePatientName) stateDialog.showModal();
+        window.addEventListener('pagehide', saveCurrentPatient); buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); if (!activePatientName) openStateDialog();
     </script>
 </body>
 </html>
