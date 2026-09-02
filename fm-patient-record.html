@@ -136,7 +136,8 @@
         .point-result-dialog .treatment-result-grid { grid-template-columns: repeat(9, minmax(0, 1fr)); }
         .point-result-dialog .treatment-result-grid button { min-height: 42px; font-size: clamp(12px, 4vw, 18px); }
         .treatment-result-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; }
-        #treatment-comment-dialog { position: fixed; top: 40px; right: 8px; bottom: 8px; left: 16px; display: flex; flex-direction: column; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 12px; }
+        #treatment-comment-dialog { position: fixed; top: 40px; right: 8px; bottom: 8px; left: 16px; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 12px; }
+        #treatment-comment-dialog[open] { display: flex; flex-direction: column; }
         #treatment-comment-actions { grid-template-columns: repeat(8, minmax(0, 1fr)); margin-bottom: 10px; }
         #treatment-comment-actions button { min-height: 38px; font-size: clamp(11px, 3.4vw, 16px); }
         .treatment-comment-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
