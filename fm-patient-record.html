@@ -130,12 +130,23 @@
         #treatment-result-dialog h2 { margin-bottom: 10px; }
         .treatment-result-grid { display: grid; grid-template-columns: 1fr; gap: 2px; }
         .treatment-result-grid button { min-width: 0; min-height: 42px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 18px/1 Arial, sans-serif; }
-        .treatment-result-grid button:hover, .treatment-result-grid button:focus-visible, .treatment-result-grid button.treatment-target { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
+        .treatment-result-grid button:hover, .treatment-result-grid button:focus-visible, .treatment-result-grid button.treatment-target, .treatment-result-grid button.treatment-selected, .treatment-result-grid button[aria-pressed="true"] { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
         #treatment-result-dialog.point-result-dialog { width: min(480px, calc(100vw - 16px)); overflow: hidden; padding: 8px; }
         #treatment-result-dialog.point-result-dialog h2 { display: none; }
         .point-result-dialog .treatment-result-grid { grid-template-columns: repeat(9, minmax(0, 1fr)); }
         .point-result-dialog .treatment-result-grid button { min-height: 42px; font-size: clamp(12px, 4vw, 18px); }
         .treatment-result-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; }
+        #treatment-comment-dialog { position: fixed; top: 40px; right: 8px; bottom: 8px; left: 16px; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 12px; }
+        #treatment-comment-actions { grid-template-columns: repeat(8, minmax(0, 1fr)); margin-bottom: 10px; }
+        #treatment-comment-actions button { min-height: 38px; font-size: clamp(11px, 3.4vw, 16px); }
+        .treatment-comment-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+        .treatment-comment-header h2 { margin: 0; font: 700 16px Arial, sans-serif; }
+        .treatment-comment-tools { flex: 0 0 auto; }
+        .treatment-comment-tools button { min-height: 30px; padding: 4px 10px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 12px Arial, sans-serif; }
+        #treatment-comment { display: block; width: 100%; min-height: min(42dvh, 280px); padding: 8px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 700 14px/1.35 "Courier New", monospace; resize: vertical; }
+        #treatment-comment-display { min-height: min(42dvh, 280px); overflow: auto; padding: 8px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: #f3f4f6; font: 14px/1.4 Arial, sans-serif; white-space: pre-wrap; }
+        #treatment-comment-display[hidden], #treatment-comment[hidden] { display: none; }
+        #treatment-comment-display img { display: block; width: auto; max-width: 100%; max-height: 48dvh; margin: 6px 0; }
         #treatment-number-dialog { position: fixed; top: auto; right: auto; bottom: 8px; left: 8px; width: min(260px, calc(100vw - 32px)); margin: 0; padding: 12px; }
         #treatment-number-dialog h2 { margin-bottom: 10px; }
         .treatment-number-grid { display: grid; grid-template-columns: 1fr; gap: 2px; }
@@ -224,6 +235,15 @@
     <dialog id="treatment-result-dialog" class="state-dialog" aria-labelledby="treatment-result-dialog-title">
         <h2 id="treatment-result-dialog-title">Treatment result</h2>
         <div id="treatment-result-actions" class="treatment-result-grid"></div>
+    </dialog>
+    <dialog id="treatment-comment-dialog" class="state-dialog" aria-labelledby="treatment-comment-dialog-title">
+        <div id="treatment-comment-actions" class="treatment-result-grid"></div>
+        <div class="treatment-comment-header">
+            <h2 id="treatment-comment-dialog-title">Treatment comment</h2>
+            <div class="treatment-comment-tools"><button id="toggle-treatment-comment" type="button">Display</button></div>
+        </div>
+        <textarea id="treatment-comment" aria-label="Treatment comment in Markdown"></textarea>
+        <div id="treatment-comment-display" hidden aria-label="Treatment comment display"></div>
     </dialog>
     <dialog id="treatment-number-dialog" class="state-dialog" aria-labelledby="treatment-number-dialog-title">
         <h2 id="treatment-number-dialog-title">Visit number</h2>
@@ -809,6 +829,11 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         const historyActions = document.getElementById('history-actions');
         const treatmentResultDialog = document.getElementById('treatment-result-dialog');
         const treatmentResultActions = document.getElementById('treatment-result-actions');
+        const treatmentCommentDialog = document.getElementById('treatment-comment-dialog');
+        const treatmentCommentActions = document.getElementById('treatment-comment-actions');
+        const treatmentComment = document.getElementById('treatment-comment');
+        const treatmentCommentDisplay = document.getElementById('treatment-comment-display');
+        const toggleTreatmentComment = document.getElementById('toggle-treatment-comment');
         const treatmentNumberDialog = document.getElementById('treatment-number-dialog');
         const treatmentNumberActions = document.getElementById('treatment-number-actions');
         const patientDetailsDialog = document.getElementById('patient-details-dialog');
@@ -1060,10 +1085,11 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         function normalizePatientDetails(details) { const validFields = new Set(patientDetailsFields().filter(field => field.id !== 'patient_name').map(field => field.id)); return Object.fromEntries(Object.entries(details || {}).filter(([key]) => validFields.has(key))); }
         function normalizeTreatmentNumber(number) { return String(Math.min(10, Math.max(1, Number(number) || 1))).padStart(2, '0'); }
         function validatePainHistory(history) { if (history === undefined) return {}; if (!history || typeof history !== 'object' || Array.isArray(history)) throw new Error('Expected painHistory to be a location map.'); return Object.fromEntries(Object.entries(history).map(([location, selection]) => { if (!/^(anterior|posterior):.+$/.test(location) || !selection || typeof selection !== 'object' || !['SiPa', 'PaConc', 'PaPrev'].includes(selection.type) || !['LT', 'RT', 'BI'].includes(selection.side) || !bodyHistoryAges.includes(selection.age)) throw new Error(`Invalid painHistory entry: ${location}`); return [location, { type: selection.type, side: selection.side, age: selection.age }]; })); }
-        function normalizeTreatments(treatments) { return Object.fromEntries(Object.entries(treatments || {}).map(([number, treatment]) => { if (!treatment || typeof treatment !== 'object' || Array.isArray(treatment) || 'bodyHistory' in treatment) throw new Error(`Invalid visit: ${number}`); return [normalizeTreatmentNumber(number), { ...treatment, painHistory: validatePainHistory(treatment.painHistory), patientDetails: normalizePatientDetails(treatment.patientDetails) }]; })); }
+        function normalizeTreatmentData(treatment, legacyResult) { if (treatment !== undefined && (!treatment || typeof treatment !== 'object' || Array.isArray(treatment))) throw new Error('Expected treatment to be an object.'); const result = treatment?.result ?? legacyResult ?? ''; if (typeof result !== 'string' || (result && (!treatmentResultValues.includes(result) || result === 'clear'))) throw new Error('Invalid treatment result.'); if (treatment?.comment !== undefined && typeof treatment.comment !== 'string') throw new Error('Expected treatment comment to be text.'); return { result, comment: treatment?.comment || '' }; }
+        function normalizeTreatments(treatments) { return Object.fromEntries(Object.entries(treatments || {}).map(([number, treatment]) => { if (!treatment || typeof treatment !== 'object' || Array.isArray(treatment) || 'bodyHistory' in treatment) throw new Error(`Invalid visit: ${number}`); const { treatment: treatmentData, treatmentResult, ...visit } = treatment; return [normalizeTreatmentNumber(number), { ...visit, treatment: normalizeTreatmentData(treatmentData, treatmentResult), painHistory: validatePainHistory(treatment.painHistory), patientDetails: normalizePatientDetails(treatment.patientDetails) }]; })); }
         function normalizePatients(patients) { return Object.fromEntries(Object.entries(patients || {}).filter(([name, patient]) => name.trim() && patient && typeof patient === 'object' && !Array.isArray(patient)).map(([name, patient]) => [name, { ...patient, visits: normalizeTreatments(patient.visits) }])); }
         function migrateStoredPainHistory(history) { const legacyTypes = { previous: 'PaPrev', main: 'SiPa', secondary: 'PaConc' }; return Object.fromEntries(Object.entries(history || {}).map(([location, selection]) => { if (selection?.type) return [location, selection]; const [legacyType, legacySelection] = Object.entries(legacyTypes).map(([legacyName, type]) => [type, selection?.[legacyName]]).find(([, value]) => value); if (!legacySelection) throw new Error(`Invalid stored painHistory entry: ${location}`); return [location, { type: legacyType, side: legacySelection.side, age: legacySelection.age }]; })); }
-        function migrateStoredPatients() { const patients = loadPatients(); const migratedPatients = Object.fromEntries(Object.entries(patients).map(([name, patient]) => [name, { ...patient, visits: Object.fromEntries(Object.entries(patient.visits || {}).map(([number, visit]) => [number, { ...visit, painHistory: migrateStoredPainHistory(visit.painHistory) }])) }])); if (JSON.stringify(patients) !== JSON.stringify(migratedPatients)) savePatients(migratedPatients); }
+        function migrateStoredPatients() { const patients = loadPatients(); const migratedPatients = Object.fromEntries(Object.entries(patients).map(([name, patient]) => [name, { ...patient, visits: Object.fromEntries(Object.entries(patient.visits || {}).map(([number, visit]) => { const { treatment: treatmentData, treatmentResult, ...visitData } = visit; return [number, { ...visitData, treatment: normalizeTreatmentData(treatmentData, treatmentResult), painHistory: migrateStoredPainHistory(visit.painHistory) }]; })) }])); if (JSON.stringify(patients) !== JSON.stringify(migratedPatients)) savePatients(migratedPatients); }
         function loadPatientDetails() { return currentTreatment().patientDetails || {}; }
         function applyPatientDetails() { const details = loadPatientDetails(); patientDetailsFields().forEach(field => { field.value = field.id === 'patient_name' ? activePatientName : details[field.id] || patientDetailsDefaults[field.id] || ''; }); }
         function savePatientDetails() { updateCurrentTreatment({ patientDetails: serializePatientDetails() }); }
@@ -1103,7 +1129,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             return button;
         }
         function selectTreatmentResult(value) {
-            if (!activeTreatmentPoint) { const result = value === 'clear' ? '' : value; updateCurrentTreatment({ treatmentResult: result }); applyTreatmentResult(result); treatmentResultDialog.close(); return; }
+            if (!activeTreatmentPoint) { const result = value === 'clear' ? '' : value; updateCurrentTreatment({ treatment: { ...loadTreatmentData(), result } }); applyTreatmentResult(result); treatmentResultDialog.close(); return; }
             activeTreatmentPoint.dataset.treated = value === 'clear' ? '' : value;
             applyVisual(activeTreatmentPoint); saveState(); refreshGuide(); treatmentResultDialog.close(); activeTreatmentPoint = undefined;
         }
@@ -1123,8 +1149,12 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             treatmentResultDialog.style.top = `${showAbove ? Math.max(8, rect.top - height - 8) : Math.min(window.innerHeight - height - 8, rect.bottom + 8)}px`;
             treatmentResultDialog.showModal();
         }
-        function loadTreatmentResult() { const value = currentTreatment().treatmentResult; return treatmentResultValues.includes(value) && value !== 'clear' ? value : ''; }
-        function applyTreatmentResult(value) { if (!treatmentResultButton) return; treatmentResultButton.textContent = value; treatmentResultButton.title = value ? `Treatment result: ${value}. Drag up to change.` : 'Drag up to choose an overall treatment result.'; treatmentResultButton.setAttribute('aria-label', treatmentResultButton.title); }
+        function loadTreatmentData() { return normalizeTreatmentData(currentTreatment().treatment, currentTreatment().treatmentResult); }
+        function loadTreatmentResult() { return loadTreatmentData().result; }
+        function applyTreatmentResult(value) { if (treatmentResultButton) { treatmentResultButton.textContent = value; treatmentResultButton.title = value ? 'Treatment result selected. Press to view or edit it; drag up to change it.' : 'Press to add a treatment comment; drag up to choose an overall treatment result.'; treatmentResultButton.setAttribute('aria-label', treatmentResultButton.title); treatmentResultButton.classList.remove('treatment-selected'); } document.querySelectorAll('button[data-treatment-result]').forEach(button => { const selected = button.dataset.treatmentResult === value; button.setAttribute('aria-pressed', String(selected)); button.classList.toggle('treatment-selected', selected); }); }
+        function renderTreatmentComment(value) { const escape = text => text.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]); return value.split('\n').map(line => { const image = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/); if (!image) return escape(line); const source = image[2].trim(); return /^(https?:|data:image\/)/i.test(source) ? `<img src="${escape(source)}" alt="${escape(image[1])}">` : escape(line); }).join('<br>'); }
+        function setTreatmentCommentMode(display) { treatmentCommentDisplay.hidden = !display; treatmentComment.hidden = display; toggleTreatmentComment.textContent = display ? 'Edit' : 'Display'; if (display) treatmentCommentDisplay.innerHTML = renderTreatmentComment(treatmentComment.value); }
+        function openTreatmentCommentDialog() { const treatment = loadTreatmentData(); activeTreatmentPoint = undefined; treatmentComment.value = treatment.comment; setTreatmentCommentMode(false); treatmentCommentDialog.showModal(); applyTreatmentResult(treatment.result); }
         function createTreatmentResultButton() {
             const button = document.createElement('button'); button.type = 'button'; button.className = 'treatment-result-button'; treatmentResultButton = button; applyTreatmentResult(loadTreatmentResult());
             let startX; let startY; let pointerId; let pickerOpened = false; let suppressClick = false;
@@ -1136,7 +1166,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             button.addEventListener('pointerup', event => { if (event.pointerId !== pointerId) return; if (!pickerOpened) { clearGesture(); return; } const target = updateTarget(event.clientX, event.clientY); if (target) selectTreatmentResult(target.dataset.treatmentResult); else treatmentResultDialog.close(); clearGesture(); });
             button.addEventListener('pointercancel', () => { if (pickerOpened) treatmentResultDialog.close(); clearGesture(); });
             button.addEventListener('lostpointercapture', () => { if (pickerOpened) treatmentResultDialog.close(); clearGesture(); });
-            button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } openTreatmentResultDialog(button, false, true); });
+            button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } openTreatmentCommentDialog(); });
             return button;
         }
         function createPatientDetailsButton() {
@@ -1191,7 +1221,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         const treatmentResultValues = ['+++', '++', '+', 'NC', 'X', '-', '--', '---', 'clear'];
         const treatmentNumbers = Array.from({ length: 10 }, (_, index) => String(10 - index).padStart(2, '0'));
         bodyHistoryAges.forEach((age, ageIndex) => bodyHistoryTypes.forEach(type => ['RT', 'LT', 'BI'].forEach(side => { const button = document.createElement('button'); button.type = 'button'; button.dataset.historySide = side; button.dataset.historyAge = ageIndex; button.dataset.historyType = type.name; button.classList.add(`history-${type.name.toLocaleLowerCase()}`); button.textContent = `${side} ${age}`; button.title = `${side} ${age}: ${type.label}`; button.setAttribute('aria-label', button.title); button.addEventListener('click', () => selectBodyHistory(side, ageIndex, type.name)); historyActions.appendChild(button); })));
-        treatmentResultValues.forEach(value => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentResult = value; button.textContent = value; button.addEventListener('click', () => selectTreatmentResult(value)); treatmentResultActions.appendChild(button); });
+        treatmentResultValues.forEach(value => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentResult = value; button.textContent = value; button.setAttribute('aria-pressed', 'false'); button.addEventListener('click', () => selectTreatmentResult(value)); treatmentResultActions.appendChild(button); });
+        treatmentResultValues.filter(value => value !== 'X').forEach(value => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentResult = value; button.textContent = value; button.setAttribute('aria-pressed', 'false'); button.addEventListener('click', () => selectTreatmentResult(value)); treatmentCommentActions.appendChild(button); });
         treatmentNumbers.forEach(number => { const button = document.createElement('button'); button.type = 'button'; button.dataset.treatmentNumber = number; button.textContent = number; button.setAttribute('aria-pressed', 'false'); button.addEventListener('click', () => selectTreatmentNumber(number)); treatmentNumberActions.appendChild(button); });
         document.querySelectorAll('#patient-details-dialog input, #patient-details-dialog textarea').forEach(field => {
             if (field.id === 'patient_name') { field.addEventListener('change', () => { try { renamePatient(field.value); } catch (error) { alert(`Unable to rename patient: ${error.message}`); applyPatientDetails(); } }); return; }
@@ -1202,6 +1233,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
                 field.focus({ preventScroll: true });
             }, { passive: false });
         });
+        treatmentComment.addEventListener('input', () => updateCurrentTreatment({ treatment: { ...loadTreatmentData(), comment: treatmentComment.value } }));
+        toggleTreatmentComment.addEventListener('click', () => setTreatmentCommentMode(!treatmentComment.hidden));
         historyActions.addEventListener('pointerover', event => { const button = event.target.closest('button[data-history-side]'); if (button) historyHoverValue.textContent = historyHoverText(button); });
         historyActions.addEventListener('pointerleave', () => { historyHoverValue.textContent = ''; });
         document.addEventListener('pointermove', event => { if (!historyDialog.open) return; const button = document.elementFromPoint(event.clientX, event.clientY)?.closest('button[data-history-side]'); historyHoverValue.textContent = historyHoverText(button); });
@@ -1234,7 +1267,7 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
         document.getElementById('toggle-point-keys').addEventListener('click', event => { const visible = sheet.classList.toggle('show-point-keys'); event.currentTarget.setAttribute('aria-pressed', String(visible)); stateDialog.close(); });
         document.getElementById('close-patient-details').addEventListener('click', () => patientDetailsDialog.close());
         stateDialog.addEventListener('toggle', () => { if (stateDialog.open) { patientSearch.value = activePatientName; patientSearchOptions.hidden = true; } });
-        stateDialog.addEventListener('click', event => { if (event.target === stateDialog) stateDialog.close(); }); guideDialog.addEventListener('click', event => { if (event.target === guideDialog) guideDialog.close(); }); historyDialog.addEventListener('click', event => { if (event.target === historyDialog) historyDialog.close(); }); treatmentResultDialog.addEventListener('click', event => { if (event.target === treatmentResultDialog) treatmentResultDialog.close(); }); treatmentNumberDialog.addEventListener('click', event => { if (event.target === treatmentNumberDialog) treatmentNumberDialog.close(); }); patientDetailsDialog.addEventListener('click', event => { if (event.target === patientDetailsDialog) patientDetailsDialog.close(); });
+        stateDialog.addEventListener('click', event => { if (event.target === stateDialog) stateDialog.close(); }); guideDialog.addEventListener('click', event => { if (event.target === guideDialog) guideDialog.close(); }); historyDialog.addEventListener('click', event => { if (event.target === historyDialog) historyDialog.close(); }); treatmentResultDialog.addEventListener('click', event => { if (event.target === treatmentResultDialog) treatmentResultDialog.close(); }); treatmentCommentDialog.addEventListener('click', event => { if (event.target === treatmentCommentDialog) treatmentCommentDialog.close(); }); treatmentNumberDialog.addEventListener('click', event => { if (event.target === treatmentNumberDialog) treatmentNumberDialog.close(); }); patientDetailsDialog.addEventListener('click', event => { if (event.target === patientDetailsDialog) patientDetailsDialog.close(); });
         migrateStoredPatients();
         activeTreatmentNumber = normalizeTreatmentNumber(localStorage.getItem(storageKeys.activeTreatment));
         window.addEventListener('pagehide', saveCurrentPatient); buildSheet(); applyPatientDetails(); selectGuide(guideSets.find(guide => guide.name === currentTreatment().guideName), false); applyTreatmentNumber(); if (!activePatientName) openStateDialog();
