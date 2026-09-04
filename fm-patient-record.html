@@ -178,14 +178,14 @@
     <main id="sheet" aria-label="Patient record"></main>
     <div id="gesture-overlay" class="gesture-overlay" aria-live="polite"><span class="gesture-dot"></span></div>
     <span id="gesture-point-name" class="gesture-point-name"></span>
-    <dialog id="state-dialog" class="state-dialog" aria-label="Patient administration">
+    <dialog id="state-dialog" class="state-dialog" aria-label="Patient administration" autofocus>
         <div class="state-dialog-actions">
             <div class="patient-actions">
                 <div class="patient-search-group">
                     <input id="patient-search" type="search" placeholder="patient name" aria-label="Patient name" autocomplete="off" enterkeyhint="search">
                     <div id="patient-search-options" class="patient-search-options" role="listbox" aria-label="Matching patients" hidden></div>
                 </div>
-                <button id="create-patient" type="button" autofocus aria-label="Create patient" title="Create patient">+</button>
+                <button id="create-patient" type="button" aria-label="Create patient" title="Create patient">+</button>
                 <button id="remove-patient" class="danger-button" type="button" aria-label="Remove current patient" title="Remove current patient">×</button>
             </div>
             <div class="state-data-actions">
@@ -236,7 +236,7 @@
         </div>
         <div id="history-actions" class="history-grid"></div>
     </dialog>
-    <dialog id="treatment-result-dialog" class="state-dialog" aria-labelledby="treatment-result-dialog-title">
+    <dialog id="treatment-result-dialog" class="state-dialog" aria-labelledby="treatment-result-dialog-title" autofocus>
         <h2 id="treatment-result-dialog-title">Treatment result</h2>
         <div id="treatment-result-actions" class="treatment-result-grid"></div>
     </dialog>
@@ -253,7 +253,7 @@
         <h2 id="treatment-number-dialog-title">Visit number</h2>
         <div id="treatment-number-actions" class="treatment-number-grid"></div>
     </dialog>
-    <dialog id="patient-details-dialog" class="state-dialog" aria-label="Patient details">
+    <dialog id="patient-details-dialog" class="state-dialog" aria-label="Patient details" autofocus>
         <form class="patient-details-form">
             <div class="patient-details-row">
                 <input id="patient_name" type="text" placeholder="name" aria-label="name">
