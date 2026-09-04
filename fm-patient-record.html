@@ -131,7 +131,8 @@
         #treatment-result-dialog h2 { margin-bottom: 10px; }
         .treatment-result-grid { display: grid; grid-template-columns: 1fr; gap: 2px; }
         .treatment-result-grid button { min-width: 0; min-height: 42px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 18px/1 Arial, sans-serif; }
-        .treatment-result-grid button:focus-visible, .treatment-result-grid button.treatment-target, .treatment-result-grid button.treatment-selected, .treatment-result-grid button[aria-pressed="true"] { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
+        .treatment-result-grid button:focus-visible, .treatment-number-grid button:focus-visible { outline: 2px solid #facc15; outline-offset: -2px; }
+        .treatment-result-grid button.treatment-target, .treatment-result-grid button.treatment-selected, .treatment-result-grid button[aria-pressed="true"] { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
         @media (hover: hover) { .treatment-result-grid button:hover { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; } }
         #treatment-result-dialog.point-result-dialog { width: min(480px, calc(100vw - 16px)); overflow: hidden; padding: 8px; }
         #treatment-result-dialog.point-result-dialog h2 { display: none; }
@@ -154,7 +155,7 @@
         #treatment-number-dialog h2 { margin-bottom: 10px; }
         .treatment-number-grid { display: grid; grid-template-columns: 1fr; gap: 2px; }
         .treatment-number-grid button { min-height: 42px; border: 1px solid #575757; border-radius: 3px; background: #303030; color: inherit; cursor: pointer; font: 700 18px/1 Arial, sans-serif; }
-        .treatment-number-grid button:focus-visible, .treatment-number-grid button.treatment-number-target, .treatment-number-grid button[aria-pressed="true"] { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
+        .treatment-number-grid button.treatment-number-target, .treatment-number-grid button[aria-pressed="true"] { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; }
         @media (hover: hover) { .treatment-number-grid button:hover { border-color: #e0f2fe; background: #0369a1; box-shadow: inset 0 0 0 1px #7dd3fc, 0 0 8px #38bdfc99; } }
         .treatment-number-button { width: calc(100% - 4px); height: calc(100% - 4px); border: 1px solid #575757; border-radius: 3px; background: #272727; color: #f3f4f6; cursor: pointer; font: 700 clamp(12px, 2.8vw, 18px)/1 Arial, sans-serif; touch-action: none; }
         #patient-details-dialog, #patient-details-dialog[open] { position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); bottom: auto; left: auto; z-index: 3; width: min(430px, calc(100vw - 16px)); margin: 0; overflow: visible; padding: 3px 10px; transform: none; }
@@ -178,7 +179,7 @@
     <main id="sheet" aria-label="Patient record"></main>
     <div id="gesture-overlay" class="gesture-overlay" aria-live="polite"><span class="gesture-dot"></span></div>
     <span id="gesture-point-name" class="gesture-point-name"></span>
-    <dialog id="state-dialog" class="state-dialog" aria-label="Patient administration" autofocus>
+    <dialog id="state-dialog" class="state-dialog" aria-label="Patient administration">
         <div class="state-dialog-actions">
             <div class="patient-actions">
                 <div class="patient-search-group">
@@ -236,11 +237,11 @@
         </div>
         <div id="history-actions" class="history-grid"></div>
     </dialog>
-    <dialog id="treatment-result-dialog" class="state-dialog" aria-labelledby="treatment-result-dialog-title" autofocus>
+    <dialog id="treatment-result-dialog" class="state-dialog" aria-labelledby="treatment-result-dialog-title">
         <h2 id="treatment-result-dialog-title">Treatment result</h2>
         <div id="treatment-result-actions" class="treatment-result-grid"></div>
     </dialog>
-    <dialog id="treatment-comment-dialog" class="state-dialog" aria-labelledby="treatment-comment-dialog-title" autofocus>
+    <dialog id="treatment-comment-dialog" class="state-dialog" aria-labelledby="treatment-comment-dialog-title">
         <div id="treatment-comment-actions" class="treatment-result-grid"></div>
         <div class="treatment-comment-header">
             <h2 id="treatment-comment-dialog-title">Treatment comment</h2>
@@ -249,11 +250,11 @@
         <textarea id="treatment-comment" aria-label="Treatment comment in Markdown"></textarea>
         <div id="treatment-comment-display" hidden aria-label="Treatment comment display"></div>
     </dialog>
-    <dialog id="treatment-number-dialog" class="state-dialog" aria-labelledby="treatment-number-dialog-title" autofocus>
+    <dialog id="treatment-number-dialog" class="state-dialog" aria-labelledby="treatment-number-dialog-title">
         <h2 id="treatment-number-dialog-title">Visit number</h2>
         <div id="treatment-number-actions" class="treatment-number-grid"></div>
     </dialog>
-    <dialog id="patient-details-dialog" class="state-dialog" aria-label="Patient details" autofocus>
+    <dialog id="patient-details-dialog" class="state-dialog" aria-label="Patient details">
         <form class="patient-details-form">
             <div class="patient-details-row">
                 <input id="patient_name" type="text" placeholder="name" aria-label="name">
