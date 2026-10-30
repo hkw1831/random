@@ -305,7 +305,7 @@ SC1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
 SC2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
 HU,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
 CU1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
-CU2,,,,,,,,,,,,,,,,,,,x,x,
+CU2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
 CA1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
 CA2,,,,,,,,,,,,,,x,x,x,x,x,x,x,x
 DI1,x,x,x,x,x,x,,x,x,x,x,x,x,x,x,x,x,x,x,x,x
@@ -342,7 +342,7 @@ SC1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
 SC2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
 HU,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
 CU1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
-CU2,,,,,,,,,,,,x,,,,,,,,x,
+CU2,x,x,,,,,,,x,x,x,x,,,,,,,x,x,x
 CA1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
 CA2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x
 DI1,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,x
@@ -653,6 +653,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             'an-me-hu-rt': { rule1: ['an-me-sc1-rt', 'an-me-sc2-rt', 'an-me-hu-rt', 'an-me-cu-rt', 'an-me-ca1-rt', 'an-me-ca2-rt', 'an-me-di1-rt', 'an-me-di2-rt'], rule2: [], rule3: [] },
             'an-me-cu-lt': { rule1: ['an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 'an-me-cu-lt', 'an-me-ca1-lt', 'an-me-ca2-lt', 'an-me-di1-lt', 'an-me-di2-lt'], rule2: [], rule3: [] },
             'an-me-cu-rt': { rule1: ['an-me-sc1-rt', 'an-me-sc2-rt', 'an-me-hu-rt', 'an-me-cu-rt', 'an-me-ca1-rt', 'an-me-ca2-rt', 'an-me-di1-rt', 'an-me-di2-rt'], rule2: [], rule3: [] },
+            'an-me-cu2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-me-cu2-rt': { rule1: [], rule2: [], rule3: [] },
             'an-me-ca1-lt': { rule1: ['an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 'an-me-cu-lt', 'an-me-ca1-lt', 'an-me-ca2-lt', 'an-me-di1-lt', 'an-me-di2-lt'], rule2: [], rule3: [] },
             'an-me-ca1-rt': { rule1: ['an-me-sc1-rt', 'an-me-sc2-rt', 'an-me-hu-rt', 'an-me-cu-rt', 'an-me-ca1-rt', 'an-me-ca2-rt', 'an-me-di1-rt', 'an-me-di2-rt'], rule2: [], rule3: [] },
             'an-me-ca2-lt': { rule1: ['an-me-sc1-lt', 'an-me-sc2-lt', 'an-me-hu-lt', 'an-me-cu-lt', 'an-me-ca1-lt', 'an-me-ca2-lt', 'an-me-di1-lt', 'an-me-di2-lt'], rule2: [], rule3: [] },
@@ -707,6 +709,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             'an-la-hu-rt': { rule1: [], rule2: [], rule3: [] },
             'an-la-cu-lt': { rule1: [], rule2: [], rule3: [] },
             'an-la-cu-rt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cu2-lt': { rule1: [], rule2: [], rule3: [] },
+            'an-la-cu2-rt': { rule1: [], rule2: [], rule3: [] },
             'an-la-ca1-lt': { rule1: [], rule2: [], rule3: [] },
             'an-la-ca1-rt': { rule1: [], rule2: [], rule3: [] },
             'an-la-ca2-lt': { rule1: [], rule2: [], rule3: [] },
@@ -811,6 +815,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             're-la-hu-rt': { rule1: [], rule2: [], rule3: [] },
             're-la-cu-lt': { rule1: [], rule2: [], rule3: [] },
             're-la-cu-rt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cu2-lt': { rule1: [], rule2: [], rule3: [] },
+            're-la-cu2-rt': { rule1: [], rule2: [], rule3: [] },
             're-la-ca1-lt': { rule1: [], rule2: [], rule3: [] },
             're-la-ca1-rt': { rule1: [], rule2: [], rule3: [] },
             're-la-ca2-lt': { rule1: [], rule2: [], rule3: [] },
@@ -820,6 +826,13 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             're-la-di2-lt': { rule1: [], rule2: [], rule3: [] },
             're-la-di2-rt': { rule1: [], rule2: [], rule3: [] },
         };
+        const normalizeCu1Key = key => key.replace(/^(an-me|an-la|re-la)-cu-(lt|rt)$/, '$1-cu1-$2');
+        Object.entries(balanceRules).forEach(([key, rules]) => {
+            const normalizedKey = normalizeCu1Key(key);
+            const normalizedRules = Object.fromEntries(Object.entries(rules).map(([name, values]) => [name, values.map(normalizeCu1Key)]));
+            if (normalizedKey !== key) delete balanceRules[key];
+            balanceRules[normalizedKey] = normalizedRules;
+        });
         const sheet = document.getElementById('sheet');
         const gestureOverlay = document.getElementById('gesture-overlay');
         const gesturePointName = document.getElementById('gesture-point-name');
@@ -877,9 +890,8 @@ DI2,x,x,,,,,,,x,x,x,x,,,,,,,,x,x`,
             const rowAliases = { LU1P: 'lu-p', LU2: 'lu', LU3D: 'lu-d', PV1P: 'pv-p', PV2: 'pv', PV3D: 'pv-d' };
             const row = ['AL', 'AM', 'RL', 'RM'].includes(pointName) ? treatmentRow : ['IR', 'ER'].includes(pointName) && rowAliases[rowName] ? rowAliases[rowName] : rowName.toLowerCase();
             const numberless = ['AN', 'RE', 'ME', 'LA', 'IR', 'ER'].includes(pointName) && !/^cp[123]$/i.test(rowName);
-            const cuAlias = ['AL', 'AM', 'RL'].includes(pointName) && /^CU\d+$/i.test(rowName);
             const rlThOrLu = pointName === 'RL' && /^(TH|LU)/i.test(rowName);
-            const keyRow = numberless || cuAlias || rlThOrLu ? row.replace(/\d+$/, '') : row;
+            const keyRow = numberless || rlThOrLu ? row.replace(/\d+$/, '') : row;
             if (pointName === 'ME') {
                 if (isMergedMe) return `${prefix}-${keyRow}-a`;
                 if (columnIndex === layout.rightMeColumn) return `${prefix}-${keyRow}-r`;
