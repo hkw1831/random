@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A4 Notes Maker</title>
+  <style>
+    :root {
+      --ink: #1b2421;
+      --muted: #68736d;
+      --line: #cbd5cf;
+      --wash: #eef3ef;
+      --accent: #176f5a;
+      --accent-dark: #0e5142;
+      --paper: #fff;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #e5ebe7;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .app {
+      width: min(1440px, calc(100% - 32px));
+      margin: 16px auto 28px;
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .editor {
+      position: sticky;
+      top: 16px;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding: 16px;
+      background: #f9fbf9;
+      border: 1px solid var(--line);
+      box-shadow: 0 12px 30px rgba(25, 47, 37, .12);
+    }
+    .eyebrow, label {
+      display: block;
+      color: #53625b;
+      font: 700 11px/1.2 Arial, sans-serif;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+    .eyebrow { margin-bottom: 12px; }
+    .field { margin-top: 12px; }
+    label { margin-bottom: 5px; }
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .checkbox-label input { display: inline-block; width: auto; margin: 0; }
+    input, textarea, select {
+      display: block;
+      width: 100%;
+      border: 1px solid #bdc9c1;
+      border-radius: 4px;
+      padding: 8px;
+      color: var(--ink);
+      background: var(--paper);
+      font: 14px/1.4 Arial, sans-serif;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: 3px solid rgba(23, 111, 90, .18);
+      border-color: var(--accent);
+    }
+    textarea { min-height: 460px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+    .hint { margin: 5px 0 0; color: var(--muted); font: 12px/1.4 Arial, sans-serif; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+    button {
+      min-height: 36px;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 8px 10px;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      font: 700 13px/1 Arial, sans-serif;
+    }
+    button:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+    button.secondary { background: #fff; color: var(--accent-dark); }
+    button.secondary:hover { background: var(--wash); }
+    button:disabled { opacity: .6; cursor: wait; }
+    .status { min-height: 18px; margin: 10px 0 0; color: var(--muted); font: 12px/1.35 Arial, sans-serif; }
+    .preview-area { min-width: 0; }
+    #pages {
+      display: grid;
+      justify-items: center;
+      gap: 18px;
+    }
+    .page {
+      --page-top-margin: 15mm;
+      --page-side-margin: 16mm;
+      --page-bottom-margin: 18mm;
+      position: relative;
+      width: 210mm;
+      height: 297mm;
+      overflow: hidden;
+      padding: var(--page-top-margin) var(--page-side-margin) var(--page-bottom-margin);
+      background: var(--paper);
+      box-shadow: 0 3px 14px rgba(20, 35, 28, .18);
+      color: #202522;
+    }
+    .page.margin-v-super-narrow {
+      --page-top-margin: 5mm;
+      --page-bottom-margin: 8mm;
+    }
+    .page.margin-v-narrow {
+      --page-top-margin: 10mm;
+      --page-bottom-margin: 13mm;
+    }
+    .page.margin-v-normal {
+      --page-top-margin: 15mm;
+      --page-bottom-margin: 18mm;
+    }
+    .page.margin-v-wide {
+      --page-top-margin: 22mm;
+      --page-bottom-margin: 25mm;
+    }
+    .page.margin-h-super-narrow { --page-side-margin: 5mm; }
+    .page.margin-h-narrow { --page-side-margin: 11mm; }
+    .page.margin-h-normal { --page-side-margin: 16mm; }
+    .page.margin-h-wide { --page-side-margin: 23mm; }
+    .page-body {
+      height: calc(297mm - var(--page-top-margin) - var(--page-bottom-margin));
+      overflow: hidden;
+      font-size: 16px;
+      line-height: 1.48;
+      overflow-wrap: anywhere;
+    }
+    .page-number {
+      position: absolute;
+      right: var(--page-side-margin);
+      bottom: 3mm;
+      color: #69736e;
+      font: 11px/1 Arial, sans-serif;
+    }
+    .page-body > :first-child { margin-top: 0; }
+    .page-body > :last-child { margin-bottom: 0; }
+    .page-body h1, .page-body h2, .page-body h3 {
+      color: #163f34;
+      line-height: 1.2;
+      break-after: avoid;
+    }
+    .page-body h1 { margin: 0 0 .55em; font-size: 1.8em; }
+    .page-body h2 { margin: 1em 0 .45em; font-size: 1.35em; }
+    .page-body h3 { margin: .9em 0 .35em; font-size: 1.12em; }
+    .page-body p { margin: 0 0 .8em; }
+    .page-body ul, .page-body ol { margin: 0 0 .8em 1.35em; padding: 0; }
+    .page-body li { margin: .16em 0; }
+    .page-body strong { color: #133e33; }
+    .page-body mark { padding: .05em .16em; background: #fff09a; color: inherit; border-radius: 2px; }
+    .page-body a { color: #176f5a; }
+    .page-body code { padding: .08em .25em; background: #eef3ef; border-radius: 3px; font-size: .88em; }
+    .page-body pre {
+      margin: 0 0 .8em;
+      padding: .75em .9em;
+      overflow: hidden;
+      background: #eef3ef;
+      border: 1px solid #d5e0d8;
+      border-radius: 4px;
+      font: .86em/1.45 "Courier New", Courier, monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .page-body pre code { padding: 0; background: transparent; border-radius: 0; font-size: inherit; }
+    .page-body pre code.hljs { padding: 0; background: transparent; }
+    .page-body blockquote {
+      margin: 0 0 .8em;
+      padding: .35em .9em;
+      border-left: 4px solid #8eafa1;
+      color: #53625b;
+    }
+    .page-body hr { margin: 1.2em 0; border: 0; border-top: 1px solid var(--line); }
+    .note-image {
+      display: block;
+      width: 100%;
+      max-height: 240mm;
+      object-fit: contain;
+      margin: .4em auto .8em;
+    }
+    .image-block { margin: 0 0 .8em; text-align: center; }
+    .image-block figcaption { color: var(--muted); font: 11px/1.3 Arial, sans-serif; }
+    .table-wrap {
+      max-width: 100%;
+      margin: .5em 0 1em;
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .92em;
+      break-inside: avoid;
+    }
+    th, td { padding: .4em .5em; border: 1px solid #b9c7be; text-align: left; vertical-align: top; }
+    th { background: #eef3ef; color: #163f34; }
+    .atomic { break-inside: avoid; page-break-inside: avoid; }
+    .loading { color: var(--muted); font: 14px Arial, sans-serif; }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; width: min(760px, calc(100% - 24px)); }
+      .editor { position: static; }
+      .page { transform: scale(var(--page-scale, 1)); transform-origin: top center; margin-bottom: calc(-297mm * (1 - var(--page-scale, 1))); }
+    }
+    @media print {
+      @page { size: A4 portrait; margin: 0; }
+      body { background: #fff; }
+      .app { display: block; margin: 0; width: auto; }
+      .editor { display: none; }
+      #pages { display: block; }
+      .page { box-shadow: none; page-break-after: always; }
+      .page:last-child { page-break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="editor" aria-label="Notes editor">
+      <span class="eyebrow">A4 notes maker</span>
+      <div class="field">
+        <label for="title-input">Document title (PDF filename)</label>
+        <input id="title-input" type="text" placeholder="My notes">
+      </div>
+      <div class="field">
+        <label for="font-size-input">Font size</label>
+        <select id="font-size-input">
+          <option value="12">12 px</option>
+          <option value="14">14 px</option>
+          <option value="16" selected>16 px</option>
+          <option value="18">18 px</option>
+          <option value="20">20 px</option>
+          <option value="22">22 px</option>
+          <option value="24">24 px</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="font-family-input">Font</label>
+        <select id="font-family-input">
+          <option value="serif" selected>Georgia (serif)</option>
+          <option value="sans">Arial (sans-serif)</option>
+          <option value="times">Times New Roman</option>
+          <option value="system">System UI</option>
+          <option value="mono">Courier New (monospace)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="vertical-margin-input">Up/down margin</label>
+        <select id="vertical-margin-input">
+          <option value="super-narrow">Super narrow</option>
+          <option value="narrow">Narrow</option>
+          <option value="normal">Normal</option>
+          <option value="wide">Wide</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="horizontal-margin-input">Left/right margin</label>
+        <select id="horizontal-margin-input">
+          <option value="super-narrow">Super narrow</option>
+          <option value="narrow">Narrow</option>
+          <option value="normal" selected>Normal</option>
+          <option value="wide">Wide</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="checkbox-label"><input id="page-number-input" type="checkbox"> Display page numbers</label>
+      </div>
+      <div class="field">
+        <label class="checkbox-label"><input id="image-alt-input" type="checkbox"> Display image alt text</label>
+      </div>
+      <div class="field">
+        <label for="markdown-input">Markdown content</label>
+        <textarea id="markdown-input" spellcheck="false" placeholder="# Heading&#10;&#10;Write notes here...&#10;&#10;![Photo](https://example.com/photo.jpg)"></textarea>
+        <p class="hint">Supports headings, bold, lists, links, tables, horizontal rules, and Markdown images. Images and tables stay together on one A4 page.</p>
+      </div>
+      <div class="actions">
+        <button id="preview-button" type="button">Preview</button>
+        <button id="pdf-button" class="secondary" type="button">Export PDF</button>
+      </div>
+      <p id="status" class="status" aria-live="polite"></p>
+    </section>
+    <section class="preview-area" aria-label="A4 document preview">
+      <div id="pages"></div>
+    </section>
+  </main>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const titleInput = document.getElementById('title-input');
+    const markdownInput = document.getElementById('markdown-input');
+    const fontSizeInput = document.getElementById('font-size-input');
+    const pages = document.getElementById('pages');
+    const status = document.getElementById('status');
+    const previewButton = document.getElementById('preview-button');
+    const pdfButton = document.getElementById('pdf-button');
+    const fontFamilyInput = document.getElementById('font-family-input');
+    const verticalMarginInput = document.getElementById('vertical-margin-input');
+    const horizontalMarginInput = document.getElementById('horizontal-margin-input');
+    const pageNumberInput = document.getElementById('page-number-input');
+    const imageAltInput = document.getElementById('image-alt-input');
+    const fontFamilies = {
+      serif: 'Georgia, "Times New Roman", serif',
+      sans: 'Arial, sans-serif',
+      times: '"Times New Roman", Times, serif',
+      system: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      mono: '"Courier New", Courier, monospace'
+    };
+    const exportImageCache = new Map();
+    const exportImageLoads = new Map();
+    let lastExportImageRequest = 0;
+    let isExporting = false;
+
+    function escapeHtml(value) {
+      return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function inlineMarkdown(value) {
+      return escapeHtml(value)
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+        .replace(/==(.+?)==/g, '<mark>$1</mark>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/_([^_]+)_/g, '<em>$1</em>')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    }
+
+    function imageParts(line) {
+      const match = line.trim().match(/^!\[([^\]]*)\]\((?:<)?([^\s>]+)(?:>)?(?:\s+["'][^"']*["'])?\)$/);
+      return match ? { alt: match[1], url: match[2] } : null;
+    }
+
+    function isTableDelimiter(line) {
+      return /^\s*\|?(\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?\s*$/.test(line);
+    }
+
+    function tableMarkup(lines) {
+      const cells = line => line.trim().replace(/^\||\|$/g, '').split('|').map(cell => cell.trim());
+      const headers = cells(lines[0]);
+      const rows = lines.slice(2).map(cells);
+      return `<div class="table-wrap atomic"><table><thead><tr>${headers.map(cell => `<th>${inlineMarkdown(cell)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${headers.map((_, index) => `<td>${inlineMarkdown(row[index] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    }
+
+    function markdownBlocks(value) {
+      const lines = value.replace(/\r\n?/g, '\n').split('\n');
+      const blocks = [];
+      let index = 0;
+      while (index < lines.length) {
+        if (!lines[index].trim()) { index += 1; continue; }
+        if (imageParts(lines[index])) {
+          const image = imageParts(lines[index]);
+          const caption = imageAltInput.checked ? `<figcaption>${escapeHtml(image.alt)}</figcaption>` : '';
+          blocks.push(`<figure class="image-block atomic"><img class="note-image" src="${escapeHtml(image.url)}" alt="${escapeHtml(image.alt)}">${caption}</figure>`);
+          index += 1;
+          continue;
+        }
+        const codeFence = lines[index].match(/^```([^\s]*)\s*$/);
+        if (codeFence) {
+          const codeLines = [];
+          index += 1;
+          while (index < lines.length && !/^```\s*$/.test(lines[index])) codeLines.push(lines[index++]);
+          if (index < lines.length) index += 1;
+          const language = codeFence[1].match(/^[a-zA-Z0-9_+-]+/)?.[0] || 'plaintext';
+          blocks.push(`<pre class="code-block atomic"><code class="language-${language}">${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+          continue;
+        }
+        if (index + 1 < lines.length && lines[index].includes('|') && isTableDelimiter(lines[index + 1])) {
+          const tableLines = [lines[index], lines[index + 1]];
+          index += 2;
+          while (index < lines.length && lines[index].trim() && lines[index].includes('|')) tableLines.push(lines[index++]);
+          blocks.push(tableMarkup(tableLines));
+          continue;
+        }
+        const heading = lines[index].match(/^(#{1,3})\s+(.+)$/);
+        if (heading) {
+          blocks.push(`<h${heading[1].length} class="atomic">${inlineMarkdown(heading[2])}</h${heading[1].length}>`);
+          index += 1;
+          continue;
+        }
+        if (/^(\*{3,}|-{3,}|_{3,})\s*$/.test(lines[index])) {
+          blocks.push('<hr class="atomic">');
+          index += 1;
+          continue;
+        }
+        if (/^\s*>\s?/.test(lines[index])) {
+          const quoteLines = [];
+          while (index < lines.length && /^\s*>\s?/.test(lines[index])) {
+            quoteLines.push(lines[index].replace(/^\s*>\s?/, ''));
+            index += 1;
+          }
+          blocks.push(`<blockquote class="atomic">${quoteLines.map(inlineMarkdown).join('<br>')}</blockquote>`);
+          continue;
+        }
+        const listMatch = lines[index].match(/^\s*([-*+]|\d+\.)\s+(.+)$/);
+        if (listMatch) {
+          const ordered = /^\d+\./.test(listMatch[1]);
+          const items = [];
+          while (index < lines.length) {
+            const item = lines[index].match(/^\s*([-*+]|\d+\.)\s+(.+)$/);
+            if (!item || /^\d+\./.test(item[1]) !== ordered) break;
+            items.push(`<li>${inlineMarkdown(item[2])}</li>`);
+            index += 1;
+          }
+          blocks.push(`<${ordered ? 'ol' : 'ul'} class="atomic">${items.join('')}</${ordered ? 'ol' : 'ul'}>`);
+          continue;
+        }
+        const paragraph = [];
+        while (index < lines.length && lines[index].trim()) {
+          if (paragraph.length && (/^(#{1,3})\s+/.test(lines[index]) || imageParts(lines[index]) || /^\s*([-*+]|\d+\.)\s+/.test(lines[index]))) break;
+          paragraph.push(lines[index++]);
+        }
+        blocks.push(`<p>${paragraph.map(inlineMarkdown).join('<br>')}</p>`);
+      }
+      return blocks;
+    }
+
+    function pageMarkup(number) {
+      return `<article class="page"><div class="page-body"></div><footer class="page-number">Page ${number}</footer></article>`;
+    }
+
+    function updatePageNumbers() {
+      [...pages.querySelectorAll('.page-number')].forEach((footer, index, all) => {
+        footer.textContent = `Page ${index + 1} of ${all.length}`;
+        footer.hidden = !pageNumberInput.checked;
+      });
+    }
+
+    function fitOversizedTable(block, body) {
+      if (!block.classList.contains('table-wrap') || block.offsetHeight <= body.clientHeight) return;
+      const currentSize = Number.parseFloat(getComputedStyle(block).fontSize);
+      const fittedSize = Math.max(6, currentSize * body.clientHeight / block.offsetHeight);
+      block.style.fontSize = `${fittedSize}px`;
+    }
+
+    function highlightCode(block) {
+      const code = block.matches('pre.code-block') ? block.querySelector('code') : null;
+      if (code && window.hljs) window.hljs.highlightElement(code);
+    }
+
+    function paginate() {
+      const blocks = markdownBlocks(markdownInput.value);
+      pages.innerHTML = '';
+      let page = null;
+      let body = null;
+      const ensurePage = () => {
+        page = document.createElement('article');
+        page.className = `page margin-v-${verticalMarginInput.value} margin-h-${horizontalMarginInput.value}`;
+        page.innerHTML = `<div class="page-body"></div><footer class="page-number"></footer>`;
+        body = page.querySelector('.page-body');
+        body.style.fontSize = `${fontSizeInput.value}px`;
+        body.style.fontFamily = fontFamilies[fontFamilyInput.value];
+        pages.append(page);
+      };
+      ensurePage();
+      blocks.forEach(markup => {
+        const block = document.createRange().createContextualFragment(markup).firstElementChild;
+        body.append(block);
+        highlightCode(block);
+        fitOversizedTable(block, body);
+        if (body.scrollHeight > body.clientHeight && body.children.length > 1) {
+          body.removeChild(block);
+          ensurePage();
+          body.append(block);
+          fitOversizedTable(block, body);
+        }
+      });
+      if (!blocks.length) body.innerHTML = '<p class="loading">Your A4 preview will appear here.</p>';
+      pages.querySelectorAll('img').forEach(image => {
+        image.addEventListener('load', () => {
+          if (image.isConnected && !isExporting) paginate();
+        }, { once: true });
+      });
+      updatePageNumbers();
+      status.textContent = `${pages.children.length} A4 page${pages.children.length === 1 ? '' : 's'} · rendered`;
+    }
+
+    function fitPages() {
+      const scale = Math.min(1, (document.querySelector('.preview-area').clientWidth - 10) / 794);
+      document.documentElement.style.setProperty('--page-scale', scale);
+    }
+
+    function exportImageUrl(url) {
+      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&output=jpg`;
+    }
+
+    function wait(milliseconds) {
+      return new Promise(resolve => setTimeout(resolve, milliseconds));
+    }
+
+    async function cachedExportImage(url) {
+      if (exportImageCache.has(url)) return exportImageCache.get(url);
+      if (exportImageLoads.has(url)) return exportImageLoads.get(url);
+      const load = (async () => {
+        const proxyUrl = exportImageUrl(url);
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          const elapsed = Date.now() - lastExportImageRequest;
+          if (elapsed < 1000) await wait(1000 - elapsed);
+          lastExportImageRequest = Date.now();
+          try {
+            const response = await fetch(proxyUrl, { cache: 'force-cache', mode: 'cors' });
+            if (!response.ok) throw new Error(`Image proxy returned ${response.status}`);
+            const blob = await response.blob();
+            const dataUrl = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = () => reject(reader.error || new Error('Image cache failed'));
+              reader.readAsDataURL(blob);
+            });
+            exportImageCache.set(url, dataUrl);
+            return dataUrl;
+          } catch (error) {
+            if (attempt === 2) {
+              console.warn('Using direct image proxy after cache failure', error);
+              exportImageCache.set(url, proxyUrl);
+              return proxyUrl;
+            }
+            await wait(1000 * (attempt + 1));
+          }
+        }
+        return proxyUrl;
+      })();
+      exportImageLoads.set(url, load);
+      try {
+        return await load;
+      } finally {
+        exportImageLoads.delete(url);
+      }
+    }
+
+    function waitForExportImages(container) {
+      const images = [...container.querySelectorAll('img')];
+      return Promise.all(images.map(image => new Promise((resolve, reject) => {
+        if (image.complete && image.naturalWidth) {
+          resolve();
+          return;
+        }
+        image.addEventListener('load', resolve, { once: true });
+        image.addEventListener('error', () => reject(new Error(`Image could not be loaded: ${image.alt || image.src}`)), { once: true });
+      })));
+    }
+
+    function preview() {
+      paginate();
+      pages.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      previewButton.textContent = 'Preview updated';
+      setTimeout(() => { previewButton.textContent = 'Preview'; }, 1200);
+    }
+
+    async function exportPdf() {
+      pdfButton.disabled = true;
+      pdfButton.textContent = 'Preparing PDF...';
+      isExporting = true;
+      paginate();
+      const exportPages = [...pages.querySelectorAll('.page')];
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        for (const [index, page] of exportPages.entries()) {
+          const exportPage = page.cloneNode(true);
+          exportPage.style.cssText = 'position:fixed;left:-10000px;top:0;transform:none;';
+          for (const image of exportPage.querySelectorAll('img')) {
+            const originalUrl = image.src;
+            image.removeAttribute('src');
+            image.removeAttribute('srcset');
+            image.crossOrigin = 'anonymous';
+            image.src = await cachedExportImage(originalUrl);
+          }
+          document.body.append(exportPage);
+          let canvas;
+          try {
+            await waitForExportImages(exportPage);
+            canvas = await html2canvas(exportPage, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
+          } finally {
+            exportPage.remove();
+          }
+          if (index) pdf.addPage();
+          pdf.addImage(canvas.toDataURL('image/jpeg', .95), 'JPEG', 0, 0, 210, 297);
+        }
+        const filename = (titleInput.value.trim() || 'a4-notes').replace(/[\\/:*?"<>|]+/g, '-');
+        pdf.save(`${filename}.pdf`);
+        status.textContent = `${exportPages.length} page${exportPages.length === 1 ? '' : 's'} exported`;
+      } catch (error) {
+        console.error(error);
+        status.textContent = 'PDF export failed. Check image links and try again.';
+      } finally {
+        isExporting = false;
+        pdfButton.disabled = false;
+        pdfButton.textContent = 'Export PDF';
+      }
+    }
+
+    previewButton.addEventListener('click', preview);
+    pdfButton.addEventListener('click', exportPdf);
+    [titleInput, markdownInput, fontSizeInput, fontFamilyInput, verticalMarginInput, horizontalMarginInput, pageNumberInput, imageAltInput].forEach(input => input.addEventListener('input', paginate));
+    [fontFamilyInput, verticalMarginInput, horizontalMarginInput, pageNumberInput, imageAltInput].forEach(input => input.addEventListener('change', paginate));
+    window.addEventListener('resize', fitPages);
+    paginate();
+    fitPages();
+  </script>
+</body>
+</html>
